@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Local development
+.DS_Store
+*.log
+
+# Ghost local data (use docker volume instead)
+ghost-data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build artifacts
+dist/
+*.zip
+
+# Environment files
+.env
+.env.local
+
+# Backup files
+*.backup

@@ -1,0 +1,16 @@
+{{!< default}}
+
+<article class="page {{page_class}}">
+    <header class="page-header container">
+        <h1 class="page-title">{{title}}</h1>
+        {{#if feature_image}}
+        <figure class="page-feature-image">
+            <img src="{{feature_image}}" alt="{{title}}">
+        </figure>
+        {{/if}}
+    </header>
+
+    <section class="page-content container">
+        {{content}}
+    </section>
+</article>

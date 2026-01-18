@@ -1,0 +1,40 @@
+{{!< default}}
+
+<div class="container">
+    {{#if @site.cover_image}}
+    <section class="hero" style="background-image: url({{@site.cover_image}})">
+        <h1>{{@site.title}}</h1>
+        {{#if @site.description}}
+        <p>{{@site.description}}</p>
+        {{/if}}
+    </section>
+    {{/if}}
+
+    <section class="homepage-content">
+        {{!-- This is where your fancy custom homepage will go --}}
+        <div class="intro">
+            <h2>Welcome</h2>
+            <p>This is a custom homepage. Edit index.hbs to customize.</p>
+        </div>
+    </section>
+
+    <section class="recent-posts">
+        <h2>Recent Posts</h2>
+        <div class="post-grid">
+            {{#foreach posts}}
+            <article class="post-card">
+                {{#if feature_image}}
+                <a href="{{url}}" class="post-card-image" style="background-image: url({{feature_image}})"></a>
+                {{/if}}
+                <div class="post-card-content">
+                    <h3><a href="{{url}}">{{title}}</a></h3>
+                    <p>{{excerpt words="30"}}</p>
+                    <time datetime="{{date format="YYYY-MM-DD"}}">{{date format="D MMM YYYY"}}</time>
+                </div>
+            </article>
+            {{/foreach}}
+        </div>
+    </section>
+
+    {{pagination}}
+</div>
