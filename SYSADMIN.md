@@ -114,6 +114,35 @@ cd /var/www/ghost
 ghost backup
 ```
 
+### Query Ghost Settings
+
+```bash
+# Get active theme
+ssh ghost-blog "mysql -u ghost-508 -p'PASSWORD' ghost_prod -N -e \"SELECT value FROM settings WHERE \\\`key\\\`='active_theme'\""
+
+# Get any Ghost setting (replace SETTING_NAME)
+ssh ghost-blog "mysql -u ghost-508 -p'PASSWORD' ghost_prod -N -e \"SELECT value FROM settings WHERE \\\`key\\\`='SETTING_NAME'\""
+
+# List all settings keys
+ssh ghost-blog "mysql -u ghost-508 -p'PASSWORD' ghost_prod -N -e \"SELECT \\\`key\\\` FROM settings\""
+```
+
+DB credentials are in `/var/www/ghost/config.production.json` (user: `ghost-508`).
+
+### Theme Management
+
+```bash
+# List installed themes
+ssh ghost-blog "ls -la /var/www/ghost/content/themes/"
+
+# Built-in themes (symlinks)
+# /var/www/ghost/current/content/themes/casper
+# /var/www/ghost/current/content/themes/source
+
+# Custom themes go in /var/www/ghost/content/themes/
+# Ownership must be ghost:ghost
+```
+
 ## SSL/TLS
 
 - **Provider**: Cloudflare (handles SSL termination)

@@ -1,6 +1,7 @@
 {{!< default}}
 
 <article class="page {{page_class}}">
+    {{#if @page.show_title_and_feature_image}}
     <header class="page-header container">
         <h1 class="page-title">{{title}}</h1>
         {{#if feature_image}}
@@ -9,6 +10,7 @@
         </figure>
         {{/if}}
     </header>
+    {{/if}}
 
     <section class="page-content container">
         {{content}}
