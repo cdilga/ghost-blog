@@ -20,6 +20,177 @@ motion.zajno.com is built on **Webflow** and uses a **lightweight, no-WebGL appr
 
 **Key Finding:** No WebGL, Three.js, or heavy 3D libraries detected.
 
+---
+
+## The 8 Motion Design Principles
+
+motion.zajno.com teaches 8 core principles. Here's each one with **specific opportunities for chris.dilger.me**:
+
+### 1. Easing
+> "Objects in nature don't move at constant speeds; they accelerate when starting and decelerate when stopping."
+
+| Type | Behavior | Use Case |
+|------|----------|----------|
+| Linear | Constant speed | Looping animations, progress bars |
+| Ease | Slight accel/decel | General UI transitions |
+| Ease-in | Slow start → fast | Elements exiting |
+| Ease-out | Fast start → slow | Elements entering (most natural) |
+| Cubic | Extended curves | Hero animations, dramatic reveals |
+
+**Opportunities:**
+- Hero text entrance: `cubic-bezier(0.4, 0, 0.2, 1)` for dramatic feel
+- Project cards: `ease-out` for snappy hover response
+- Section transitions: longer cubic easing for cinematic feel
+
+### 2. Offset & Delay (Stagger)
+> "Staggering the appearance of multiple objects creates softness and directs viewer attention through hierarchy."
+
+**Opportunities:**
+- **8 Claude Codes section**: Stagger each terminal appearing (0.1s apart)
+- **Project grid**: Cards appear in wave pattern on scroll
+- **Hero elements**: Name → title → CTA button in sequence
+- **Blog post list**: Stagger article cards
+
+```javascript
+// GSAP stagger example
+gsap.from('.project-card', {
+  opacity: 0,
+  y: 30,
+  stagger: 0.1,
+  ease: 'power2.out'
+})
+```
+
+### 3. Fade In / Fade Out
+> "Most versatile technique for object appearance/disappearance; works best paired with other animation methods."
+
+**Opportunities:**
+- **All section entries**: Fade + translate as baseline
+- **Image reveals**: Fade in with slight scale
+- **Text content**: Fade paragraphs as user scrolls
+
+**Key insight:** Never use fade alone - always pair with transform (translate, scale, or both).
+
+### 4. Transform & Morph
+> "One shape smoothly converts into another, maintaining visual continuity."
+
+**Opportunities:**
+- **Navigation**: Hamburger → X icon morph
+- **Project cards**: Thumbnail morphs into full project view
+- **CTA buttons**: Shape morph on hover
+- **Logo**: Could morph between states (e.g., typing animation)
+
+```css
+/* Icon morph example */
+.menu-icon {
+  transition: transform 0.3s ease;
+}
+.menu-icon.open .line1 { transform: rotate(45deg) translate(5px, 5px); }
+.menu-icon.open .line2 { opacity: 0; }
+.menu-icon.open .line3 { transform: rotate(-45deg) translate(5px, -5px); }
+```
+
+### 5. Masking
+> "Uses a morphing object as a mask container; internal content can scale, move, or rotate within it."
+
+**Opportunities:**
+- **Hero section**: Desert landscape revealed through expanding mask
+- **Project previews**: Video plays within masked container
+- **Section transitions**: Content revealed through animated clip-path
+- **Image hover**: Reveal additional info through mask expansion
+
+```css
+/* Mask reveal on scroll */
+.hero-image {
+  clip-path: circle(0% at 50% 50%);
+  transition: clip-path 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hero-image.visible {
+  clip-path: circle(100% at 50% 50%);
+}
+```
+
+### 6. Dimension (Floating Dimensionality)
+> "Creates perceived depth, making object interaction intuitive and spatial."
+
+**Opportunities:**
+- **Project cards**: Lift on hover with shadow depth
+- **Hero layers**: Foreground/background separation
+- **Featured content**: "Floating" above the page
+- **Mobile accelerometer**: Cards tilt with device movement
+
+```css
+/* 3D card lift */
+.project-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.project-card:hover {
+  transform: translateY(-8px) rotateX(2deg);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+```
+
+### 7. Parallax
+> "Layered objects move at different speeds based on distance; farther objects move less."
+
+**Opportunities:**
+- **Desert hero**: Sky (slow) → mountains (medium) → foreground (fast)
+- **About section**: Background texture moves slower than content
+- **Project showcase**: Depth layers on scroll
+- **Footer**: Subtle parallax on decorative elements
+
+```javascript
+// GSAP ScrollTrigger parallax
+gsap.to('.bg-layer', {
+  yPercent: -20,
+  scrollTrigger: {
+    trigger: '.hero',
+    scrub: true
+  }
+})
+gsap.to('.fg-layer', {
+  yPercent: -50,
+  scrollTrigger: {
+    trigger: '.hero',
+    scrub: true
+  }
+})
+```
+
+### 8. Zoom
+> "Provides smooth transitions between interface elements and destinations while communicating depth."
+
+**Opportunities:**
+- **Project click**: Zoom into project detail page
+- **Image galleries**: Zoom to full-screen view
+- **Section focus**: Zoom effect on scroll into section
+- **YouTube embed**: Zoom from thumbnail to video player
+
+```javascript
+// Zoom transition to detail
+gsap.to('.project-card.active', {
+  scale: 1.5,
+  duration: 0.6,
+  ease: 'power2.inOut'
+})
+```
+
+---
+
+## Principle Application Matrix
+
+| Site Section | Primary Principles | Secondary |
+|--------------|-------------------|-----------|
+| **Hero** | Parallax, Masking, Easing | Fade, Dimension |
+| **8 Claude Codes** | Stagger, Fade | Dimension |
+| **Projects** | Dimension, Zoom, Stagger | Transform, Masking |
+| **Blog posts** | Fade, Stagger | Easing |
+| **YouTube embed** | Zoom, Masking | Dimension |
+| **Talks section** | Fade, Stagger, Dimension | Parallax |
+| **Footer** | Parallax, Fade | - |
+
+---
+
 ## Animation Patterns Catalog
 
 ### 1. Page Load Animations
