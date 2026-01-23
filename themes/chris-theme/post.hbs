@@ -1,43 +1,137 @@
 {{!< default}}
 
 {{#post}}
-<article class="post {{post_class}}">
-    <header class="post-header container">
-        <h1 class="post-title">{{title}}</h1>
-        <div class="post-meta">
-            <time datetime="{{date format="YYYY-MM-DD"}}">{{date format="D MMMM YYYY"}}</time>
-            {{#if primary_author}}
-            <span class="post-author">by {{primary_author.name}}</span>
+<article class="post {{post_class}}" itemscope itemtype="http://schema.org/BlogPosting">
+    {{!-- Post Header - Centered, Clean --}}
+    <header class="post-header">
+        <div class="container container--narrow">
+            {{#if primary_tag}}
+            <a href="{{primary_tag.url}}" class="post-tag">{{primary_tag.name}}</a>
             {{/if}}
-            {{#if reading_time}}
-            <span class="reading-time">{{reading_time}} min read</span>
-            {{/if}}
+
+            <h1 class="post-title" itemprop="headline">{{title}}</h1>
+
+            <div class="post-meta">
+                {{#if primary_author}}
+                <div class="post-author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+                    {{#if primary_author.profile_image}}
+                    <img src="{{primary_author.profile_image}}" alt="{{primary_author.name}}" class="post-author__avatar">
+                    {{/if}}
+                    <span class="post-author__name" itemprop="name">{{primary_author.name}}</span>
+                </div>
+                {{/if}}
+                <time class="post-date" datetime="{{date format="YYYY-MM-DD"}}" itemprop="datePublished">
+                    {{date format="D MMMM YYYY"}}
+                </time>
+                {{#if reading_time}}
+                <span class="post-reading-time">{{reading_time}} min read</span>
+                {{/if}}
+            </div>
         </div>
-        {{#if feature_image}}
-        <figure class="post-feature-image">
-            <img src="{{feature_image}}" alt="{{title}}">
-        </figure>
-        {{/if}}
     </header>
 
-    <section class="post-content container">
+    {{!-- Feature Image - Full Width --}}
+    {{#if feature_image}}
+    <figure class="post-feature-image">
+        <img src="{{feature_image}}" alt="{{title}}" itemprop="image" loading="eager">
+        {{#if feature_image_caption}}
+        <figcaption>{{feature_image_caption}}</figcaption>
+        {{/if}}
+    </figure>
+    {{/if}}
+
+    {{!-- Post Content - Ghost's Content API handles embeds --}}
+    <section class="post-content container container--narrow" itemprop="articleBody">
         {{content}}
     </section>
 
-    <footer class="post-footer container">
+    {{!-- Post Footer --}}
+    <footer class="post-footer container container--narrow">
         {{#if tags}}
         <div class="post-tags">
+            <span class="post-tags__label">Tagged:</span>
             {{#foreach tags}}
-            <a href="{{url}}">{{name}}</a>
+            <a href="{{url}}" rel="tag">{{name}}</a>
             {{/foreach}}
+        </div>
+        {{/if}}
+
+        {{!-- Share Links --}}
+        <div class="post-share">
+            <span class="post-share__label">Share:</span>
+            <a href="https://twitter.com/intent/tweet?url={{url absolute="true"}}&text={{encode title}}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="post-share__link"
+               aria-label="Share on X">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+            </a>
+            <a href="https://www.linkedin.com/shareArticle?mini=true&url={{url absolute="true"}}&title={{encode title}}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="post-share__link"
+               aria-label="Share on LinkedIn">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path fill="currentColor" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+            </a>
+            <button class="post-share__link post-share__link--copy"
+                    onclick="navigator.clipboard.writeText('{{url absolute="true"}}').then(() => this.classList.add('copied'))"
+                    aria-label="Copy link">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="icon-link">
+                    <path fill="none" stroke="currentColor" stroke-width="2" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="icon-check">
+                    <path fill="none" stroke="currentColor" stroke-width="2" d="M20 6L9 17l-5-5"/>
+                </svg>
+            </button>
+        </div>
+
+        {{!-- Author Bio (if available) --}}
+        {{#if primary_author.bio}}
+        <div class="post-author-bio">
+            {{#if primary_author.profile_image}}
+            <img src="{{primary_author.profile_image}}" alt="{{primary_author.name}}" class="post-author-bio__avatar">
+            {{/if}}
+            <div class="post-author-bio__content">
+                <span class="post-author-bio__label">Written by</span>
+                <h4 class="post-author-bio__name">{{primary_author.name}}</h4>
+                <p class="post-author-bio__text">{{primary_author.bio}}</p>
+            </div>
         </div>
         {{/if}}
     </footer>
 </article>
 {{/post}}
 
+{{!-- Related Posts --}}
+{{#get "posts" filter="tags:[{{#post}}{{#primary_tag}}{{slug}}{{/primary_tag}}{{/post}}]+id:-{{post.id}}" limit="3" as |related|}}
+{{#if related}}
+<section class="related-posts">
+    <div class="container">
+        <h3 class="related-posts__title">More articles</h3>
+        <div class="related-posts__grid">
+            {{#foreach related}}
+            <article class="related-post-card">
+                {{#if feature_image}}
+                <a href="{{url}}" class="related-post-card__image" style="background-image: url({{feature_image}})"></a>
+                {{/if}}
+                <div class="related-post-card__content">
+                    <h4><a href="{{url}}">{{title}}</a></h4>
+                    <time datetime="{{date format="YYYY-MM-DD"}}">{{date format="D MMM YYYY"}}</time>
+                </div>
+            </article>
+            {{/foreach}}
+        </div>
+    </div>
+</section>
+{{/if}}
+{{/get}}
+
 {{#if comments}}
-<section class="post-comments container">
+<section class="post-comments container container--narrow">
     {{comments}}
 </section>
 {{/if}}
