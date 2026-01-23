@@ -292,6 +292,35 @@
             );
         }
 
+        // Content Creator 3D YouTube embed animation
+        const youtube3dContainer = document.querySelector('.youtube-3d-container');
+        if (youtube3dContainer) {
+            const embed = youtube3dContainer.querySelector('lite-youtube');
+            if (embed) {
+                gsap.fromTo(embed,
+                    {
+                        scale: 0.8,
+                        rotateY: -15,
+                        rotateX: 5,
+                        opacity: 0,
+                    },
+                    {
+                        scale: 1,
+                        rotateY: -5,
+                        rotateX: 2,
+                        opacity: 1,
+                        duration: 0.8,
+                        ease: 'power2.out',
+                        scrollTrigger: {
+                            trigger: youtube3dContainer,
+                            start: 'top 80%',
+                            toggleActions: 'play none none none',
+                        }
+                    }
+                );
+            }
+        }
+
         console.log('Chris Theme: Scene animations initialized');
     }
 
