@@ -21,7 +21,7 @@ LOG_FILE="${SCRIPT_DIR}/beads-agent.log"
 DRY_RUN=false
 
 # Timeout settings (in seconds)
-ITERATION_TIMEOUT=1800   # 30 minutes max per iteration
+ITERATION_TIMEOUT=10800  # 3 hours max per iteration
 STUCK_TIMEOUT=120        # 2 minutes of no output = stuck
 
 # Parse arguments
@@ -238,7 +238,7 @@ main() {
     echo ""
 
     local iteration=1
-    local max_iterations=100  # Safety limit
+    local max_iterations=1000  # Safety limit (effectively unlimited)
 
     while [[ $iteration -le $max_iterations ]]; do
         if ! run_agent_iteration $iteration; then
