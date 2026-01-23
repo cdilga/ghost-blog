@@ -244,7 +244,186 @@
             );
         }
 
+        // Code lines staggered animation (The Coder scene)
+        const codeLines = document.querySelectorAll('.code-line');
+        if (codeLines.length > 0) {
+            gsap.fromTo(codeLines,
+                {
+                    opacity: 0,
+                    x: -10,
+                },
+                {
+                    opacity: 1,
+                    x: 0,
+                    duration: 0.4,
+                    ease: 'power2.out',
+                    stagger: 0.1,
+                    scrollTrigger: {
+                        trigger: codeLines[0].closest('.coder__code'),
+                        start: 'top 80%',
+                        toggleActions: 'play none none none',
+                    }
+                }
+            );
+        }
+
         console.log('Chris Theme: Scene animations initialized');
+    }
+
+    // Generate GitHub contribution graph
+    function generateGitHubGraph() {
+        const graphGrid = document.querySelector('[data-github-graph]');
+        if (!graphGrid) return;
+
+        // Generate 20 weeks x 7 days = 140 cells
+        const weeks = 20;
+        const days = 7;
+        const totalCells = weeks * days;
+
+        // Clear existing content
+        graphGrid.innerHTML = '';
+
+        // Generate cells with random contribution levels
+        for (let i = 0; i < totalCells; i++) {
+            const cell = document.createElement('span');
+            cell.className = 'github-graph__cell';
+
+            // Random contribution level (0-4), weighted toward lower values
+            const rand = Math.random();
+            let level;
+            if (rand < 0.3) level = 0;
+            else if (rand < 0.55) level = 1;
+            else if (rand < 0.75) level = 2;
+            else if (rand < 0.9) level = 3;
+            else level = 4;
+
+            if (level > 0) {
+                cell.classList.add(`github-graph__cell--${level}`);
+            }
+
+            graphGrid.appendChild(cell);
+        }
+
+        // Animate cells on scroll if GSAP is available
+        if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+            const cells = graphGrid.querySelectorAll('.github-graph__cell');
+            gsap.fromTo(cells,
+                {
+                    scale: 0,
+                    opacity: 0,
+                },
+                {
+                    scale: 1,
+                    opacity: 1,
+                    duration: 0.3,
+                    ease: 'back.out(2)',
+                    stagger: {
+                        amount: 0.8,
+                        grid: [days, weeks],
+                        from: 'start',
+                    },
+                    scrollTrigger: {
+                        trigger: graphGrid,
+                        start: 'top 85%',
+                        toggleActions: 'play none none none',
+                    }
+                }
+            );
+        }
+
+        console.log('Chris Theme: GitHub graph generated');
+    }
+
+    // Initialize project card video previews
+    function initProjectVideos() {
+        const projectCards = document.querySelectorAll('.project-card');
+
+        projectCards.forEach(card => {
+            const video = card.querySelector('.project-card__video');
+            if (!video) return;
+
+            // Play video on hover
+            card.addEventListener('mouseenter', () => {
+                video.play().catch(() => {
+                    // Autoplay might be blocked, ignore error
+                });
+            });
+
+            // Pause video when mouse leaves
+            card.addEventListener('mouseleave', () => {
+                video.pause();
+                video.currentTime = 0;
+            });
+        });
+
+        console.log('Chris Theme: Project video previews initialized');
+    }
+
+    // Initialize mobile accelerometer tilt effect for project cards
+    function initAccelerometerTilt() {
+        // Only run on touch devices
+        if (!('DeviceOrientationEvent' in window) || !isMobile) return;
+
+        const projectCards = document.querySelectorAll('.project-card');
+        if (projectCards.length === 0) return;
+
+        // Check if permission is needed (iOS 13+)
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            // Need to request permission on user interaction
+            const enableTilt = () => {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permission => {
+                        if (permission === 'granted') {
+                            attachTiltHandler(projectCards);
+                        }
+                    })
+                    .catch(console.error);
+                document.removeEventListener('touchstart', enableTilt, { once: true });
+            };
+            document.addEventListener('touchstart', enableTilt, { once: true });
+        } else {
+            // Android or older iOS - no permission needed
+            attachTiltHandler(projectCards);
+        }
+
+        console.log('Chris Theme: Accelerometer tilt initialized');
+    }
+
+    function attachTiltHandler(cards) {
+        let isActive = false;
+
+        // Use Intersection Observer to only apply tilt when cards are visible
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    isActive = true;
+                } else {
+                    isActive = false;
+                    // Reset transform when not visible
+                    cards.forEach(card => {
+                        card.style.transform = '';
+                    });
+                }
+            });
+        }, { threshold: 0.1 });
+
+        const projectsGrid = document.querySelector('.projects-grid');
+        if (projectsGrid) {
+            observer.observe(projectsGrid);
+        }
+
+        window.addEventListener('deviceorientation', (e) => {
+            if (!isActive || prefersReducedMotion) return;
+
+            // gamma: left-right tilt (-90 to 90)
+            // beta: front-back tilt (-180 to 180)
+            const tiltX = Math.max(-15, Math.min(15, e.gamma || 0)) / 15; // -1 to 1
+            const tiltY = Math.max(-15, Math.min(15, (e.beta || 0) - 45)) / 15; // -1 to 1, offset for holding angle
+
+            cards.forEach(card => {
+                card.style.transform = `perspective(1000px) rotateX(${tiltY * 3}deg) rotateY(${tiltX * 3}deg)`;
+            });
+        }, { passive: true });
     }
 
     // Main initialization
@@ -266,6 +445,15 @@
 
         // Initialize scene scroll animations
         initSceneAnimations();
+
+        // Generate GitHub contribution graph
+        generateGitHubGraph();
+
+        // Initialize project video previews
+        initProjectVideos();
+
+        // Initialize mobile accelerometer tilt
+        initAccelerometerTilt();
     }
 
     // Initialize when DOM is ready
