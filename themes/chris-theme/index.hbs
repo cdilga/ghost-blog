@@ -198,6 +198,82 @@
     </div>
 </section>
 
+{{!-- Scene: The Consultant --}}
+<section class="scene scene--consultant" id="consultant">
+    <div class="container">
+        <header class="scene__header" data-animate="fade-up">
+            <span class="scene__label">The Consultant</span>
+            <h2 class="scene__title">Solving Enterprise Challenges</h2>
+            <p class="scene__description">Partnering with Australia's leading companies to modernize their technology and accelerate digital transformation.</p>
+        </header>
+
+        <div class="consultant__content">
+            {{!-- Problem → Solution Cards --}}
+            <div class="consultant__cases">
+                <article class="case-study" data-animate="fade-up" data-animate-delay="0.1">
+                    <div class="case-study__problem">
+                        <span class="case-study__label">Challenge</span>
+                        <h3 class="case-study__title">Legacy Infrastructure</h3>
+                        <p class="case-study__text">Aging on-premise systems creating operational bottlenecks and security vulnerabilities</p>
+                    </div>
+                    <div class="case-study__arrow" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </div>
+                    <div class="case-study__solution">
+                        <span class="case-study__label case-study__label--accent">Solution</span>
+                        <h3 class="case-study__title">Cloud-Native Architecture</h3>
+                        <p class="case-study__text">Modern AWS infrastructure with auto-scaling, CI/CD pipelines, and infrastructure as code</p>
+                    </div>
+                </article>
+
+                <article class="case-study" data-animate="fade-up" data-animate-delay="0.2">
+                    <div class="case-study__problem">
+                        <span class="case-study__label">Challenge</span>
+                        <h3 class="case-study__title">Manual Deployments</h3>
+                        <p class="case-study__text">Error-prone release processes taking days instead of minutes</p>
+                    </div>
+                    <div class="case-study__arrow" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </div>
+                    <div class="case-study__solution">
+                        <span class="case-study__label case-study__label--accent">Solution</span>
+                        <h3 class="case-study__title">Automated DevOps</h3>
+                        <p class="case-study__text">Streamlined pipelines enabling multiple daily deployments with zero downtime</p>
+                    </div>
+                </article>
+
+                <article class="case-study" data-animate="fade-up" data-animate-delay="0.3">
+                    <div class="case-study__problem">
+                        <span class="case-study__label">Challenge</span>
+                        <h3 class="case-study__title">Developer Bottlenecks</h3>
+                        <p class="case-study__text">Teams blocked by manual processes and lack of self-service capabilities</p>
+                    </div>
+                    <div class="case-study__arrow" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </div>
+                    <div class="case-study__solution">
+                        <span class="case-study__label case-study__label--accent">Solution</span>
+                        <h3 class="case-study__title">Platform Engineering</h3>
+                        <p class="case-study__text">Internal developer platforms with golden paths and self-service infrastructure</p>
+                    </div>
+                </article>
+            </div>
+
+            {{!-- Visual/Photo --}}
+            <div class="consultant__visual" data-animate="fade-up" data-animate-delay="0.4">
+                <figure class="consultant__image">
+                    <img src="{{asset "images/consultant/laptop_in_bag.jpg"}}" alt="Ready for consulting work" loading="lazy">
+                </figure>
+            </div>
+        </div>
+
+        <div class="consultant__cta" data-animate="fade-up" data-animate-delay="0.5">
+            <p class="consultant__cta-text">Let's discuss your technology challenges</p>
+            <a href="/contact/" class="btn btn--primary btn--large">Start a Conversation</a>
+        </div>
+    </div>
+</section>
+
 {{!-- Projects Section: Animated Cards --}}
 <section class="projects-section" id="projects">
     <div class="container">
