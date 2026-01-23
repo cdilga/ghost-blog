@@ -1,24 +1,38 @@
 {{!< default}}
 
-<div class="container">
-    {{#if @site.cover_image}}
-    <section class="hero" style="background-image: url({{@site.cover_image}})">
-        <h1>{{@site.title}}</h1>
-        {{#if @site.description}}
-        <p>{{@site.description}}</p>
-        {{/if}}
-    </section>
-    {{/if}}
-
-    <section class="homepage-content">
-        {{!-- This is where your fancy custom homepage will go --}}
-        <div class="intro">
-            <h2>Welcome</h2>
-            <p>This is a custom homepage. Edit index.hbs to customize.</p>
+{{!-- Hero Section: Desert Parallax --}}
+<section class="hero hero--full hero--parallax" id="hero">
+    <div class="hero__background">
+        {{!-- Sky layer (slowest parallax) --}}
+        <div class="hero__layer hero__layer--sky" data-parallax-speed="0.1">
+            <img src="{{asset "images/desert_ground_from_top_of_big_red.jpg"}}" alt="" loading="eager" aria-hidden="true">
         </div>
-    </section>
+        {{!-- Dune layer (medium parallax) --}}
+        <div class="hero__layer hero__layer--dunes" data-parallax-speed="0.3">
+            <img src="{{asset "images/desert_dune_tufts_big_red.jpg"}}" alt="" loading="eager" aria-hidden="true">
+        </div>
+        {{!-- Foreground gradient overlay --}}
+        <div class="hero__layer hero__layer--overlay" data-parallax-speed="0"></div>
+    </div>
 
-    <section class="recent-posts">
+    <div class="hero__content">
+        <h1 class="hero__title" data-animate="fade-up">CHRIS DILGER</h1>
+        <p class="hero__subtitle" data-animate="fade-up" data-animate-delay="0.1">Software Engineer</p>
+        <div class="hero__cta" data-animate="fade-up" data-animate-delay="0.2">
+            <a href="#recent-posts" class="btn btn--primary btn--large">View Work</a>
+            <a href="/about/" class="btn btn--secondary btn--large">About Me</a>
+        </div>
+    </div>
+
+    {{!-- Scroll indicator --}}
+    <div class="hero__scroll-indicator" aria-hidden="true">
+        <span class="hero__scroll-text">Scroll</span>
+        <div class="hero__scroll-line"></div>
+    </div>
+</section>
+
+<div class="container">
+    <section class="recent-posts" id="recent-posts">
         <h2>Recent Posts</h2>
         <div class="post-grid">
             {{#foreach posts}}
