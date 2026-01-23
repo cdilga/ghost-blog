@@ -373,6 +373,29 @@
             }
         }
 
+        // Dev Playground tiles staggered animation
+        const playgroundTiles = document.querySelectorAll('.playground-tile[data-animate="fade-up"]');
+        if (playgroundTiles.length > 0) {
+            gsap.fromTo(playgroundTiles,
+                {
+                    opacity: 0,
+                    y: 20,
+                },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.4,
+                    ease: 'power2.out',
+                    stagger: 0.08,
+                    scrollTrigger: {
+                        trigger: playgroundTiles[0].closest('.playground-grid'),
+                        start: 'top 85%',
+                        toggleActions: 'play none none none',
+                    }
+                }
+            );
+        }
+
         console.log('Chris Theme: Scene animations initialized');
     }
 
