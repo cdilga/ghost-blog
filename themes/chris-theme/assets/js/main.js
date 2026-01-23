@@ -321,6 +321,58 @@
             }
         }
 
+        // Top Articles section staggered animation
+        const topArticlesGrid = document.querySelector('.top-articles__grid');
+        if (topArticlesGrid) {
+            const featuredCard = topArticlesGrid.querySelector('.article-card--featured');
+            const regularCards = topArticlesGrid.querySelectorAll('.article-card:not(.article-card--featured)');
+
+            // Featured card: scale + fade
+            if (featuredCard) {
+                gsap.fromTo(featuredCard,
+                    {
+                        opacity: 0,
+                        scale: 0.98,
+                        y: 20,
+                    },
+                    {
+                        opacity: 1,
+                        scale: 1,
+                        y: 0,
+                        duration: 0.6,
+                        ease: 'power2.out',
+                        scrollTrigger: {
+                            trigger: topArticlesGrid,
+                            start: 'top 80%',
+                            toggleActions: 'play none none none',
+                        }
+                    }
+                );
+            }
+
+            // Regular cards: staggered fade
+            if (regularCards.length > 0) {
+                gsap.fromTo(regularCards,
+                    {
+                        opacity: 0,
+                        y: 30,
+                    },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        duration: 0.5,
+                        ease: 'power2.out',
+                        stagger: 0.15,
+                        scrollTrigger: {
+                            trigger: topArticlesGrid,
+                            start: 'top 75%',
+                            toggleActions: 'play none none none',
+                        }
+                    }
+                );
+            }
+        }
+
         console.log('Chris Theme: Scene animations initialized');
     }
 
@@ -566,6 +618,159 @@
         return num.toString();
     }
 
+    // Initialize infinite blog carousel with scroll-hijack
+    function initBlogCarousel() {
+        const section = document.querySelector('.carousel-section');
+        const container = document.querySelector('.carousel-container');
+        const track = document.querySelector('.carousel-track');
+        const cards = document.querySelectorAll('.carousel-card');
+
+        if (!section || !track || cards.length === 0) return;
+
+        // Skip carousel for reduced motion - CSS handles visibility
+        if (prefersReducedMotion) {
+            console.log('Chris Theme: Blog carousel disabled (reduced motion)');
+            return;
+        }
+
+        // Carousel configuration
+        const config = {
+            radius: isMobile ? 350 : 500,           // Cylinder radius
+            visibleCards: isMobile ? 5 : 7,         // Cards visible at once
+            anglePerCard: 360 / cards.length,       // Angle between cards
+            scrollMultiplier: isMobile ? 0.15 : 0.1 // Scroll speed
+        };
+
+        let currentRotation = 0;
+        let targetRotation = 0;
+        let velocity = 0;
+        let isActive = false;
+
+        // Position cards on cylinder
+        function positionCards() {
+            cards.forEach((card, index) => {
+                const angle = (config.anglePerCard * index) + currentRotation;
+                const radian = (angle * Math.PI) / 180;
+
+                // 3D position on cylinder
+                const x = Math.sin(radian) * config.radius;
+                const z = Math.cos(radian) * config.radius - config.radius;
+                const rotateY = -angle;
+
+                // Apply transform
+                card.style.transform = `
+                    translateX(${x}px)
+                    translateZ(${z}px)
+                    rotateY(${rotateY}deg)
+                `;
+
+                // Fade cards at back of cylinder
+                const normalizedZ = (z + config.radius) / (config.radius * 2);
+                const opacity = Math.max(0.3, normalizedZ);
+                card.style.opacity = opacity;
+            });
+        }
+
+        // Animation loop for smooth rotation
+        function animateCarousel() {
+            // Ease toward target
+            const diff = targetRotation - currentRotation;
+            currentRotation += diff * 0.1;
+
+            // Apply velocity decay
+            if (Math.abs(velocity) > 0.1) {
+                targetRotation += velocity;
+                velocity *= 0.95; // Friction
+            }
+
+            positionCards();
+            requestAnimationFrame(animateCarousel);
+        }
+
+        // Scroll event handler (non-hijack version - horizontal scroll on track)
+        function handleScroll(e) {
+            if (!isActive) return;
+
+            const delta = e.deltaY || e.deltaX || 0;
+            velocity += delta * config.scrollMultiplier;
+
+            // Prevent default only when actively scrolling carousel
+            // Comment out to disable scroll-hijack (use native scroll instead)
+            // e.preventDefault();
+        }
+
+        // Touch handling for mobile swipe
+        let touchStartX = 0;
+        let touchStartTime = 0;
+        let lastTouchX = 0;
+
+        function handleTouchStart(e) {
+            touchStartX = e.touches[0].clientX;
+            lastTouchX = touchStartX;
+            touchStartTime = Date.now();
+            velocity = 0; // Stop any existing momentum
+        }
+
+        function handleTouchMove(e) {
+            if (!isActive) return;
+
+            const touchX = e.touches[0].clientX;
+            const deltaX = lastTouchX - touchX;
+            lastTouchX = touchX;
+
+            targetRotation += deltaX * config.scrollMultiplier * 3;
+        }
+
+        function handleTouchEnd(e) {
+            // Calculate swipe velocity for momentum
+            const touchEndX = e.changedTouches[0].clientX;
+            const elapsed = Date.now() - touchStartTime;
+            const distance = touchStartX - touchEndX;
+
+            if (elapsed < 300 && Math.abs(distance) > 50) {
+                // Fast swipe - add momentum
+                velocity = (distance / elapsed) * 10;
+            }
+        }
+
+        // Keyboard navigation
+        function handleKeyboard(e) {
+            if (!isActive) return;
+
+            if (e.key === 'ArrowLeft') {
+                targetRotation += config.anglePerCard;
+                e.preventDefault();
+            } else if (e.key === 'ArrowRight') {
+                targetRotation -= config.anglePerCard;
+                e.preventDefault();
+            }
+        }
+
+        // Use Intersection Observer to activate/deactivate
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                isActive = entry.isIntersecting && entry.intersectionRatio > 0.3;
+            });
+        }, {
+            threshold: [0, 0.3, 0.5, 0.7, 1]
+        });
+
+        observer.observe(section);
+
+        // Event listeners
+        container.addEventListener('wheel', handleScroll, { passive: true });
+        container.addEventListener('touchstart', handleTouchStart, { passive: true });
+        container.addEventListener('touchmove', handleTouchMove, { passive: true });
+        container.addEventListener('touchend', handleTouchEnd, { passive: true });
+        document.addEventListener('keydown', handleKeyboard);
+
+        // Initial position and start animation
+        positionCards();
+        animateCarousel();
+
+        console.log('Chris Theme: Blog carousel initialized with', cards.length, 'cards');
+    }
+
     // Main initialization
     function init() {
         const lenis = initLenis();
@@ -597,6 +802,9 @@
 
         // Initialize mobile accelerometer tilt
         initAccelerometerTilt();
+
+        // Initialize blog carousel
+        initBlogCarousel();
     }
 
     // Initialize when DOM is ready
