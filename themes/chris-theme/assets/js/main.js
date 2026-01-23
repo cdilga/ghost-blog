@@ -292,35 +292,6 @@
             );
         }
 
-        // Terminal grid staggered animation (8 Claude Codes scene)
-        const terminalGrid = document.querySelector('.terminal-grid[data-animate="stagger"]');
-        if (terminalGrid) {
-            const terminals = terminalGrid.querySelectorAll('.terminal');
-
-            gsap.fromTo(terminals,
-                {
-                    opacity: 0,
-                    y: 20,
-                },
-                {
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.5,
-                    ease: 'power2.out',
-                    stagger: {
-                        amount: 0.8,
-                        grid: [2, 4],
-                        from: 'start',
-                    },
-                    scrollTrigger: {
-                        trigger: terminalGrid,
-                        start: 'top 80%',
-                        toggleActions: 'play none none none',
-                    }
-                }
-            );
-        }
-
         console.log('Chris Theme: Scene animations initialized');
     }
 
