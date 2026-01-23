@@ -31,7 +31,7 @@ export const SpeakerScene: React.FC = () => {
     <AbsoluteFill
       style={{
         opacity: fadeIn * fadeOut,
-        background: `linear-gradient(135deg, \${COLORS.bgDark} 0%, #1a1a2e 100%)`,
+        background: `linear-gradient(135deg, ${COLORS.bgDark} 0%, #1a1a2e 100%)`,
         overflow: "hidden",
       }}
     >
@@ -43,8 +43,8 @@ export const SpeakerScene: React.FC = () => {
           left: "50%",
           width: 600,
           height: 600,
-          transform: `translateX(-50%) rotate(\${spotlightRotation}deg)`,
-          background: `conic-gradient(from 0deg, transparent, \${COLORS.accent}10, transparent, \${COLORS.accent}10, transparent)`,
+          transform: `translateX(-50%) rotate(${spotlightRotation}deg)`,
+          background: `conic-gradient(from 0deg, transparent, ${COLORS.accent}10, transparent, ${COLORS.accent}10, transparent)`,
           borderRadius: "50%",
           filter: "blur(60px)",
         }}
