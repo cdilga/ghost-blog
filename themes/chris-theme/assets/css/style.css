@@ -1893,8 +1893,18 @@ pre code {
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
-    animation: terminal-scroll 10s linear infinite;
+    animation: terminal-scroll var(--scroll-duration, 10s) linear infinite;
 }
+
+/* Varying scroll speeds for visual variety */
+.terminal[data-terminal="1"] .terminal__scroll { --scroll-duration: 12s; }
+.terminal[data-terminal="2"] .terminal__scroll { --scroll-duration: 9s; }
+.terminal[data-terminal="3"] .terminal__scroll { --scroll-duration: 14s; }
+.terminal[data-terminal="4"] .terminal__scroll { --scroll-duration: 8s; }
+.terminal[data-terminal="5"] .terminal__scroll { --scroll-duration: 11s; }
+.terminal[data-terminal="6"] .terminal__scroll { --scroll-duration: 13s; }
+.terminal[data-terminal="7"] .terminal__scroll { --scroll-duration: 7s; }
+.terminal[data-terminal="8"] .terminal__scroll { --scroll-duration: 10s; }
 
 @keyframes terminal-scroll {
     0% {
