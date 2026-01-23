@@ -3521,10 +3521,10 @@ pre code {
     letter-spacing: 0.05em;
 }
 
-.playground-tile__status:contains('Active'),
-.playground-tile[data-status="active"] .playground-tile__status {
-    background: rgba(34, 197, 94, 0.1);
-    color: rgb(34, 197, 94);
+/* Focus styles for accessibility */
+.playground-tile:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
 }
 
 /* Initial animation state */
@@ -3533,6 +3533,7 @@ pre code {
     transform: translateY(20px);
 }
 
+/* Mobile responsive */
 @media (max-width: 640px) {
     .playground-grid {
         grid-template-columns: 1fr 1fr;
@@ -3540,6 +3541,26 @@ pre code {
 
     .playground-tile {
         padding: var(--space-4) var(--space-3);
+    }
+
+    .playground-tile__icon {
+        font-size: var(--text-xl);
+    }
+
+    .playground-tile__domain {
+        font-size: var(--text-xs);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .playground-tile[data-animate="fade-up"] {
+        opacity: 1;
+        transform: none;
+    }
+
+    .playground-tile:hover {
+        transform: none;
     }
 }
 
