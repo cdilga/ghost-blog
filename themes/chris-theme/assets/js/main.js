@@ -244,6 +244,31 @@
             );
         }
 
+        // Terminal grid staggered animation (8 Claude Codes scene)
+        const terminalGrid = document.querySelector('.terminal-grid[data-animate="stagger"]');
+        if (terminalGrid) {
+            const terminals = terminalGrid.querySelectorAll('.terminal');
+
+            gsap.fromTo(terminals,
+                {
+                    opacity: 0,
+                    y: 20,
+                },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.5,
+                    ease: 'power2.out',
+                    stagger: 0.1, // 0.1s apart = 0.8s total for 8 terminals
+                    scrollTrigger: {
+                        trigger: terminalGrid,
+                        start: 'top 80%',
+                        toggleActions: 'play none none none',
+                    }
+                }
+            );
+        }
+
         // Code lines staggered animation (The Coder scene)
         const codeLines = document.querySelectorAll('.code-line');
         if (codeLines.length > 0) {
