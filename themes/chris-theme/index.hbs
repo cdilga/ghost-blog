@@ -612,25 +612,80 @@
     </div>
 </section>
 
-{{!-- Static fallback for reduced motion --}}
-<div class="container">
-    <section class="recent-posts recent-posts--fallback" id="recent-posts">
-        <h2>Recent Posts</h2>
-        <div class="post-grid">
-            {{#foreach posts}}
-            <article class="post-card">
+{{!-- Top Articles Section (Featured layout + reduced motion fallback) --}}
+<section class="top-articles" id="recent-posts">
+    <div class="container">
+        <header class="section-header" data-animate="fade-up">
+            <h2 class="section-title">Top Articles</h2>
+            <p class="section-subtitle">Thoughts on software engineering, AI development, and cloud architecture</p>
+        </header>
+
+        <div class="top-articles__grid">
+            {{#foreach posts limit="4"}}
+            {{#if @first}}
+            {{!-- Featured Article (First Post) --}}
+            <article class="article-card article-card--featured" data-animate="fade-up" data-animate-delay="0.1">
                 {{#if feature_image}}
-                <a href="{{url}}" class="post-card-image" style="background-image: url({{feature_image}})"></a>
+                <a href="{{url}}" class="article-card__image">
+                    <img src="{{feature_image}}" alt="{{title}}" loading="lazy">
+                </a>
+                {{else}}
+                <a href="{{url}}" class="article-card__image article-card__image--placeholder">
+                    <div class="article-card__placeholder-bg"></div>
+                </a>
                 {{/if}}
-                <div class="post-card-content">
-                    <h3><a href="{{url}}">{{title}}</a></h3>
-                    <p>{{excerpt words="30"}}</p>
-                    <time datetime="{{date format="YYYY-MM-DD"}}">{{date format="D MMM YYYY"}}</time>
+                <div class="article-card__content">
+                    <div class="article-card__meta">
+                        <time datetime="{{date format="YYYY-MM-DD"}}">{{date format="D MMM YYYY"}}</time>
+                        {{#if primary_tag}}
+                        <span class="article-card__tag">{{primary_tag.name}}</span>
+                        {{/if}}
+                    </div>
+                    <h3 class="article-card__title">
+                        <a href="{{url}}">{{title}}</a>
+                    </h3>
+                    <p class="article-card__excerpt">{{excerpt words="50"}}</p>
+                    <div class="article-card__footer">
+                        <a href="{{url}}" class="article-card__read-more">Read Article →</a>
+                    </div>
                 </div>
             </article>
+            {{else}}
+            {{!-- Secondary Articles --}}
+            <article class="article-card" data-animate="fade-up" data-animate-delay="0.{{math @index "+" "1"}}">
+                {{#if feature_image}}
+                <a href="{{url}}" class="article-card__image">
+                    <img src="{{feature_image}}" alt="{{title}}" loading="lazy">
+                </a>
+                {{else}}
+                <a href="{{url}}" class="article-card__image article-card__image--placeholder">
+                    <div class="article-card__placeholder-bg"></div>
+                </a>
+                {{/if}}
+                <div class="article-card__content">
+                    <div class="article-card__meta">
+                        <time datetime="{{date format="YYYY-MM-DD"}}">{{date format="D MMM YYYY"}}</time>
+                        {{#if primary_tag}}
+                        <span class="article-card__tag">{{primary_tag.name}}</span>
+                        {{/if}}
+                    </div>
+                    <h3 class="article-card__title">
+                        <a href="{{url}}">{{title}}</a>
+                    </h3>
+                    <p class="article-card__excerpt">{{excerpt words="25"}}</p>
+                </div>
+            </article>
+            {{/if}}
             {{/foreach}}
         </div>
-    </section>
 
+        <div class="top-articles__cta" data-animate="fade-up">
+            <a href="#all-posts" class="btn btn--secondary btn--large">View All Articles</a>
+        </div>
+    </div>
+</section>
+
+{{!-- Pagination --}}
+<div class="container pagination-container">
     {{pagination}}
 </div>
