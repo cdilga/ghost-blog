@@ -117,7 +117,7 @@ export const CoderScene: React.FC = () => {
           borderRadius: 12,
           overflow: "hidden",
           boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-          transform: `translateX(\${interpolate(frame, [fps * 0.2, fps * 0.7], [-100, 0], {
+          transform: `translateX(${interpolate(frame, [fps * 0.2, fps * 0.7], [-100, 0], {
             extrapolateRight: "clamp",
           })}px)`,
           opacity: interpolate(frame, [fps * 0.2, fps * 0.7], [0, 1], {
@@ -174,7 +174,7 @@ export const CoderScene: React.FC = () => {
           borderRadius: 12,
           padding: 24,
           boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-          transform: `translateX(\${interpolate(frame, [fps * 0.5, fps * 1], [100, 0], {
+          transform: `translateX(${interpolate(frame, [fps * 0.5, fps * 1], [100, 0], {
             extrapolateRight: "clamp",
           })}px)`,
           opacity: interpolate(frame, [fps * 0.5, fps * 1], [0, 1], {
@@ -239,7 +239,7 @@ export const CoderScene: React.FC = () => {
               fontWeight: "bold",
               color: COLORS.text,
               boxShadow: "0 4px 12px rgba(0,0,0,0.2), inset 0 -2px 0 rgba(0,0,0,0.1)",
-              transform: `scale(\${keyScale(fps * 2 + i * 5)})`,
+              transform: `scale(${keyScale(fps * 2 + i * 5)})`,
               opacity: interpolate(frame, [fps * 1.5 + i * 8, fps * 2 + i * 8], [0, 1], {
                 extrapolateRight: "clamp",
               }),
