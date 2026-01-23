@@ -2005,6 +2005,93 @@ pre code {
 }
 
 /* ==========================================================================
+   17c2b. Scene: The Content Creator
+   ========================================================================== */
+
+.scene--content-creator {
+    background: var(--color-bg);
+}
+
+.content-creator__showcase {
+    max-width: 800px;
+    margin: 0 auto var(--space-12);
+}
+
+/* 3D YouTube Container */
+.youtube-3d-container {
+    perspective: 1200px;
+    display: flex;
+    justify-content: center;
+}
+
+.youtube-3d-container .embed--youtube {
+    margin: 0;
+    width: 100%;
+    max-width: 720px;
+}
+
+.youtube-3d-container .embed--youtube lite-youtube {
+    transform: perspective(1000px) rotateY(-5deg) rotateX(2deg) scale(0.95);
+    box-shadow: 20px 20px 60px rgba(0, 0, 0, 0.2);
+    transition: transform var(--duration-slow) var(--ease-out),
+                box-shadow var(--duration-slow) var(--ease-out);
+}
+
+.youtube-3d-container .embed--youtube lite-youtube:hover {
+    transform: perspective(1000px) rotateY(0) rotateX(0) scale(1);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+}
+
+/* Content Creator CTA */
+.content-creator__cta {
+    text-align: center;
+}
+
+.content-creator__cta-text {
+    font-size: var(--text-lg);
+    color: var(--color-text-soft);
+    margin-bottom: var(--space-6);
+}
+
+.content-creator__cta .btn {
+    gap: var(--space-3);
+}
+
+/* Entry animation state */
+.content-creator__showcase[data-animate="fade-up"] {
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .youtube-3d-container .embed--youtube lite-youtube {
+        transform: perspective(1000px) rotateY(-2deg) rotateX(1deg) scale(0.98);
+        box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .youtube-3d-container .embed--youtube lite-youtube:hover {
+        transform: perspective(1000px) rotateY(0) rotateX(0) scale(1);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .youtube-3d-container .embed--youtube lite-youtube {
+        transform: none;
+    }
+
+    .youtube-3d-container .embed--youtube lite-youtube:hover {
+        transform: none;
+    }
+
+    .content-creator__showcase[data-animate="fade-up"] {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* ==========================================================================
    17c3. Scene: The Consultant
    ========================================================================== */
 
