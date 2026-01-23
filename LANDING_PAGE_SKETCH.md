@@ -181,6 +181,36 @@
 │                                                                 │
 │        [𝕏 Twitter]  [YouTube]  [LinkedIn]  [GitHub]            │
 │                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│              INFINITE BLOG CAROUSEL (Scroll-Hijack)             │
+│                      "All My Writing"                           │
+│                                                                 │
+│   Visual: Circular wheel of blog posts rotating horizontally    │
+│                                                                 │
+│      ░░░                                                  ░░░   │
+│     ░░░░░    ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ░░░░░  │
+│    ░░░░░░░   │ POST 1 │ │ POST 2 │ │ POST 3 │ │ POST 4 │░░░░░░░ │
+│   FADE←      │  ───   │ │  ───   │ │  ───   │ │  ───   │  →FADE │
+│    ░░░░░░░   │ title  │ │ title  │ │ title  │ │ title  │░░░░░░░ │
+│     ░░░░░    │ excerpt│ │ excerpt│ │ excerpt│ │ excerpt│ ░░░░░  │
+│      ░░░     └────────┘ └────────┘ └────────┘ └────────┘  ░░░   │
+│                                                                 │
+│              ◄──── SCROLL TO ROTATE WHEEL ────►                 │
+│                                                                 │
+│   Behavior:                                                     │
+│   - Scroll-hijack: vertical scroll → horizontal carousel        │
+│   - Infinite loop: posts wrap seamlessly                        │
+│   - Velocity-based: fast scroll = fast spin, momentum decay     │
+│   - Click-through: tap any card to read full post               │
+│   - Mobile: swipe gestures, touch velocity tracking             │
+│                                                                 │
+│   Visual Effects:                                               │
+│   - Curved 3D perspective (posts on a cylinder)                 │
+│   - Edge fade: 30% opacity gradient on left/right               │
+│   - Center focus: active card slightly larger, full opacity     │
+│   - Smooth easing on start/stop                                 │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -271,6 +301,84 @@ gsap.ticker.add((time) => lenis.raf(time * 1000))
   transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
 }
 ```
+
+### 5. Infinite Blog Carousel ⏳
+**Decision:** GSAP ScrollTrigger + CSS 3D transforms (scroll-hijack pattern)
+
+**Core Mechanics:**
+```javascript
+// Scroll-hijack carousel setup
+const carousel = document.querySelector('.blog-carousel');
+const cards = gsap.utils.toArray('.blog-card');
+
+// Pin the section and convert vertical scroll to horizontal rotation
+ScrollTrigger.create({
+  trigger: '.carousel-section',
+  start: 'top top',
+  end: () => `+=${cards.length * 300}`,  // Scroll distance = cards × offset
+  pin: true,
+  scrub: 1,  // Smooth 1:1 scroll-to-animation
+  onUpdate: (self) => {
+    // Map scroll progress to rotation angle
+    const rotation = self.progress * 360 * (cards.length / visibleCards);
+    updateCarouselRotation(rotation);
+  }
+});
+```
+
+**3D Cylinder Effect:**
+```css
+.carousel-track {
+  transform-style: preserve-3d;
+  perspective: 1200px;
+}
+
+.blog-card {
+  position: absolute;
+  transform-origin: center center -400px;  /* Radius of cylinder */
+  backface-visibility: hidden;
+}
+
+/* Distribute cards around cylinder */
+.blog-card:nth-child(1) { transform: rotateY(0deg) translateZ(400px); }
+.blog-card:nth-child(2) { transform: rotateY(30deg) translateZ(400px); }
+/* ... dynamically calculated via JS */
+```
+
+**Edge Fade Effect:**
+```css
+.carousel-container {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
+  -webkit-mask-image: /* same */;
+}
+```
+
+**Data Source:** Ghost Content API
+```javascript
+// Fetch all posts from Ghost
+const posts = await ghost.posts.browse({
+  limit: 'all',
+  fields: 'title,slug,excerpt,feature_image,published_at'
+});
+```
+
+**Mobile Optimizations:**
+- Touch velocity tracking for natural swipe-to-spin
+- Reduced card count (6-8 visible vs 12 on desktop)
+- Larger touch targets (full card is tappable)
+- `will-change: transform` for GPU compositing
+- Intersection Observer to pause when off-screen
+
+**Accessibility:**
+- `prefers-reduced-motion`: disable scroll-hijack, show static grid
+- Keyboard navigation: arrow keys rotate carousel
+- Screen readers: carousel announces as list of articles
 
 ---
 
@@ -380,7 +488,14 @@ Earth:        #8B4513  (Red earth)
 2. Top Articles + Ghost integration
 3. Embed components
 
-### Phase 5: Polish
+### Phase 5: Blog Carousel
+1. Ghost Content API integration
+2. Carousel scroll-hijack mechanics
+3. 3D cylinder effect + edge fades
+4. Mobile swipe gestures
+5. Infinite loop logic
+
+### Phase 6: Polish
 1. Mobile optimization
 2. Performance audit
 3. Reduced motion support
