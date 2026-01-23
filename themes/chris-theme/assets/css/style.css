@@ -1794,6 +1794,207 @@ pre code {
 }
 
 /* ==========================================================================
+   17c2. Scene: 8 Claude Codes
+   ========================================================================== */
+
+.scene--claude-codes {
+    background: var(--color-bg-dark);
+    color: var(--color-text-on-dark);
+}
+
+.scene--claude-codes .scene__label {
+    color: var(--color-accent);
+}
+
+.scene--claude-codes .scene__title {
+    color: var(--color-text-on-dark);
+}
+
+.scene--claude-codes .scene__description {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Terminal Grid */
+.terminal-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-12);
+}
+
+/* Individual Terminal */
+.terminal {
+    background: #1a1a1a;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform var(--duration-normal) var(--ease-out),
+                box-shadow var(--duration-normal) var(--ease-out);
+    will-change: transform;
+}
+
+.terminal:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4),
+                0 0 30px rgba(255, 107, 53, 0.1);
+}
+
+/* Terminal Header */
+.terminal__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.terminal__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.terminal__dot--red { background: #ff5f56; }
+.terminal__dot--yellow { background: #ffbd2e; }
+.terminal__dot--green { background: #27c93f; }
+
+.terminal__title {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Terminal Body */
+.terminal__body {
+    padding: var(--space-3);
+    height: 160px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Fade gradient at bottom */
+.terminal__body::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent 0%, #1a1a1a 100%);
+    pointer-events: none;
+}
+
+/* Terminal Scroll Container */
+.terminal__scroll {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    animation: terminal-scroll 10s linear infinite;
+}
+
+@keyframes terminal-scroll {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-50%);
+    }
+}
+
+/* Pause scroll on hover */
+.terminal:hover .terminal__scroll {
+    animation-play-state: paused;
+}
+
+/* Terminal Lines */
+.terminal__line {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+}
+
+.terminal__prompt {
+    color: var(--color-accent);
+    margin-right: var(--space-2);
+}
+
+.terminal__line--output {
+    color: rgba(255, 255, 255, 0.5);
+    padding-left: var(--space-4);
+}
+
+.terminal__line--success {
+    color: #27c93f;
+}
+
+.terminal__line--error {
+    color: #ff5f56;
+}
+
+/* Claude Codes CTA */
+.claude-codes__cta {
+    text-align: center;
+}
+
+.claude-codes__cta-text {
+    font-size: var(--text-lg);
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: var(--space-6);
+}
+
+/* Initial animation states for terminals */
+.terminal-grid[data-animate="stagger"] .terminal {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+/* Mobile responsive for 8 Claude Codes */
+@media (max-width: 1024px) {
+    .terminal-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .terminal-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+
+    /* Show only 4 terminals on mobile */
+    .terminal:nth-child(n+5) {
+        display: none;
+    }
+
+    .terminal__body {
+        height: 140px;
+    }
+}
+
+/* Reduced motion for terminal animations */
+@media (prefers-reduced-motion: reduce) {
+    .terminal__scroll {
+        animation: none;
+    }
+
+    .terminal-grid[data-animate="stagger"] .terminal {
+        opacity: 1;
+        transform: none;
+    }
+
+    .terminal:hover {
+        transform: none;
+    }
+}
+
+/* ==========================================================================
    17c3. Scene: The Consultant
    ========================================================================== */
 
