@@ -1,4 +1,6 @@
 import { AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig, interpolate } from "remotion";
+import { TransitionSeries, linearTiming } from "@remotion/transitions";
+import { fade } from "@remotion/transitions/fade";
 import { HeroScene } from "../scenes/HeroScene";
 import { CoderScene } from "../scenes/CoderScene";
 import { SpeakerScene } from "../scenes/SpeakerScene";
