@@ -120,8 +120,8 @@ export const ProjectsScene: React.FC = () => {
                 background: "white",
                 borderRadius: 20,
                 padding: 32,
-                boxShadow: `0 20px 60px rgba(0,0,0,0.1), 0 0 0 1px \${project.color}20`,
-                transform: `scale(\${scale}) translateY(\${y + hoverY}px)`,
+                boxShadow: `0 20px 60px rgba(0,0,0,0.1), 0 0 0 1px ${project.color}20`,
+                transform: `scale(${scale}) translateY(${y + hoverY}px)`,
                 opacity,
                 display: "flex",
                 alignItems: "flex-start",
@@ -134,7 +134,7 @@ export const ProjectsScene: React.FC = () => {
                   width: 80,
                   height: 80,
                   borderRadius: 16,
-                  background: `\${project.color}15`,
+                  background: `${project.color}15`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -197,7 +197,7 @@ export const ProjectsScene: React.FC = () => {
                   right: 0,
                   width: 100,
                   height: 100,
-                  background: `linear-gradient(135deg, \${project.color}30, transparent)`,
+                  background: `linear-gradient(135deg, ${project.color}30, transparent)`,
                   borderTopRightRadius: 20,
                 }}
               />
