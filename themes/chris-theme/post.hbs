@@ -1,5 +1,6 @@
 {{!< default}}
 
+{{#post}}
 <article class="post {{post_class}}">
     <header class="post-header container">
         <h1 class="post-title">{{title}}</h1>
@@ -33,6 +34,7 @@
         {{/if}}
     </footer>
 </article>
+{{/post}}
 
 {{#if comments}}
 <section class="post-comments container">
