@@ -60,7 +60,7 @@ export const RemotionRoot = () => {
         <Composition
           id="HeroScene"
           component={HeroScene}
-          durationInFrames={150}
+          durationInFrames={180}
           fps={30}
           width={1920}
           height={1080}
@@ -68,7 +68,15 @@ export const RemotionRoot = () => {
         <Composition
           id="CoderScene"
           component={CoderScene}
-          durationInFrames={150}
+          durationInFrames={180}
+          fps={30}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="ClaudeCodesScene"
+          component={ClaudeCodesScene}
+          durationInFrames={180}
           fps={30}
           width={1920}
           height={1080}
@@ -76,7 +84,23 @@ export const RemotionRoot = () => {
         <Composition
           id="SpeakerScene"
           component={SpeakerScene}
-          durationInFrames={150}
+          durationInFrames={180}
+          fps={30}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="ContentCreatorScene"
+          component={ContentCreatorScene}
+          durationInFrames={180}
+          fps={30}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="ConsultantScene"
+          component={ConsultantScene}
+          durationInFrames={180}
           fps={30}
           width={1920}
           height={1080}
@@ -84,7 +108,15 @@ export const RemotionRoot = () => {
         <Composition
           id="ProjectsScene"
           component={ProjectsScene}
-          durationInFrames={150}
+          durationInFrames={180}
+          fps={30}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="DevPlaygroundScene"
+          component={DevPlaygroundScene}
+          durationInFrames={180}
           fps={30}
           width={1920}
           height={1080}

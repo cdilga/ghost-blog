@@ -59,7 +59,7 @@ export const ProjectsScene: React.FC = () => {
           width: 400,
           height: 400,
           borderRadius: "50%",
-          background: `\${COLORS.accent}10`,
+          background: `${COLORS.accent}10`,
           filter: "blur(80px)",
         }}
       />
@@ -71,7 +71,7 @@ export const ProjectsScene: React.FC = () => {
           width: 300,
           height: 300,
           borderRadius: "50%",
-          background: `\${COLORS.warm}20`,
+          background: `${COLORS.warm}20`,
           filter: "blur(60px)",
         }}
       />
