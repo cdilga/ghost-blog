@@ -8,11 +8,12 @@
     "restart": "docker compose restart ghost",
     "logs": "docker compose logs -f ghost",
     "shell": "docker compose exec ghost sh",
-    "validate": "npx gscan themes/chris-theme --verbose",
     "clean": "docker compose down -v && echo 'All local Ghost data removed'",
     "package": "cd themes && zip -r chris-theme.zip chris-theme -x '*.DS_Store' -x '*node_modules*' && echo 'Theme packaged: themes/chris-theme.zip'",
-    "test": "npx playwright test",
-    "test:headed": "npx playwright test --headed",
+    "test": "npm run test:validate && npm run test:smoke",
+    "test:validate": "npx gscan themes/chris-theme --verbose",
+    "test:smoke": "npx playwright test",
+    "test:smoke:headed": "npx playwright test --headed",
     "test:install": "npx playwright install chromium"
   },
   "devDependencies": {
