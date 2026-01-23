@@ -28,3 +28,4 @@ playwright-report/
 
 # Backup files
 *.backup
+remotion-video/out/
