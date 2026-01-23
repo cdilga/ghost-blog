@@ -1,0 +1,21 @@
+{
+  "name": "ghost-blog",
+  "private": true,
+  "description": "Ghost blog for chris.dilger.me",
+  "scripts": {
+    "start": "docker compose up -d && echo '\nGhost starting at http://localhost:2368\nAdmin: http://localhost:2368/ghost/\n'",
+    "stop": "docker compose down",
+    "restart": "docker compose restart ghost",
+    "logs": "docker compose logs -f ghost",
+    "shell": "docker compose exec ghost sh",
+    "validate": "npx gscan themes/chris-theme --verbose",
+    "clean": "docker compose down -v && echo 'All local Ghost data removed'",
+    "package": "cd themes && zip -r chris-theme.zip chris-theme -x '*.DS_Store' -x '*node_modules*' && echo 'Theme packaged: themes/chris-theme.zip'",
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:install": "npx playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  }
+}
