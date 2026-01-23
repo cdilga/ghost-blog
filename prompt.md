@@ -46,6 +46,24 @@ The project is building a **scrolling portfolio experience** with:
 - **If blocked** - document the blocker in the issue and move to next task
 - **Ghost CLI** must run as `chris` user, not root
 
+## Learning from Failures
+
+When you encounter an approach that **doesn't work** or causes issues:
+
+1. Add it to `GUARDRAILS.md` under a relevant section
+2. Keep it concise - just the pitfall and what to do instead
+3. Only document **specific gotchas**, not generic logs
+
+Example format for GUARDRAILS.md:
+```markdown
+## Theme Development Pitfalls
+
+- **Don't use X** - causes Y. Instead do Z.
+- **Card CSS requires** - the `.kg-card` wrapper, not direct selectors
+```
+
+This helps future sessions avoid the same mistakes.
+
 ## SSH Access
 
 ```bash
