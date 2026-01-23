@@ -2366,6 +2366,182 @@ pre code {
 }
 
 /* ==========================================================================
+   18b. Embed Components
+   ========================================================================== */
+
+/* Base embed styles */
+.embed {
+    margin: var(--space-8) 0;
+}
+
+.embed__caption {
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-top: var(--space-3);
+}
+
+/* YouTube Embed - 3D transform effect */
+.embed--youtube {
+    perspective: 1000px;
+}
+
+.embed--youtube lite-youtube {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    transition: transform var(--duration-normal) var(--ease-out),
+                box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.embed--youtube.embed--3d lite-youtube {
+    transform: perspective(1000px) rotateY(-5deg) rotateX(2deg);
+}
+
+.embed--youtube.embed--3d:hover lite-youtube,
+.embed--youtube lite-youtube:hover {
+    transform: perspective(1000px) rotateY(0) rotateX(0);
+    box-shadow: var(--shadow-xl);
+}
+
+/* GitHub Repo Card */
+.github-repo-card {
+    display: block;
+    padding: var(--space-5);
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: border-color var(--duration-normal) var(--ease-out),
+                box-shadow var(--duration-normal) var(--ease-out),
+                transform var(--duration-normal) var(--ease-out);
+}
+
+.github-repo-card:hover {
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    color: var(--color-text);
+}
+
+.github-repo-card__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.github-repo-card__icon {
+    color: var(--color-text-muted);
+}
+
+.github-repo-card__owner {
+    color: var(--color-text-muted);
+}
+
+.github-repo-card__sep {
+    color: var(--color-text-muted);
+}
+
+.github-repo-card__name {
+    font-weight: var(--weight-semibold);
+    color: var(--color-accent);
+}
+
+.github-repo-card:hover .github-repo-card__name {
+    text-decoration: underline;
+}
+
+.github-repo-card__description {
+    font-size: var(--text-sm);
+    color: var(--color-text-soft);
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-relaxed);
+}
+
+.github-repo-card__stats {
+    display: flex;
+    gap: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+.github-repo-card__stat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.github-repo-card__stat svg {
+    color: var(--color-text-muted);
+}
+
+.github-repo-card__lang-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-accent);
+}
+
+/* Twitter/X Preview */
+.twitter-preview {
+    padding: var(--space-5);
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin: 0;
+    transition: border-color var(--duration-normal) var(--ease-out),
+                box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.twitter-preview:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-md);
+}
+
+.twitter-preview__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.twitter-preview__icon {
+    color: var(--color-text);
+}
+
+.twitter-preview__author {
+    font-weight: var(--weight-medium);
+    color: var(--color-text-soft);
+}
+
+.twitter-preview__text {
+    font-size: var(--text-base);
+    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-4);
+    color: var(--color-text);
+}
+
+.twitter-preview__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: var(--weight-medium);
+}
+
+.twitter-preview__link:hover {
+    text-decoration: underline;
+}
+
+.twitter-preview__link svg {
+    opacity: 0.7;
+}
+
+/* ==========================================================================
    19. Print Styles
    ========================================================================== */
 
