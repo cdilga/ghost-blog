@@ -18,6 +18,10 @@ ghost-data/
 dist/
 *.zip
 
+# Playwright
+test-results/
+playwright-report/
+
 # Environment files
 .env
 .env.local
