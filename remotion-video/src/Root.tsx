@@ -5,6 +5,10 @@ import { HeroScene } from "./scenes/HeroScene";
 import { CoderScene } from "./scenes/CoderScene";
 import { SpeakerScene } from "./scenes/SpeakerScene";
 import { ProjectsScene } from "./scenes/ProjectsScene";
+import { ConsultantScene } from "./scenes/ConsultantScene";
+import { ClaudeCodesScene } from "./scenes/ClaudeCodesScene";
+import { ContentCreatorScene } from "./scenes/ContentCreatorScene";
+import { DevPlaygroundScene } from "./scenes/DevPlaygroundScene";
 
 // Design tokens from the Ghost theme
 export const COLORS = {
@@ -29,7 +33,7 @@ export const RemotionRoot = () => {
       <Composition
         id="WebsiteShowcase"
         component={WebsiteShowcase}
-        durationInFrames={900} // 30 seconds at 30fps
+        durationInFrames={1800} // 60 seconds at 30fps
         fps={30}
         width={1920}
         height={1080}

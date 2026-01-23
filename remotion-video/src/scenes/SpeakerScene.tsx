@@ -78,7 +78,7 @@ export const SpeakerScene: React.FC = () => {
           opacity: interpolate(frame, [fps * 0.5, fps * 1], [0, 1], {
             extrapolateRight: "clamp",
           }),
-          transform: `scale(\${interpolate(frame, [fps * 0.5, fps * 1], [0.5, 1], {
+          transform: `scale(${interpolate(frame, [fps * 0.5, fps * 1], [0.5, 1], {
             extrapolateRight: "clamp",
           })})`,
         }}
@@ -115,9 +115,9 @@ export const SpeakerScene: React.FC = () => {
                 background: "rgba(255,255,255,0.05)",
                 borderRadius: 16,
                 backdropFilter: "blur(10px)",
-                border: `1px solid \${COLORS.accent}30`,
+                border: `1px solid ${COLORS.accent}30`,
                 opacity: cardOpacity,
-                transform: `translateX(\${cardX}px)`,
+                transform: `translateX(${cardX}px)`,
                 display: "flex",
                 alignItems: "center",
                 gap: 20,
@@ -175,7 +175,7 @@ export const SpeakerScene: React.FC = () => {
               height: 120,
               background: COLORS.text,
               borderRadius: "40px 40px 0 0",
-              transform: `translateY(\${20 + (i % 3) * 15}px)`,
+              transform: `translateY(${20 + (i % 3) * 15}px)`,
             }}
           />
         ))}
