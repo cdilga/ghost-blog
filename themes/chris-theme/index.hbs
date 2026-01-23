@@ -31,6 +31,248 @@
     </div>
 </section>
 
+{{!-- Scene: The Coder --}}
+<section class="scene scene--coder" id="the-coder" data-scene="coder">
+    <div class="container">
+        <header class="scene__header" data-animate="fade-up">
+            <span class="scene__label">The Coder</span>
+            <h2 class="scene__title">Building Software</h2>
+            <p class="scene__description">Crafting elegant solutions with modern technologies.</p>
+        </header>
+
+        <div class="coder__content">
+            {{!-- Keyboard visualization --}}
+            <a href="https://x.com/chrisdilger" target="_blank" rel="noopener noreferrer" class="coder__keyboard" data-animate="fade-up" data-animate-delay="0.1" aria-label="Visit my X.com profile">
+                <div class="keyboard">
+                    <div class="keyboard__row">
+                        <span class="key" data-key="1">~</span>
+                        <span class="key">1</span>
+                        <span class="key">2</span>
+                        <span class="key">3</span>
+                        <span class="key">4</span>
+                        <span class="key">5</span>
+                        <span class="key">6</span>
+                        <span class="key">7</span>
+                        <span class="key">8</span>
+                        <span class="key">9</span>
+                        <span class="key">0</span>
+                        <span class="key">-</span>
+                        <span class="key">=</span>
+                        <span class="key key--wide">⌫</span>
+                    </div>
+                    <div class="keyboard__row">
+                        <span class="key key--wide">Tab</span>
+                        <span class="key">Q</span>
+                        <span class="key">W</span>
+                        <span class="key" data-key="2">E</span>
+                        <span class="key">R</span>
+                        <span class="key">T</span>
+                        <span class="key">Y</span>
+                        <span class="key">U</span>
+                        <span class="key" data-key="5">I</span>
+                        <span class="key" data-key="6">O</span>
+                        <span class="key">P</span>
+                        <span class="key">[</span>
+                        <span class="key">]</span>
+                        <span class="key">\</span>
+                    </div>
+                    <div class="keyboard__row">
+                        <span class="key key--wide">Caps</span>
+                        <span class="key">A</span>
+                        <span class="key" data-key="3">S</span>
+                        <span class="key">D</span>
+                        <span class="key">F</span>
+                        <span class="key">G</span>
+                        <span class="key" data-key="7">H</span>
+                        <span class="key">J</span>
+                        <span class="key">K</span>
+                        <span class="key" data-key="8">L</span>
+                        <span class="key">;</span>
+                        <span class="key">'</span>
+                        <span class="key key--wide key--accent">↵</span>
+                    </div>
+                    <div class="keyboard__row">
+                        <span class="key key--wide">⇧</span>
+                        <span class="key">Z</span>
+                        <span class="key">X</span>
+                        <span class="key" data-key="4">C</span>
+                        <span class="key">V</span>
+                        <span class="key">B</span>
+                        <span class="key">N</span>
+                        <span class="key">M</span>
+                        <span class="key">,</span>
+                        <span class="key">.</span>
+                        <span class="key">/</span>
+                        <span class="key key--wide">⇧</span>
+                    </div>
+                    <div class="keyboard__row">
+                        <span class="key">Ctrl</span>
+                        <span class="key">⌥</span>
+                        <span class="key">⌘</span>
+                        <span class="key key--space"></span>
+                        <span class="key">⌘</span>
+                        <span class="key">⌥</span>
+                        <span class="key">←</span>
+                        <span class="key">↓</span>
+                        <span class="key">→</span>
+                    </div>
+                </div>
+                <span class="coder__keyboard-label">Follow on X →</span>
+            </a>
+
+            {{!-- Code snippet --}}
+            <div class="coder__code" data-animate="fade-up" data-animate-delay="0.2">
+                <div class="code-window">
+                    <div class="code-window__header">
+                        <span class="code-window__dot code-window__dot--red"></span>
+                        <span class="code-window__dot code-window__dot--yellow"></span>
+                        <span class="code-window__dot code-window__dot--green"></span>
+                        <span class="code-window__title">main.ts</span>
+                    </div>
+                    <pre class="code-window__content"><code class="code-lines" data-stagger-lines><span class="code-line"><span class="code-keyword">async</span> <span class="code-keyword">function</span> <span class="code-function">buildSomethingGreat</span>() {</span>
+<span class="code-line">  <span class="code-keyword">const</span> ideas = <span class="code-keyword">await</span> <span class="code-function">gather</span>(inspiration);</span>
+<span class="code-line">  <span class="code-keyword">const</span> solution = <span class="code-function">iterate</span>(ideas, passion);</span>
+<span class="code-line">  </span>
+<span class="code-line">  <span class="code-keyword">return</span> <span class="code-function">ship</span>(solution);</span>
+<span class="code-line">}</span></code></pre>
+                </div>
+            </div>
+
+            {{!-- GitHub contribution graph --}}
+            <div class="coder__github" data-animate="fade-up" data-animate-delay="0.3">
+                <h3 class="coder__github-title">
+                    <svg class="coder__github-icon" viewBox="0 0 16 16" width="20" height="20" aria-hidden="true">
+                        <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                    GitHub Activity
+                </h3>
+                <a href="https://github.com/cdilga" target="_blank" rel="noopener noreferrer" class="github-graph" aria-label="View my GitHub profile">
+                    <div class="github-graph__grid" data-github-graph>
+                        {{!-- Grid generated via JS --}}
+                    </div>
+                    <div class="github-graph__legend">
+                        <span>Less</span>
+                        <span class="github-graph__level github-graph__level--0"></span>
+                        <span class="github-graph__level github-graph__level--1"></span>
+                        <span class="github-graph__level github-graph__level--2"></span>
+                        <span class="github-graph__level github-graph__level--3"></span>
+                        <span class="github-graph__level github-graph__level--4"></span>
+                        <span>More</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{!-- Scene: The Speaker --}}
+<section class="scene scene--speaker" id="speaker">
+    <div class="container">
+        <header class="scene__header" data-animate="fade-up">
+            <span class="scene__label">The Speaker</span>
+            <h2 class="scene__title">Sharing Knowledge</h2>
+            <p class="scene__description">Passionate about sharing insights on software engineering, cloud architecture, and AI at conferences and meetups.</p>
+        </header>
+
+        <div class="speaker__gallery" data-animate="stagger">
+            <figure class="speaker__photo speaker__photo--primary">
+                <img src="{{asset "images/speaker/peter-doherty-awards.jpg"}}" alt="Chris Dilger speaking at Peter Doherty Awards 2023" loading="lazy">
+                <figcaption>Peter Doherty Awards 2023</figcaption>
+            </figure>
+            <figure class="speaker__photo">
+                <img src="{{asset "images/speaker/speaking_awards_ceremony.jpg"}}" alt="Chris Dilger at podium" loading="lazy">
+            </figure>
+            <figure class="speaker__photo">
+                <img src="{{asset "images/speaker/presso.jpeg"}}" alt="Chris Dilger giving a presentation" loading="lazy">
+            </figure>
+            <figure class="speaker__photo">
+                <img src="{{asset "images/speaker/community-day.jpeg"}}" alt="Chris Dilger at AWS Community Day Melbourne" loading="lazy">
+                <figcaption>AWS Community Day Melbourne</figcaption>
+            </figure>
+        </div>
+
+        <div class="speaker__cta" data-animate="fade-up">
+            <p class="speaker__cta-text">Available for speaking engagements</p>
+            <a href="/contact/" class="btn btn--primary btn--large">Get in Touch</a>
+        </div>
+    </div>
+</section>
+
+{{!-- Projects Section: Animated Cards --}}
+<section class="projects-section" id="projects">
+    <div class="container">
+        <header class="section-header">
+            <h2 class="section-title" data-animate="fade-up">Featured Work</h2>
+            <p class="section-subtitle" data-animate="fade-up" data-animate-delay="0.1">Projects, tools, and things I've built</p>
+        </header>
+
+        <div class="projects-grid">
+            <article class="project-card" data-animate="fade-up" data-animate-delay="0.1">
+                <div class="project-card__media">
+                    <div class="project-card__thumbnail" style="background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-earth) 100%);"></div>
+                </div>
+                <div class="project-card__content">
+                    <h3 class="project-card__title">Claude Code Workflows</h3>
+                    <p class="project-card__description">Multi-agent development with parallel Claude Code instances for complex software projects</p>
+                    <div class="project-card__tags">
+                        <span class="tag">AI</span>
+                        <span class="tag">Automation</span>
+                        <span class="tag">DevTools</span>
+                    </div>
+                    <div class="project-card__links">
+                        <a href="https://github.com/cdilga" class="project-card__link" aria-label="View on GitHub">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="project-card" data-animate="fade-up" data-animate-delay="0.2">
+                <div class="project-card__media">
+                    <div class="project-card__thumbnail" style="background: linear-gradient(135deg, var(--color-warm) 0%, var(--color-accent) 100%);"></div>
+                </div>
+                <div class="project-card__content">
+                    <h3 class="project-card__title">chris.dilger.me</h3>
+                    <p class="project-card__description">Personal portfolio with desert parallax theme, GSAP animations, and smooth scroll</p>
+                    <div class="project-card__tags">
+                        <span class="tag">Ghost</span>
+                        <span class="tag">Design</span>
+                        <span class="tag">Animation</span>
+                    </div>
+                    <div class="project-card__links">
+                        <a href="https://github.com/cdilga/ghost-blog" class="project-card__link" aria-label="View on GitHub">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        </a>
+                        <a href="https://chris.dilger.me" class="project-card__link" aria-label="Visit live site">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        </a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="project-card" data-animate="fade-up" data-animate-delay="0.3">
+                <div class="project-card__media">
+                    <div class="project-card__thumbnail" style="background: linear-gradient(135deg, var(--color-sky) 0%, var(--color-accent) 100%);"></div>
+                </div>
+                <div class="project-card__content">
+                    <h3 class="project-card__title">Enterprise Consulting</h3>
+                    <p class="project-card__description">Cloud architecture and DevOps consulting for enterprise clients across Australia</p>
+                    <div class="project-card__tags">
+                        <span class="tag">Cloud</span>
+                        <span class="tag">DevOps</span>
+                        <span class="tag">Enterprise</span>
+                    </div>
+                    <div class="project-card__links">
+                        <a href="/contact/" class="project-card__link" aria-label="Get in touch">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
 <div class="container">
     <section class="recent-posts" id="recent-posts">
         <h2>Recent Posts</h2>

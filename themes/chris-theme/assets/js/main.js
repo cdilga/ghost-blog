@@ -157,6 +157,96 @@
         console.log('Chris Theme: Hero parallax initialized');
     }
 
+    // Initialize scene scroll animations (Speaker, Projects, etc.)
+    function initSceneAnimations() {
+        if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+            // Show all animated content immediately
+            document.querySelectorAll('[data-animate]').forEach(el => {
+                el.style.opacity = '1';
+                el.style.transform = 'none';
+            });
+            return;
+        }
+
+        // Generic fade-up animation for elements with data-animate="fade-up"
+        const fadeUpElements = document.querySelectorAll('[data-animate="fade-up"]:not(.hero--parallax [data-animate])');
+
+        fadeUpElements.forEach(el => {
+            const delay = parseFloat(el.dataset.animateDelay) || 0;
+
+            gsap.fromTo(el,
+                {
+                    opacity: 0,
+                    y: 30,
+                },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.6,
+                    ease: 'power2.out',
+                    delay: delay,
+                    scrollTrigger: {
+                        trigger: el,
+                        start: 'top 85%',
+                        toggleActions: 'play none none none',
+                    }
+                }
+            );
+        });
+
+        // Speaker gallery staggered animation
+        const speakerGallery = document.querySelector('.speaker__gallery[data-animate="stagger"]');
+        if (speakerGallery) {
+            const photos = speakerGallery.querySelectorAll('.speaker__photo');
+
+            gsap.fromTo(photos,
+                {
+                    opacity: 0,
+                    y: 30,
+                    rotation: () => gsap.utils.random(-3, 3), // Random slight rotation
+                },
+                {
+                    opacity: 1,
+                    y: 0,
+                    rotation: 0,
+                    duration: 0.6,
+                    ease: 'power2.out',
+                    stagger: 0.15,
+                    scrollTrigger: {
+                        trigger: speakerGallery,
+                        start: 'top 80%',
+                        toggleActions: 'play none none none',
+                    }
+                }
+            );
+        }
+
+        // Project cards staggered animation
+        const projectCards = document.querySelectorAll('.project-card[data-animate="fade-up"]');
+        if (projectCards.length > 0) {
+            gsap.fromTo(projectCards,
+                {
+                    opacity: 0,
+                    y: 30,
+                },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.6,
+                    ease: 'power2.out',
+                    stagger: 0.1,
+                    scrollTrigger: {
+                        trigger: projectCards[0].closest('.projects-grid'),
+                        start: 'top 80%',
+                        toggleActions: 'play none none none',
+                    }
+                }
+            );
+        }
+
+        console.log('Chris Theme: Scene animations initialized');
+    }
+
     // Main initialization
     function init() {
         const lenis = initLenis();
@@ -173,6 +263,9 @@
 
         // Initialize hero parallax (works with or without Lenis)
         initHeroParallax();
+
+        // Initialize scene scroll animations
+        initSceneAnimations();
     }
 
     // Initialize when DOM is ready

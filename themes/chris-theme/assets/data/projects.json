@@ -1,0 +1,76 @@
+{
+  "projects": [
+    {
+      "id": "claude-code",
+      "title": "Claude Code Workflows",
+      "description": "Multi-agent development with parallel Claude Code instances for complex software projects",
+      "tags": ["AI", "Automation", "DevTools"],
+      "thumbnail": "/assets/images/projects/claude-code-thumb.jpg",
+      "video": null,
+      "links": {
+        "github": "https://github.com/cdilga/claude-workflows",
+        "live": null,
+        "youtube": null
+      },
+      "stats": {
+        "stars": 0,
+        "forks": 0
+      },
+      "featured": true
+    },
+    {
+      "id": "ghost-blog",
+      "title": "chris.dilger.me",
+      "description": "Personal portfolio with desert parallax theme, GSAP animations, and infinite scroll carousel",
+      "tags": ["Ghost", "Design", "Animation"],
+      "thumbnail": "/assets/images/projects/ghost-blog-thumb.jpg",
+      "video": null,
+      "links": {
+        "github": "https://github.com/cdilga/ghost-blog",
+        "live": "https://chris.dilger.me",
+        "youtube": null
+      },
+      "stats": {
+        "stars": 0,
+        "forks": 0
+      },
+      "featured": true
+    },
+    {
+      "id": "aws-community",
+      "title": "AWS Community Day",
+      "description": "Speaker and organizer for AWS Community Day Melbourne events",
+      "tags": ["AWS", "Community", "Speaking"],
+      "thumbnail": "/assets/images/projects/aws-community-thumb.jpg",
+      "video": null,
+      "links": {
+        "github": null,
+        "live": "https://awscommunity.com.au",
+        "youtube": null
+      },
+      "stats": {
+        "stars": 0,
+        "forks": 0
+      },
+      "featured": false
+    },
+    {
+      "id": "enterprise-consulting",
+      "title": "Enterprise Consulting",
+      "description": "Cloud architecture and DevOps consulting for enterprise clients",
+      "tags": ["Consulting", "Cloud", "Enterprise"],
+      "thumbnail": "/assets/images/projects/consulting-thumb.jpg",
+      "video": null,
+      "links": {
+        "github": null,
+        "live": null,
+        "youtube": null
+      },
+      "stats": {
+        "stars": 0,
+        "forks": 0
+      },
+      "featured": false
+    }
+  ]
+}
