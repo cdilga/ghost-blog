@@ -451,6 +451,92 @@
         }, { passive: true });
     }
 
+    // Fetch GitHub repo data and populate cards
+    function initGitHubRepoCards() {
+        const repoCards = document.querySelectorAll('[data-github-repo]');
+        if (repoCards.length === 0) return;
+
+        // Language colors from GitHub's linguist
+        const languageColors = {
+            'JavaScript': '#f1e05a',
+            'TypeScript': '#3178c6',
+            'Python': '#3572A5',
+            'Go': '#00ADD8',
+            'Rust': '#dea584',
+            'Swift': '#F05138',
+            'Kotlin': '#A97BFF',
+            'Java': '#b07219',
+            'Ruby': '#701516',
+            'CSS': '#563d7c',
+            'HTML': '#e34c26',
+            'Shell': '#89e051',
+            'C': '#555555',
+            'C++': '#f34b7d',
+            'C#': '#178600',
+        };
+
+        repoCards.forEach(async (card) => {
+            const repoPath = card.dataset.githubRepo;
+            if (!repoPath) return;
+
+            try {
+                const response = await fetch(`https://api.github.com/repos/${repoPath}`);
+                if (!response.ok) return;
+
+                const data = await response.json();
+
+                // Update description if placeholder exists
+                const descEl = card.querySelector('[data-github-description]');
+                if (descEl && data.description) {
+                    descEl.textContent = data.description;
+                }
+
+                // Update stars
+                const starsEl = card.querySelector('[data-github-stars] span:last-child');
+                if (starsEl && data.stargazers_count !== undefined) {
+                    starsEl.textContent = formatNumber(data.stargazers_count);
+                }
+
+                // Update forks
+                const forksEl = card.querySelector('[data-github-forks] span:last-child');
+                if (forksEl && data.forks_count !== undefined) {
+                    forksEl.textContent = formatNumber(data.forks_count);
+                }
+
+                // Add language if not already present
+                if (data.language) {
+                    const existingLang = card.querySelector('.github-repo-card__stat--language');
+                    if (!existingLang) {
+                        const statsEl = card.querySelector('.github-repo-card__stats');
+                        if (statsEl) {
+                            const langStat = document.createElement('span');
+                            langStat.className = 'github-repo-card__stat github-repo-card__stat--language';
+                            const color = languageColors[data.language] || '#858585';
+                            langStat.innerHTML = `<span class="github-repo-card__lang-dot" style="background-color: ${color}"></span>${data.language}`;
+                            statsEl.appendChild(langStat);
+                        }
+                    }
+                }
+
+            } catch (error) {
+                console.warn(`Failed to fetch GitHub repo data for ${repoPath}:`, error);
+            }
+        });
+
+        console.log('Chris Theme: GitHub repo cards initialized');
+    }
+
+    // Format number with K/M suffix
+    function formatNumber(num) {
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1) + 'M';
+        }
+        if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K';
+        }
+        return num.toString();
+    }
+
     // Main initialization
     function init() {
         const lenis = initLenis();
@@ -473,6 +559,9 @@
 
         // Generate GitHub contribution graph
         generateGitHubGraph();
+
+        // Initialize GitHub repo cards (fetch API data)
+        initGitHubRepoCards();
 
         // Initialize project video previews
         initProjectVideos();
