@@ -311,4 +311,64 @@ test.describe('Hero Depth Parallax Tests', () => {
     await context.close();
   });
 
+  test('ultra-wide viewport covers full hero area', async ({ browser }) => {
+    // Test ultra-wide (21:9 aspect ratio - 2560x1080)
+    const context = await browser.newContext({
+      viewport: { width: 2560, height: 1080 },
+    });
+    const page = await context.newPage();
+
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(500);
+
+    // Check that canvas covers the full hero area
+    const coverage = await page.evaluate(() => {
+      const hero = document.querySelector('.hero');
+      const canvas = document.querySelector('.hero__depth-canvas canvas');
+
+      if (!hero || !canvas) return { heroExists: !!hero, canvasExists: !!canvas };
+
+      const heroRect = hero.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+
+      return {
+        heroExists: true,
+        canvasExists: true,
+        heroWidth: heroRect.width,
+        heroHeight: heroRect.height,
+        canvasWidth: canvasRect.width,
+        canvasHeight: canvasRect.height,
+        // Canvas should cover at least the hero area
+        widthCoverage: canvasRect.width >= heroRect.width,
+        heightCoverage: canvasRect.height >= heroRect.height,
+      };
+    });
+
+    expect(coverage.canvasExists).toBe(true);
+    expect(coverage.widthCoverage).toBe(true);
+    expect(coverage.heightCoverage).toBe(true);
+
+    // Also verify mouse tracking works at edges
+    const hero = page.locator('.hero');
+    const box = await hero.boundingBox();
+
+    // Move mouse to far left edge
+    await page.mouse.move(box.x + 10, box.y + box.height / 2);
+    await page.waitForTimeout(200);
+
+    // Move mouse to far right edge
+    await page.mouse.move(box.x + box.width - 10, box.y + box.height / 2);
+    await page.waitForTimeout(200);
+
+    // Canvas should still be functional
+    const stillFunctional = await page.evaluate(() => {
+      const canvas = document.querySelector('.hero__depth-canvas canvas');
+      return canvas && canvas.offsetWidth > 0;
+    });
+    expect(stillFunctional).toBe(true);
+
+    await context.close();
+  });
+
 });

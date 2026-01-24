@@ -33,56 +33,77 @@
     const isMobile = window.innerWidth <= 768;
     const maxDisplacement = isMobile ? CONFIG.displacementScale.mobile : CONFIG.displacementScale.desktop;
 
-    // Debug panel (visible on mobile for testing)
-    let debugPanel = null;
-    let debugState = {
-        status: 'Init...',
-        mode: 'unknown',
-        targetX: 0,
-        targetY: 0,
-        scaleX: 0,
-        scaleY: 0,
-        events: 0
-    };
+    // Motion control UI for mobile
+    let motionButton = null;
+    let motionStatus = null;
 
-    function createDebugPanel() {
-        if (!isMobile || debugPanel) return;
-        debugPanel = document.createElement('div');
-        debugPanel.style.cssText = `
+    function createMotionUI() {
+        if (!isMobile) return;
+
+        // Create container
+        const container = document.createElement('div');
+        container.className = 'hero-motion-ui';
+        container.style.cssText = `
             position: fixed;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.85);
-            color: #0f0;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-family: monospace;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 99999;
-            pointer-events: none;
-            line-height: 1.4;
+            text-align: center;
         `;
-        document.body.appendChild(debugPanel);
-        updateDebugPanel();
+
+        // Create button
+        motionButton = document.createElement('button');
+        motionButton.style.cssText = `
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        `;
+        motionButton.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L12 6M12 18L12 22M2 12L6 12M18 12L22 12"/>
+                <circle cx="12" cy="12" r="4"/>
+            </svg>
+            Enable tilt control
+        `;
+
+        // Create status text
+        motionStatus = document.createElement('div');
+        motionStatus.style.cssText = `
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        `;
+
+        container.appendChild(motionButton);
+        container.appendChild(motionStatus);
+        document.body.appendChild(container);
+
+        return container;
     }
 
-    function updateDebugPanel() {
-        if (!debugPanel) return;
-        debugPanel.innerHTML = `
-            <div style="color:#fff;font-weight:bold;margin-bottom:5px;">Hero Depth Debug</div>
-            <div>Status: <span style="color:${debugState.status.includes('ERROR') ? '#f44' : '#0f0'}">${debugState.status}</span></div>
-            <div>Mode: ${debugState.mode}</div>
-            <div>Target: X=${debugState.targetX.toFixed(2)} Y=${debugState.targetY.toFixed(2)}</div>
-            <div>Scale: X=${debugState.scaleX.toFixed(1)} Y=${debugState.scaleY.toFixed(1)}</div>
-            <div>Events: ${debugState.events}</div>
-            <div style="color:#888;margin-top:5px;">Drag finger on hero to test</div>
-        `;
+    function hideMotionButton() {
+        if (motionButton) {
+            motionButton.style.display = 'none';
+        }
     }
 
-    function showDebugStatus(message, color = '#FF6B35') {
-        debugState.status = message;
-        updateDebugPanel();
+    function showMotionStatus(message, isError = false) {
+        if (motionStatus) {
+            motionStatus.textContent = message;
+            motionStatus.style.color = isError ? '#ff6b6b' : 'rgba(255,255,255,0.7)';
+        }
     }
 
     // Image paths - using Ghost's asset helper via data attributes
@@ -117,9 +138,15 @@
         z-index: 1;
     `;
 
-    // Insert canvas container, hiding original image
+    // Insert canvas container, hiding original images
     heroLayer.appendChild(container);
     heroImage.style.visibility = 'hidden';
+
+    // Also hide the sky layer - we only want the dunes with depth effect
+    const skyLayer = document.querySelector('.hero__layer--sky');
+    if (skyLayer) {
+        skyLayer.style.visibility = 'hidden';
+    }
 
     // Current and target displacement values (for smoothing)
     let currentX = 0;
@@ -148,15 +175,19 @@
 
             container.appendChild(app.canvas);
 
+            // Ensure canvas fills container
+            app.canvas.style.width = '100%';
+            app.canvas.style.height = '100%';
+            app.canvas.style.display = 'block';
+
             // Load the main image
             const mainTexture = await PIXI.Assets.load(imageSrc);
             const mainSprite = new PIXI.Sprite(mainTexture);
 
-            // Scale sprite to cover container
-            const scale = Math.max(
-                app.screen.width / mainSprite.width,
-                app.screen.height / mainSprite.height
-            );
+            // Scale sprite to cover container (object-fit: cover behavior)
+            const scaleX = app.screen.width / mainSprite.width;
+            const scaleY = app.screen.height / mainSprite.height;
+            const scale = Math.max(scaleX, scaleY);
             mainSprite.scale.set(scale);
 
             // Center the sprite
@@ -169,8 +200,12 @@
             displacementSprite = new PIXI.Sprite(depthTexture);
             displacementSprite.texture.source.addressMode = 'repeat';
 
-            // Scale depth map to match main image
-            displacementSprite.scale.set(scale);
+            // IMPORTANT: Displacement sprite must cover FULL screen for effect to work everywhere
+            // Scale it independently to ensure it fills the viewport completely
+            const depthScaleX = app.screen.width / displacementSprite.width;
+            const depthScaleY = app.screen.height / displacementSprite.height;
+            const depthScale = Math.max(depthScaleX, depthScaleY);
+            displacementSprite.scale.set(depthScale);
             displacementSprite.anchor.set(0.5);
             displacementSprite.x = app.screen.width / 2;
             displacementSprite.y = app.screen.height / 2;
@@ -202,8 +237,7 @@
             window.addEventListener('resize', handleResize);
 
             console.log('Hero Depth: Initialized successfully');
-            createDebugPanel();
-            showDebugStatus('PixiJS ready');
+            createMotionUI();
 
         } catch (error) {
             console.error('Hero Depth: Failed to initialize', error);
@@ -224,21 +258,6 @@
         // Apply displacement
         displacementFilter.scale.x = currentX * maxDisplacement;
         displacementFilter.scale.y = currentY * maxDisplacement;
-
-        // Update debug panel
-        debugState.targetX = targetX;
-        debugState.targetY = targetY;
-        debugState.scaleX = displacementFilter.scale.x;
-        debugState.scaleY = displacementFilter.scale.y;
-        if (isMobile && animateLogCount % 10 === 0) {
-            updateDebugPanel();
-        }
-        animateLogCount++;
-
-        // Log occasionally when there's actual movement
-        if (animateLogCount < 50 && (Math.abs(targetX) > 0.1 || Math.abs(targetY) > 0.1)) {
-            console.log('Hero Depth: Animate - target:', targetX.toFixed(2), targetY.toFixed(2), 'scale:', displacementFilter.scale.x.toFixed(1), displacementFilter.scale.y.toFixed(1));
-        }
     }
 
     function initMouseTracking() {
@@ -265,46 +284,52 @@
         console.log('Hero Depth: initGyroscope called');
         console.log('Hero Depth: DeviceOrientationEvent exists:', 'DeviceOrientationEvent' in window);
         console.log('Hero Depth: requestPermission exists:', typeof DeviceOrientationEvent?.requestPermission === 'function');
-        debugState.mode = 'gyro (init)';
-        showDebugStatus('Init gyroscope...');
 
         // Check for gyroscope support
         if (!('DeviceOrientationEvent' in window)) {
             console.log('Hero Depth: No DeviceOrientationEvent, falling back to touch');
+            showMotionStatus('Tilt control not available');
+            hideMotionButton();
             initTouchTracking();
             return;
         }
 
         // Request permission on iOS 13+
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            console.log('Hero Depth: iOS detected, waiting for tap to request permission');
-            showDebugStatus('iOS: Tap anywhere for gyro permission');
-            debugState.mode = 'iOS wait tap';
-            // Need user interaction to request
-            const enableGyro = () => {
-                console.log('Hero Depth: Touch detected, requesting gyro permission...');
-                DeviceOrientationEvent.requestPermission()
-                    .then(permission => {
-                        console.log('Hero Depth: Permission result:', permission);
-                        if (permission === 'granted') {
-                            attachGyroHandler();
-                        } else {
-                            console.log('Hero Depth: Permission denied, using touch tracking');
+            console.log('Hero Depth: iOS detected, using button for permission');
+            showMotionStatus('Tap button to enable tilt parallax');
+
+            if (motionButton) {
+                motionButton.onclick = () => {
+                    console.log('Hero Depth: Button clicked, requesting gyro permission...');
+                    DeviceOrientationEvent.requestPermission()
+                        .then(permission => {
+                            console.log('Hero Depth: Permission result:', permission);
+                            if (permission === 'granted') {
+                                hideMotionButton();
+                                showMotionStatus('Tilt control enabled ✓');
+                                setTimeout(() => { if (motionStatus) motionStatus.style.display = 'none'; }, 2000);
+                                attachGyroHandler();
+                            } else {
+                                console.log('Hero Depth: Permission denied, using touch tracking');
+                                showMotionStatus('Permission denied - using touch instead', true);
+                                hideMotionButton();
+                                initTouchTracking();
+                            }
+                        })
+                        .catch((err) => {
+                            console.error('Hero Depth: Permission error:', err);
+                            showMotionStatus('Error requesting permission', true);
+                            hideMotionButton();
                             initTouchTracking();
-                        }
-                    })
-                    .catch((err) => {
-                        console.error('Hero Depth: Permission error:', err);
-                        initTouchTracking();
-                    });
-                document.removeEventListener('touchstart', enableGyro, { once: true });
-            };
-            document.addEventListener('touchstart', enableGyro, { once: true });
+                        });
+                };
+            }
         } else {
-            // Android - no permission needed
+            // Android/other - no permission needed, but may be blocked
             console.log('Hero Depth: Android/other, attaching gyro handler directly');
-            showDebugStatus('Attaching gyro handler...');
-            debugState.mode = 'gyro (attaching)';
+            hideMotionButton();
+            showMotionStatus('Detecting tilt sensors...');
             attachGyroHandler();
         }
     }
@@ -331,7 +356,6 @@
             }
 
             gyroValidEvents++;
-            debugState.events = gyroValidEvents;
 
             // gamma: left-right tilt (-90 to 90)
             // beta: front-back tilt (-180 to 180)
@@ -341,9 +365,6 @@
             // Normalize to -1 to 1 range, accounting for device being held at ~45 degrees
             targetX = Math.max(-1, Math.min(1, gamma / 45)) * CONFIG.gyroSensitivity;
             targetY = Math.max(-1, Math.min(1, (beta - 45) / 45)) * CONFIG.gyroSensitivity;
-
-            // Show gyro values in status
-            showDebugStatus(`Gyro: β=${beta.toFixed(0)} γ=${gamma.toFixed(0)}`);
         };
 
         window.addEventListener('deviceorientation', handler, { passive: true });
@@ -353,14 +374,20 @@
         gyroTimeout = setTimeout(() => {
             if (gyroValidEvents === 0) {
                 console.log('Hero Depth: No valid gyro events received, falling back to touch');
-                debugState.mode = 'touch (gyro blocked)';
-                showDebugStatus('Gyro blocked, using touch...');
                 window.removeEventListener('deviceorientation', handler);
+
+                // Detect Brave browser
+                const isBrave = navigator.brave !== undefined || navigator.userAgent.includes('Brave');
+                if (isBrave) {
+                    showMotionStatus('Brave blocks tilt sensors. Tap shield icon → Allow sensors', true);
+                } else {
+                    showMotionStatus('Tilt sensors blocked by browser');
+                }
                 initTouchTracking();
             } else {
                 console.log('Hero Depth: Gyroscope working with', gyroValidEvents, 'valid events');
-                debugState.mode = 'gyroscope';
-                showDebugStatus('Gyro active');
+                showMotionStatus('Tilt control active ✓');
+                setTimeout(() => { if (motionStatus) motionStatus.style.display = 'none'; }, 2000);
             }
         }, 2000);
     }
@@ -369,13 +396,10 @@
 
     function initTouchTracking() {
         console.log('Hero Depth: Touch tracking fallback initialized');
-        debugState.mode = 'touch';
-        showDebugStatus('Touch mode active');
 
         const heroSection = document.querySelector('.hero');
         if (!heroSection) {
             console.error('Hero Depth: .hero section not found!');
-            showDebugStatus('ERROR: No hero');
             return;
         }
 
@@ -386,18 +410,8 @@
             const touch = e.touches[0];
             const rect = heroSection.getBoundingClientRect();
 
-            // Update event count for any touch
-            touchEventCount++;
-            debugState.events = touchEventCount;
-
             // Only respond if touch is within hero bounds
-            if (touch.clientY < rect.top || touch.clientY > rect.bottom) {
-                showDebugStatus(`Touch outside hero (y=${touch.clientY.toFixed(0)}, hero=${rect.top.toFixed(0)}-${rect.bottom.toFixed(0)})`);
-                return;
-            }
-
-            // Show touch is being captured
-            showDebugStatus(`Touch IN hero: ${touch.clientX.toFixed(0)},${touch.clientY.toFixed(0)}`);
+            if (touch.clientY < rect.top || touch.clientY > rect.bottom) return;
 
             targetX = ((touch.clientX - rect.left) / rect.width - 0.5) * 2;
             targetY = ((touch.clientY - rect.top) / rect.height - 0.5) * 2;
@@ -414,12 +428,12 @@
     function handleResize() {
         if (!app) return;
 
-        // PixiJS handles resize via resizeTo, but we may need to re-center sprites
+        // PixiJS handles resize via resizeTo, but we need to re-scale and re-center sprites
         const mainSprite = app.stage.children[1];
         if (mainSprite) {
             const scale = Math.max(
-                app.screen.width / (mainSprite.texture.width),
-                app.screen.height / (mainSprite.texture.height)
+                app.screen.width / mainSprite.texture.width,
+                app.screen.height / mainSprite.texture.height
             );
             mainSprite.scale.set(scale);
             mainSprite.x = app.screen.width / 2;
@@ -427,6 +441,12 @@
         }
 
         if (displacementSprite) {
+            // Displacement sprite must also scale to cover full screen
+            const depthScale = Math.max(
+                app.screen.width / displacementSprite.texture.width,
+                app.screen.height / displacementSprite.texture.height
+            );
+            displacementSprite.scale.set(depthScale);
             displacementSprite.x = app.screen.width / 2;
             displacementSprite.y = app.screen.height / 2;
         }
