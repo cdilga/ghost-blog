@@ -1,10 +1,14 @@
-# Landing Page Overview Sketch
+# Landing Page PRD (Product Requirements Document)
+
+> **This is the canonical source of truth.** All implementation should match this spec.
+> Reference: research/motion-zajno-analysis.md for motion design principles.
 
 ## Design System
 - **Theme**: Australian Desert / Outdoors
-- **Accent Color**: Orange
+- **Accent Color**: Orange (#FF6B35)
 - **Style**: Ultra clean, minimal, high-performance
-- **Target**: 120fps WebGL rendering, "WOW" factor on first load
+- **Target**: 120fps CSS/GPU rendering, "WOW" factor on first load
+- **Approach**: CSS 3D transforms + GSAP (NO WebGL) - proven by motion.zajno.com research
 
 ---
 
@@ -27,7 +31,7 @@
 ### Graceful Degradation
 - Reduce motion for `prefers-reduced-motion`
 - Fallback to simpler animations on low-end devices
-- Skip WebGL if not supported, use CSS fallbacks
+- CSS-only approach means broad browser support
 
 ---
 
@@ -48,7 +52,7 @@
 ### Performance on Mobile
 - **Battery conscious**: Pause animations when tab not visible
 - **Data conscious**: Lazy load videos, offer lower-res options
-- **Memory conscious**: Clean up WebGL contexts, limit particle counts
+- **Memory conscious**: Limit active animations, use Intersection Observer
 
 ### Testing Targets
 - iPhone SE (small screen baseline)
@@ -62,9 +66,17 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
+│                           HEADER                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  CHRIS DILGER          [Home] [About] [Projects] [Blog] │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  - Transparent overlay on hero, solid on scroll                 │
+│  - Mobile: hamburger menu with Transform/Morph animation        │
+│  - Sticky on desktop, hide-on-scroll-down on mobile            │
+├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │                    HERO / SCROLLYTELLING                        │
-│                    (Full WebGL Experience)                      │
+│                    (Full CSS 3D Experience)                     │
 │                                                                 │
 │    ┌─────────────────────────────────────────────────────┐     │
 │    │                                                     │     │
@@ -118,9 +130,17 @@
 │                                                                 │
 │  Scene 5: THE CONSULTANT                                        │
 │  ┌──────────────────────────────────────┐                      │
-│  │  🏢 Enterprise work showcase         │                      │
-│  │  "Big Australian companies"          │                      │
+│  │  🏢 Enterprise consulting work       │                      │
+│  │  Real experience (from LinkedIn)     │                      │
 │  │  Problem → Solution narrative        │                      │
+│  └──────────────────────────────────────┘                      │
+│                                                                 │
+│  Scene 6: THE TEACHER                                           │
+│  ┌──────────────────────────────────────┐                      │
+│  │  👨‍🏫 Teaching/mentoring showcase     │                      │
+│  │  Data Engineering Bootcamp exp       │                      │
+│  │  Generic Zoom meeting visual         │                      │
+│  │  "Available for tutoring" CTA        │                      │
 │  └──────────────────────────────────────┘                      │
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
@@ -211,8 +231,60 @@
 │   - Center focus: active card slightly larger, full opacity     │
 │   - Smooth easing on start/stop                                 │
 │                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│                    AMBIENT VIDEO FOOTER                         │
+│                                                                 │
+│   ┌─────────────────────────────────────────────────────────┐  │
+│   │  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │  │
+│   │  ░░░░░░░░░ WINDSWEPT SAND DUNE VIDEO ░░░░░░░░░░░░░░░░░  │  │
+│   │  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │  │
+│   └─────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│   - Ultra slow motion (playbackRate: 0.5)                       │
+│   - Ambient, subtle background                                  │
+│   - Autoplay, muted, loop                                       │
+│   - Lazy load, pause when off-screen                            │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Content Specification (Required)
+
+### Social Links
+All platforms use username: **cdilga**
+- X/Twitter: https://x.com/cdilga
+- YouTube: https://youtube.com/@cdilga
+- LinkedIn: https://linkedin.com/in/cdilga
+- GitHub: https://github.com/cdilga
+
+### YouTube Embed (Scene 3)
+- Channel: youtube.com/@cdilga
+- Video: Use featured/pinned video (fallback: uVwReaMfQSQ)
+- NOT: dQw4w9WgXcQ (placeholder)
+
+### Projects to Feature
+Source: github.com/cdilga (polished repos only)
+- **multiplayer-racer** - Multiplayer racing game
+- **ladder-logic-editor** - PLC ladder logic editor
+- **exquisite-corpse** - Collaborative drawing game
+- **checkface.me** - (sunset project, feature at end)
+
+NOT to feature:
+- chris.dilger.me (this IS the site)
+- Unfinished/WIP repos
+
+### Consultant Content
+Source from LinkedIn (linkedin.com/in/cdilga):
+- Real consulting experience
+- Actual technologies used
+- NOT generic "DevOps transformation" clichés
+
+### Teacher Content
+- Data Engineering Bootcamp experience
+- Use generic Zoom meeting placeholder (no bootcamp assets)
 
 ---
 
@@ -224,6 +296,48 @@
 | **Talk Organizer** | Speaker section + Talks | "This guy presents well" → Book |
 | **Client** | Consulting + Projects | "Can fix my problem" → Hire |
 | **Dev Community** | Projects + Dev Playground | "Cool project" → Follow/Star |
+
+---
+
+## Motion Design Requirements
+
+> Reference: research/motion-zajno-analysis.md for detailed implementation
+
+### 8 Motion Principles (from research)
+1. **Easing** - Natural acceleration/deceleration (cubic-bezier)
+2. **Stagger** - Sequential element appearance (0.1s offsets)
+3. **Fade** - Always paired with transform, never alone
+4. **Transform/Morph** - Shape transitions (hamburger → X)
+5. **Masking** - Reveal effects via clip-path
+6. **Dimension** - Depth via shadows, perspective, lift
+7. **Parallax** - Layered movement at different speeds
+8. **Zoom** - Scale transitions for focus/detail
+
+### Section-Specific Requirements
+
+| Section | Primary Principles | Secondary | Notes |
+|---------|-------------------|-----------|-------|
+| **Header** | Transform/Morph | Fade | Hamburger icon animation |
+| **Hero** | Parallax, Masking, Easing | Fade, Dimension | Entry: mask reveal (clip-path expanding) |
+| **8 Claude Codes** | Stagger, Fade | Dimension | 0.1s stagger between terminals |
+| **Content Creator** | **Zoom, Masking** | Dimension | NOT just static rotation - needs zoom + reveal |
+| **Speaker** | Fade, Stagger, Dimension | Parallax | Photo gallery stagger |
+| **Consultant** | Fade, Transform | Easing | Problem → Solution flow |
+| **Teacher** | Fade, Stagger | Dimension | Similar to Speaker |
+| **Projects** | Dimension, Zoom, Stagger | Transform, Masking | 3D hover lift |
+| **Blog Carousel** | 3D Cylinder | Velocity-based | Scroll-hijack rotation |
+| **Footer Video** | Parallax | - | Slow ambient movement |
+
+### Critical Motion Fixes Needed
+1. **YouTube embed**: Currently just static rotation. MUST implement Zoom + Masking:
+   - Entry: scale(0.5) → scale(1) with clip-path reveal
+   - Hover: scale up, shadow deepen, "lifted" feel
+   - Click: zoom toward viewer
+
+2. **Hero entry**: Currently fades in. MUST add mask reveal:
+   - clip-path: circle(0%) → circle(100%) on load
+
+3. **Hamburger menu**: MUST add Transform/Morph animation
 
 ---
 
@@ -383,7 +497,8 @@ const posts = await ghost.posts.browse({
 ---
 
 ## Inspiration Reference
-- Lando Norris website (high-performance WebGL)
+- Lando Norris website (high-performance, wow factor)
+- motion.zajno.com (CSS-only motion design excellence)
 - DHH's blog (no paid pressure, authentic voice)
 
 ---
@@ -428,9 +543,15 @@ Earth:        #8B4513  (Red earth)
 |-------|--------------|--------|
 | **Coder** | Keyboard SVG, code snippets | Design manually, real code samples |
 | **8 Claudes** | Terminal frame CSS/SVG, 8 code outputs | CSS-only, real terminal output |
-| **Content Creator** | YouTube thumbnail, video ID | Your actual YouTube channel |
+| **Content Creator** | YouTube thumbnail, video ID (cdilga) | youtube.com/@cdilga |
 | **Speaker** | 3-5 talk photos, conference logos | Personal photos, request logos |
-| **Consultant** | Case study icons, professional photo | Create icons, personal photo |
+| **Consultant** | Case study icons, professional photo | LinkedIn experience |
+| **Teacher** | Generic Zoom meeting screenshot | Stock/placeholder (no bootcamp assets) |
+
+### Footer Video Asset
+| Asset | Spec | Source |
+|-------|------|--------|
+| **windswept_video.mp4** | Slow-mo sand dune, ambient | Existing asset |
 
 ### Project Assets
 | Asset | Spec | Source |
