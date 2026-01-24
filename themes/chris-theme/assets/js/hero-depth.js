@@ -33,29 +33,56 @@
     const isMobile = window.innerWidth <= 768;
     const maxDisplacement = isMobile ? CONFIG.displacementScale.mobile : CONFIG.displacementScale.desktop;
 
-    // Debug indicator (visible on mobile for testing)
-    let debugIndicator = null;
+    // Debug panel (visible on mobile for testing)
+    let debugPanel = null;
+    let debugState = {
+        status: 'Init...',
+        mode: 'unknown',
+        targetX: 0,
+        targetY: 0,
+        scaleX: 0,
+        scaleY: 0,
+        events: 0
+    };
+
+    function createDebugPanel() {
+        if (!isMobile || debugPanel) return;
+        debugPanel = document.createElement('div');
+        debugPanel.style.cssText = `
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.85);
+            color: #0f0;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: monospace;
+            z-index: 99999;
+            pointer-events: none;
+            line-height: 1.4;
+        `;
+        document.body.appendChild(debugPanel);
+        updateDebugPanel();
+    }
+
+    function updateDebugPanel() {
+        if (!debugPanel) return;
+        debugPanel.innerHTML = `
+            <div style="color:#fff;font-weight:bold;margin-bottom:5px;">Hero Depth Debug</div>
+            <div>Status: <span style="color:${debugState.status.includes('ERROR') ? '#f44' : '#0f0'}">${debugState.status}</span></div>
+            <div>Mode: ${debugState.mode}</div>
+            <div>Target: X=${debugState.targetX.toFixed(2)} Y=${debugState.targetY.toFixed(2)}</div>
+            <div>Scale: X=${debugState.scaleX.toFixed(1)} Y=${debugState.scaleY.toFixed(1)}</div>
+            <div>Events: ${debugState.events}</div>
+            <div style="color:#888;margin-top:5px;">Drag finger on hero to test</div>
+        `;
+    }
+
     function showDebugStatus(message, color = '#FF6B35') {
-        if (!isMobile) return; // Only show on mobile
-        if (!debugIndicator) {
-            debugIndicator = document.createElement('div');
-            debugIndicator.style.cssText = `
-                position: fixed;
-                top: 10px;
-                left: 10px;
-                background: ${color};
-                color: white;
-                padding: 8px 12px;
-                border-radius: 4px;
-                font-size: 12px;
-                font-family: monospace;
-                z-index: 99999;
-                pointer-events: none;
-            `;
-            document.body.appendChild(debugIndicator);
-        }
-        debugIndicator.textContent = message;
-        debugIndicator.style.background = color;
+        debugState.status = message;
+        updateDebugPanel();
     }
 
     // Image paths - using Ghost's asset helper via data attributes
@@ -175,7 +202,8 @@
             window.addEventListener('resize', handleResize);
 
             console.log('Hero Depth: Initialized successfully');
-            showDebugStatus('PixiJS ready', '#4CAF50');
+            createDebugPanel();
+            showDebugStatus('PixiJS ready');
 
         } catch (error) {
             console.error('Hero Depth: Failed to initialize', error);
@@ -197,10 +225,19 @@
         displacementFilter.scale.x = currentX * maxDisplacement;
         displacementFilter.scale.y = currentY * maxDisplacement;
 
+        // Update debug panel
+        debugState.targetX = targetX;
+        debugState.targetY = targetY;
+        debugState.scaleX = displacementFilter.scale.x;
+        debugState.scaleY = displacementFilter.scale.y;
+        if (isMobile && animateLogCount % 10 === 0) {
+            updateDebugPanel();
+        }
+        animateLogCount++;
+
         // Log occasionally when there's actual movement
-        if (animateLogCount < 5 && (Math.abs(targetX) > 0.1 || Math.abs(targetY) > 0.1)) {
+        if (animateLogCount < 50 && (Math.abs(targetX) > 0.1 || Math.abs(targetY) > 0.1)) {
             console.log('Hero Depth: Animate - target:', targetX.toFixed(2), targetY.toFixed(2), 'scale:', displacementFilter.scale.x.toFixed(1), displacementFilter.scale.y.toFixed(1));
-            animateLogCount++;
         }
     }
 
@@ -228,6 +265,8 @@
         console.log('Hero Depth: initGyroscope called');
         console.log('Hero Depth: DeviceOrientationEvent exists:', 'DeviceOrientationEvent' in window);
         console.log('Hero Depth: requestPermission exists:', typeof DeviceOrientationEvent?.requestPermission === 'function');
+        debugState.mode = 'gyro (init)';
+        showDebugStatus('Init gyroscope...');
 
         // Check for gyroscope support
         if (!('DeviceOrientationEvent' in window)) {
@@ -239,6 +278,8 @@
         // Request permission on iOS 13+
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
             console.log('Hero Depth: iOS detected, waiting for tap to request permission');
+            showDebugStatus('iOS: Tap anywhere for gyro permission');
+            debugState.mode = 'iOS wait tap';
             // Need user interaction to request
             const enableGyro = () => {
                 console.log('Hero Depth: Touch detected, requesting gyro permission...');
@@ -262,6 +303,8 @@
         } else {
             // Android - no permission needed
             console.log('Hero Depth: Android/other, attaching gyro handler directly');
+            showDebugStatus('Attaching gyro handler...');
+            debugState.mode = 'gyro (attaching)';
             attachGyroHandler();
         }
     }
@@ -288,6 +331,7 @@
             }
 
             gyroValidEvents++;
+            debugState.events = gyroValidEvents;
 
             // gamma: left-right tilt (-90 to 90)
             // beta: front-back tilt (-180 to 180)
@@ -297,6 +341,9 @@
             // Normalize to -1 to 1 range, accounting for device being held at ~45 degrees
             targetX = Math.max(-1, Math.min(1, gamma / 45)) * CONFIG.gyroSensitivity;
             targetY = Math.max(-1, Math.min(1, (beta - 45) / 45)) * CONFIG.gyroSensitivity;
+
+            // Show gyro values in status
+            showDebugStatus(`Gyro: β=${beta.toFixed(0)} γ=${gamma.toFixed(0)}`);
         };
 
         window.addEventListener('deviceorientation', handler, { passive: true });
@@ -306,12 +353,14 @@
         gyroTimeout = setTimeout(() => {
             if (gyroValidEvents === 0) {
                 console.log('Hero Depth: No valid gyro events received, falling back to touch');
-                showDebugStatus('Gyro blocked, using touch...', '#FF9800');
+                debugState.mode = 'touch (gyro blocked)';
+                showDebugStatus('Gyro blocked, using touch...');
                 window.removeEventListener('deviceorientation', handler);
                 initTouchTracking();
             } else {
                 console.log('Hero Depth: Gyroscope working with', gyroValidEvents, 'valid events');
-                showDebugStatus('Gyro active', '#4CAF50');
+                debugState.mode = 'gyroscope';
+                showDebugStatus('Gyro active');
             }
         }, 2000);
     }
@@ -320,12 +369,13 @@
 
     function initTouchTracking() {
         console.log('Hero Depth: Touch tracking fallback initialized');
-        showDebugStatus('Touch mode active', '#4CAF50');
+        debugState.mode = 'touch';
+        showDebugStatus('Touch mode active');
 
         const heroSection = document.querySelector('.hero');
         if (!heroSection) {
             console.error('Hero Depth: .hero section not found!');
-            showDebugStatus('ERROR: No hero', '#f44336');
+            showDebugStatus('ERROR: No hero');
             return;
         }
 
@@ -336,14 +386,18 @@
             const touch = e.touches[0];
             const rect = heroSection.getBoundingClientRect();
 
+            // Update event count for any touch
+            touchEventCount++;
+            debugState.events = touchEventCount;
+
             // Only respond if touch is within hero bounds
-            if (touch.clientY < rect.top || touch.clientY > rect.bottom) return;
+            if (touch.clientY < rect.top || touch.clientY > rect.bottom) {
+                showDebugStatus(`Touch outside hero (y=${touch.clientY.toFixed(0)}, hero=${rect.top.toFixed(0)}-${rect.bottom.toFixed(0)})`);
+                return;
+            }
 
             // Show touch is being captured
-            if (touchEventCount < 10) {
-                showDebugStatus(`Touch: ${touch.clientX.toFixed(0)},${touch.clientY.toFixed(0)}`, '#2196F3');
-                touchEventCount++;
-            }
+            showDebugStatus(`Touch IN hero: ${touch.clientX.toFixed(0)},${touch.clientY.toFixed(0)}`);
 
             targetX = ((touch.clientX - rect.left) / rect.width - 0.5) * 2;
             targetY = ((touch.clientY - rect.top) / rect.height - 0.5) * 2;
