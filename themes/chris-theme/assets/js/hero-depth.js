@@ -99,6 +99,28 @@
         }
     }
 
+    function showRetryButton(message) {
+        if (motionButton) {
+            motionButton.style.display = 'flex';
+            motionButton.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 4v6h6M23 20v-6h-6"/>
+                    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                </svg>
+                Retry tilt control
+            `;
+            motionButton.onclick = () => {
+                hideMotionButton();
+                showMotionStatus('Retrying tilt sensors...');
+                // Reset counters and try again
+                gyroEventCount = 0;
+                gyroValidEvents = 0;
+                attachGyroHandler();
+            };
+        }
+        showMotionStatus(message, true);
+    }
+
     function showMotionStatus(message, isError = false) {
         if (motionStatus) {
             motionStatus.textContent = message;
@@ -376,12 +398,12 @@
                 console.log('Hero Depth: No valid gyro events received, falling back to touch');
                 window.removeEventListener('deviceorientation', handler);
 
-                // Detect Brave browser
+                // Detect Brave browser and show retry option
                 const isBrave = navigator.brave !== undefined || navigator.userAgent.includes('Brave');
                 if (isBrave) {
-                    showMotionStatus('Brave blocks tilt sensors. Tap shield icon → Allow sensors', true);
+                    showRetryButton('Brave blocks tilt. Enable in shield settings, then retry →');
                 } else {
-                    showMotionStatus('Tilt sensors blocked by browser');
+                    showRetryButton('Tilt sensors blocked. Check browser settings, then retry →');
                 }
                 initTouchTracking();
             } else {
