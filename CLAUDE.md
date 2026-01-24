@@ -22,6 +22,24 @@ npm start    # Start Ghost if not running
 npm test     # Run ALL tests
 ```
 
+### Mobile Testing (with Claude in Chrome)
+
+When working on mobile-specific features (accelerometer, touch, responsive), **test at mobile viewport**:
+
+1. **Resize to mobile**: `resize_window` to 375x812 (iPhone)
+2. **Reload**: Hard refresh to reinitialize with mobile detection
+3. **Check console**: Verify mobile-specific code paths initialized
+4. **Simulate gyroscope** (if applicable):
+   ```javascript
+   // Dispatch device orientation event
+   window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', {
+       alpha: 0, beta: 45, gamma: 15
+   }));
+   ```
+5. **Compare screenshots**: Capture before/after to verify effect
+
+**Do this for EACH iteration** when tuning mobile-specific values.
+
 ## Available Commands
 
 | Command | Description |

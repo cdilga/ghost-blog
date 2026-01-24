@@ -9,6 +9,7 @@
 - **Style**: Ultra clean, minimal, high-performance
 - **Target**: 120fps CSS/GPU rendering, "WOW" factor on first load
 - **Approach**: CSS 3D transforms + GSAP (NO WebGL) - proven by motion.zajno.com research
+- **Motion**: ALL 8 motion principles required (Easing, Stagger, Fade, Transform/Morph, Masking, Dimension, Parallax, Zoom) - see research/motion-zajno-analysis.md
 
 ---
 
