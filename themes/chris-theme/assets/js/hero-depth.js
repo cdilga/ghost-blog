@@ -341,10 +341,22 @@
         try {
             const faces = await faceDetector.estimateFaces(videoElement);
 
-            // Update debug overlay
+            // Update debug overlay with detailed info
             const debugEl = document.getElementById('face-debug');
-            if (debugEl) {
-                debugEl.innerHTML = `Faces: ${faces.length}<br>Target: ${targetX.toFixed(2)}, ${targetY.toFixed(2)}<br>Frame: ${faceTrackingFrameCount}`;
+            if (debugEl && faces.length > 0) {
+                const face = faces[0];
+                const box = face.box || face.boundingBox || {};
+                const xMin = box.xMin !== undefined ? box.xMin : (box.x || 0);
+                const yMin = box.yMin !== undefined ? box.yMin : (box.y || 0);
+                const w = box.width || 0;
+                const h = box.height || 0;
+                const cx = (xMin + w/2).toFixed(0);
+                const cy = (yMin + h/2).toFixed(0);
+                const bx = faceBaseline ? faceBaseline.x.toFixed(3) : '-';
+                const by = faceBaseline ? faceBaseline.y.toFixed(3) : '-';
+                debugEl.innerHTML = `Faces: ${faces.length}<br>Box: ${cx},${cy} (${w.toFixed(0)}x${h.toFixed(0)})<br>Baseline: ${bx},${by}<br>Target: ${targetX.toFixed(2)},${targetY.toFixed(2)}<br>Frame: ${faceTrackingFrameCount}`;
+            } else if (debugEl) {
+                debugEl.innerHTML = `Faces: 0<br>Frame: ${faceTrackingFrameCount}`;
             }
 
             // Log periodically for debugging
