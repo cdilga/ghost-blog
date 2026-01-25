@@ -3191,6 +3191,94 @@ pre code {
 }
 
 /* ==========================================================================
+   17c4. Scene: The Teacher
+   ========================================================================== */
+
+.scene--teacher {
+    background: var(--color-bg);
+}
+
+.teacher__content {
+    margin-bottom: var(--space-12);
+}
+
+.teacher__highlights {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6);
+}
+
+.teacher__highlight {
+    text-align: center;
+    padding: var(--space-8);
+    background: var(--color-bg-alt);
+    border-radius: var(--radius-lg);
+    transition: transform var(--duration-normal) var(--ease-out),
+                box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.teacher__highlight:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.teacher__highlight-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin-bottom: var(--space-4);
+    background: var(--color-accent-light);
+    border-radius: 50%;
+    color: var(--color-accent);
+}
+
+.teacher__highlight-title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    margin-bottom: var(--space-2);
+    color: var(--color-text);
+}
+
+.teacher__highlight-text {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+}
+
+/* Teacher CTA */
+.teacher__cta {
+    text-align: center;
+}
+
+.teacher__cta-text {
+    font-size: var(--text-lg);
+    color: var(--color-text-soft);
+    margin-bottom: var(--space-6);
+}
+
+/* Mobile responsive for teacher */
+@media (max-width: 768px) {
+    .teacher__highlights {
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
+
+    .teacher__highlight {
+        padding: var(--space-6);
+    }
+}
+
+/* Reduced motion for teacher */
+@media (prefers-reduced-motion: reduce) {
+    .teacher__highlight:hover {
+        transform: none;
+    }
+}
+
+/* ==========================================================================
    17d. Projects Section
    ========================================================================== */
 
