@@ -128,15 +128,30 @@
             }
         );
 
-        // Clip-path reveal on scroll (hero exits by clipping)
-        gsap.to(hero, {
-            clipPath: 'inset(0 0 100% 0)',
-            ease: 'none',
-            scrollTrigger: {
-                trigger: hero,
-                start: 'center top',
-                end: 'bottom top',
-                scrub: true,
+        // Clip-path reveal on scroll with non-linear "peel away" easing
+        // The hero resists initially, then accelerates away for a designed feel
+        ScrollTrigger.create({
+            trigger: hero,
+            start: 'center top',
+            end: 'bottom top',
+            scrub: true,
+            onUpdate: (self) => {
+                // Apply easeInQuart: starts slow, accelerates at end
+                // This creates a "resists then peels away" feel
+                const progress = self.progress;
+                const eased = progress * progress * progress * progress; // easeInQuart
+
+                // Convert to clip-path percentage (0% = fully visible, 100% = fully clipped)
+                const clipPercent = eased * 100;
+                hero.style.clipPath = `inset(0 0 ${clipPercent}% 0)`;
+            },
+            onLeave: () => {
+                // Ensure fully clipped when scroll past
+                hero.style.clipPath = 'inset(0 0 100% 0)';
+            },
+            onEnterBack: () => {
+                // Reset when scrolling back
+                hero.style.clipPath = 'inset(0 0 0% 0)';
             }
         });
 
