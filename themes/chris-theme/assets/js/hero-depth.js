@@ -266,13 +266,14 @@
                 }
             });
 
-            // Create hidden video element
+            // Create hidden video element (needs real dimensions for face detection)
             videoElement = document.createElement('video');
             videoElement.srcObject = stream;
             videoElement.autoplay = true;
             videoElement.playsInline = true;
             videoElement.muted = true;
-            videoElement.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;';
+            // Position off-screen but with real dimensions (some detectors need actual size)
+            videoElement.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:320px;height:240px;';
             document.body.appendChild(videoElement);
 
             await videoElement.play();
@@ -290,12 +291,13 @@
 
             // Initialize face detector
             const model = faceDetection.SupportedModels.MediaPipeFaceDetector;
-            console.log('Hero Depth: Creating face detector...');
+            console.log('Hero Depth: Creating face detector (MediaPipeFaceDetector/tfjs)...');
             faceDetector = await faceDetection.createDetector(model, {
                 runtime: 'tfjs',
+                modelType: 'short', // 'short' for faces within 2m (selfie range)
                 maxFaces: 1
             });
-            console.log('Hero Depth: Face detector created');
+            console.log('Hero Depth: Face detector created successfully');
 
             faceTrackingActive = true;
             activeInputMethod = 'face';
