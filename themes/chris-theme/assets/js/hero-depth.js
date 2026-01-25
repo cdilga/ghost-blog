@@ -274,8 +274,8 @@
             videoElement.autoplay = true;
             videoElement.playsInline = true;
             videoElement.muted = true;
-            // Position off-screen but with real dimensions (some detectors need actual size)
-            videoElement.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:320px;height:240px;';
+            // Keep on-screen but invisible (off-screen positioning can cause browser throttling)
+            videoElement.style.cssText = 'position:fixed;top:0;left:0;width:320px;height:240px;opacity:0.001;pointer-events:none;z-index:-1;';
             document.body.appendChild(videoElement);
 
             await videoElement.play();
@@ -305,6 +305,14 @@
 
             faceTrackingActive = true;
             activeInputMethod = 'face';
+
+            // Create debug overlay (temporary - remove for production)
+            const debugOverlay = document.createElement('div');
+            debugOverlay.id = 'face-debug';
+            debugOverlay.style.cssText = 'position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.8);color:#0f0;font-family:monospace;font-size:12px;padding:10px;z-index:9999;border-radius:4px;';
+            debugOverlay.innerHTML = 'Face: initializing...';
+            document.body.appendChild(debugOverlay);
+
             trackFace();
 
             console.log('Hero Depth: Face tracking enabled');
@@ -332,6 +340,12 @@
 
         try {
             const faces = await faceDetector.estimateFaces(videoElement);
+
+            // Update debug overlay
+            const debugEl = document.getElementById('face-debug');
+            if (debugEl) {
+                debugEl.innerHTML = `Faces: ${faces.length}<br>Target: ${targetX.toFixed(2)}, ${targetY.toFixed(2)}<br>Frame: ${faceTrackingFrameCount}`;
+            }
 
             // Log periodically for debugging
             const now = Date.now();
