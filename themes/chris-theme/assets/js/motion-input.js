@@ -62,6 +62,7 @@
 
     let video = null, canvas = null, ctx = null, previousGray = null;
     let animationId = null, isRunning = false, permissionGranted = false;
+    let lastEdges = null, lastGray = null; // For tooltip visualization
 
     const filterX = new OneEuroFilter(60, CONFIG.MIN_CUTOFF, CONFIG.BETA);
     const filterY = new OneEuroFilter(60, CONFIG.MIN_CUTOFF, CONFIG.BETA);
@@ -155,6 +156,8 @@
         }
 
         const edges = sobelEdges(gray, CONFIG.SIZE, CONFIG.SIZE);
+        lastGray = gray;
+        lastEdges = edges;
 
         if (previousGray) {
             const flow = calculateOpticalFlow(previousGray, gray, edges, CONFIG.SIZE, CONFIG.SIZE);
@@ -316,43 +319,62 @@
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
         `;
 
-        // Preview canvas for live feed
-        const previewCanvas = document.createElement('canvas');
-        previewCanvas.width = 64;
-        previewCanvas.height = 64;
-        previewCanvas.style.cssText = `
-            width: 64px; height: 64px;
+        // Camera feed canvas (32x32 scaled to 48x48)
+        const cameraCanvas = document.createElement('canvas');
+        cameraCanvas.width = 32;
+        cameraCanvas.height = 32;
+        cameraCanvas.style.cssText = `
+            width: 48px; height: 48px;
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 4px;
             image-rendering: pixelated;
             background: #111;
         `;
 
-        // Position indicator
+        // Edges canvas (32x32 scaled to 48x48)
+        const edgesCanvas = document.createElement('canvas');
+        edgesCanvas.width = 32;
+        edgesCanvas.height = 32;
+        edgesCanvas.style.cssText = `
+            width: 48px; height: 48px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            image-rendering: pixelated;
+            background: #111;
+        `;
+
+        // Position indicator with crosshairs
         const indicator = document.createElement('div');
         indicator.style.cssText = `
-            width: 64px; height: 64px;
+            width: 48px; height: 48px;
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 4px;
             background: #111;
             position: relative;
         `;
+        // Crosshairs
+        const crossH = document.createElement('div');
+        crossH.style.cssText = 'position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,0.2);';
+        const crossV = document.createElement('div');
+        crossV.style.cssText = 'position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(255,255,255,0.2);';
         const dot = document.createElement('div');
         dot.style.cssText = `
-            width: 8px; height: 8px;
+            width: 6px; height: 6px;
             background: #0f0;
             border-radius: 50%;
             position: absolute;
             left: 50%; top: 50%;
             transform: translate(-50%, -50%);
             box-shadow: 0 0 6px #0f0;
-            transition: left 0.05s, top 0.05s;
         `;
+        indicator.appendChild(crossH);
+        indicator.appendChild(crossV);
         indicator.appendChild(dot);
 
         const previewRow = document.createElement('div');
-        previewRow.style.cssText = 'display: flex; gap: 10px; margin-bottom: 12px;';
-        previewRow.appendChild(previewCanvas);
+        previewRow.style.cssText = 'display: flex; gap: 6px; margin-bottom: 10px;';
+        previewRow.appendChild(cameraCanvas);
+        previewRow.appendChild(edgesCanvas);
         previewRow.appendChild(indicator);
 
         const infoText = document.createElement('div');
@@ -369,25 +391,43 @@
 
         let previewAnimId = null;
         function updatePreview() {
-            const pctx = previewCanvas.getContext('2d');
+            const camCtx = cameraCanvas.getContext('2d');
+            const edgCtx = edgesCanvas.getContext('2d');
 
             // Draw video feed if available
             if (video && isRunning) {
-                pctx.drawImage(video, 0, 0, 64, 64);
+                camCtx.drawImage(video, 0, 0, 32, 32);
+
+                // Draw edges visualization
+                if (lastEdges) {
+                    const imgData = edgCtx.createImageData(32, 32);
+                    for (let i = 0; i < lastEdges.length; i++) {
+                        const v = Math.min(255, lastEdges[i] * 255);
+                        imgData.data[i * 4] = 0;
+                        imgData.data[i * 4 + 1] = v; // Green for edges
+                        imgData.data[i * 4 + 2] = 0;
+                        imgData.data[i * 4 + 3] = 255;
+                    }
+                    edgCtx.putImageData(imgData, 0, 0);
+                }
             } else {
                 // Show placeholder when no camera
-                pctx.fillStyle = '#222';
-                pctx.fillRect(0, 0, 64, 64);
-                pctx.fillStyle = '#666';
-                pctx.font = '10px sans-serif';
-                pctx.textAlign = 'center';
-                pctx.fillText('no cam', 32, 36);
+                camCtx.fillStyle = '#222';
+                camCtx.fillRect(0, 0, 32, 32);
+                camCtx.fillStyle = '#555';
+                camCtx.font = '6px sans-serif';
+                camCtx.textAlign = 'center';
+                camCtx.fillText('no', 16, 14);
+                camCtx.fillText('cam', 16, 22);
+
+                edgCtx.fillStyle = '#222';
+                edgCtx.fillRect(0, 0, 32, 32);
             }
 
             // Update position dot
             const pos = window.MotionInput.position;
-            dot.style.left = (50 + pos.x * 40) + '%';
-            dot.style.top = (50 + pos.y * 40) + '%';
+            dot.style.left = (50 + pos.x * 45) + '%';
+            dot.style.top = (50 + pos.y * 45) + '%';
 
             if (tooltip.style.opacity === '1') {
                 previewAnimId = requestAnimationFrame(updatePreview);
