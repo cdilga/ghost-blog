@@ -2240,41 +2240,91 @@ pre code {
 
 .youtube-3d-container {
     width: 100%;
-    max-width: 800px;
+    max-width: 900px;
+    perspective: 1200px;
+}
+
+/* 3D YouTube embed wrapper - holds both video and glow */
+.youtube-3d-container .embed--3d {
+    position: relative;
+    transform-style: preserve-3d;
+}
+
+/* Glow element for dramatic entry effect */
+.youtube-glow {
+    position: absolute;
+    inset: -40%;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(247, 147, 26, 0.4) 0%,
+        rgba(247, 147, 26, 0.2) 30%,
+        rgba(251, 191, 36, 0.1) 50%,
+        transparent 70%
+    );
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1;
+    filter: blur(40px);
 }
 
 /* 3D YouTube embed effect - Zoom + Masking + Dimension */
 .youtube-3d-container .embed--3d lite-youtube {
-    /* Subtle floating resting state - not weirdly tilted */
-    transform: perspective(1000px) translateY(0) translateZ(0);
+    /* NO breathing animation - static resting state */
+    transform: perspective(1200px) translateZ(0);
     box-shadow:
-        0 20px 50px rgba(0, 0, 0, 0.25),
-        0 0 0 1px rgba(255, 255, 255, 0.05);
+        0 30px 60px rgba(0, 0, 0, 0.35),
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    transition: transform 0.5s var(--ease-out),
-                box-shadow 0.5s var(--ease-out);
-    /* Subtle floating animation for dimension feel */
-    animation: youtube-float 4s ease-in-out infinite;
+    transition: box-shadow 0.4s var(--ease-out);
+    /* GPU acceleration for smooth scroll parallax */
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
-@keyframes youtube-float {
-    0%, 100% { transform: perspective(1000px) translateY(0) translateZ(0); }
-    50% { transform: perspective(1000px) translateY(-8px) translateZ(10px); }
+/* TV-like bezel effect */
+.youtube-3d-container .embed--3d lite-youtube::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+    box-shadow: inset 0 0 0 3px rgba(30, 30, 30, 0.9);
+    pointer-events: none;
+    z-index: 10;
 }
 
-/* Hover: lift up, scale slightly, deepen shadow */
+/* Screen reflection overlay */
+.youtube-3d-container .embed--3d lite-youtube::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.06) 0%,
+        transparent 100%
+    );
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    pointer-events: none;
+    z-index: 11;
+}
+
+/* Hover: dramatic lift and glow - but NO scale to avoid blur */
 .youtube-3d-container .embed--3d:hover lite-youtube {
-    transform: perspective(1000px) translateY(-12px) translateZ(30px) scale(1.02);
     box-shadow:
-        0 35px 70px rgba(0, 0, 0, 0.3),
-        0 0 50px rgba(247, 147, 26, 0.15);
-    animation: none; /* Stop float on hover for stability */
+        0 50px 100px rgba(0, 0, 0, 0.45),
+        0 0 80px rgba(247, 147, 26, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 /* Ensure lite-youtube responds to aspect ratio properly */
 .youtube-3d-container lite-youtube {
     aspect-ratio: 16/9;
+    display: block;
 }
 
 /* Content Creator CTA */
@@ -2300,38 +2350,45 @@ pre code {
 
 /* Mobile responsive for content creator */
 @media (max-width: 768px) {
-    .youtube-3d-container .embed--3d lite-youtube {
-        /* Subtler float on mobile for battery */
-        animation: youtube-float-mobile 5s ease-in-out infinite;
-        box-shadow:
-            0 15px 35px rgba(0, 0, 0, 0.2),
-            0 0 0 1px rgba(255, 255, 255, 0.03);
+    .youtube-3d-container {
+        max-width: 100%;
     }
 
-    @keyframes youtube-float-mobile {
-        0%, 100% { transform: perspective(1000px) translateY(0); }
-        50% { transform: perspective(1000px) translateY(-4px); }
+    .youtube-glow {
+        /* Smaller glow on mobile */
+        inset: -20%;
+        filter: blur(30px);
+    }
+
+    .youtube-3d-container .embed--3d lite-youtube {
+        box-shadow:
+            0 20px 40px rgba(0, 0, 0, 0.3),
+            0 0 0 1px rgba(255, 255, 255, 0.05);
     }
 
     .youtube-3d-container .embed--3d:hover lite-youtube {
-        transform: perspective(1000px) translateY(-6px) scale(1.01);
-        animation: none;
+        box-shadow:
+            0 25px 50px rgba(0, 0, 0, 0.35),
+            0 0 40px rgba(247, 147, 26, 0.15);
     }
 }
 
 /* Reduced motion for content creator */
 @media (prefers-reduced-motion: reduce) {
+    .youtube-glow {
+        display: none;
+    }
+
     .youtube-3d-container .embed--3d lite-youtube {
         transform: none;
-        animation: none;
         /* Keep shadow for depth without motion */
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
     }
 
     .youtube-3d-container .embed--3d:hover lite-youtube {
         transform: none;
         /* Subtle shadow change on hover */
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
     }
 
     .content-creator__showcase[data-animate="fade-up"] {

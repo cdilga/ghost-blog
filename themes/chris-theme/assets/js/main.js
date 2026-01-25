@@ -326,41 +326,116 @@
         }
 
         // Content Creator 3D YouTube embed animation
-        // Uses Zoom + Masking principles from motion research
+        // DRAMATIC reveal combining Zoom + Masking + Dimension + Parallax
         const youtube3dContainer = document.querySelector('.youtube-3d-container');
         if (youtube3dContainer) {
             const embed = youtube3dContainer.querySelector('lite-youtube');
-            if (embed) {
-                // Set initial state for mask + zoom reveal
+            const wrapper = youtube3dContainer.querySelector('.embed--3d');
+
+            if (embed && wrapper) {
+                // Create glow element for energy effect
+                const glow = document.createElement('div');
+                glow.className = 'youtube-glow';
+                wrapper.appendChild(glow);
+
+                // Set DRAMATIC initial state - tiny, rotated, hidden
                 gsap.set(embed, {
-                    scale: 0.6,
-                    clipPath: 'inset(15% 15% 15% 15% round 20px)',
+                    scale: 0.15,
+                    rotateX: 25,
+                    rotateY: -15,
+                    rotateZ: 3,
+                    clipPath: 'circle(0% at 50% 50%)',
                     opacity: 0,
+                    transformPerspective: 1200,
+                    transformOrigin: 'center center',
                 });
 
-                // Create timeline for coordinated entry animation
+                gsap.set(glow, {
+                    opacity: 0,
+                    scale: 0.5,
+                });
+
+                // Multi-stage timeline for cinematic entrance
                 const tl = gsap.timeline({
                     scrollTrigger: {
                         trigger: youtube3dContainer,
-                        start: 'top 80%',
+                        start: 'top 85%',
                         toggleActions: 'play none none none',
                     }
                 });
 
-                // Zoom + mask reveal animation
-                tl.to(embed, {
-                    scale: 1,
-                    clipPath: 'inset(0% 0% 0% 0% round 12px)',
+                // Stage 1: Glow appears first (0.3s)
+                tl.to(glow, {
                     opacity: 1,
+                    scale: 1.2,
+                    duration: 0.4,
+                    ease: 'power2.out',
+                })
+
+                // Stage 2: Video starts emerging from center with circular mask (0.8s)
+                .to(embed, {
+                    opacity: 1,
+                    scale: 0.4,
+                    clipPath: 'circle(25% at 50% 50%)',
+                    rotateX: 15,
+                    rotateY: -8,
+                    rotateZ: 1,
+                    duration: 0.5,
+                    ease: 'power3.out',
+                }, '-=0.2')
+
+                // Stage 3: Expand dramatically with rotation settling (1.2s)
+                .to(embed, {
+                    scale: 1,
+                    clipPath: 'circle(100% at 50% 50%)',
+                    rotateX: 0,
+                    rotateY: 0,
+                    rotateZ: 0,
                     duration: 1.0,
                     ease: 'power2.out',
                 })
-                // Add subtle "landing" bounce for dimension feel
+
+                // Stage 4: Glow pulses then fades (depth feel)
+                .to(glow, {
+                    opacity: 0.8,
+                    scale: 1.4,
+                    duration: 0.3,
+                    ease: 'power1.in',
+                }, '-=0.6')
+                .to(glow, {
+                    opacity: 0,
+                    scale: 1.6,
+                    duration: 0.5,
+                    ease: 'power2.out',
+                })
+
+                // Stage 5: Landing shadow punch for weight
                 .to(embed, {
-                    boxShadow: '0 25px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+                    boxShadow: '0 40px 80px rgba(0, 0, 0, 0.4), 0 0 100px rgba(247, 147, 26, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1)',
                     duration: 0.4,
-                    ease: 'power1.out',
-                }, '-=0.2');
+                    ease: 'back.out(1.5)',
+                }, '-=0.3');
+
+                // Add parallax depth effect on scroll AFTER entry animation
+                ScrollTrigger.create({
+                    trigger: youtube3dContainer,
+                    start: 'top bottom',
+                    end: 'bottom top',
+                    scrub: 1,
+                    onUpdate: (self) => {
+                        // Only apply parallax after entry animation completes
+                        if (tl.progress() >= 1) {
+                            const progress = self.progress;
+                            const tiltX = (progress - 0.5) * 8; // -4deg to +4deg
+                            const translateZ = Math.sin(progress * Math.PI) * 30; // 0 to 30 to 0
+                            gsap.set(embed, {
+                                rotateX: tiltX,
+                                z: translateZ,
+                                transformPerspective: 1200,
+                            });
+                        }
+                    }
+                });
             }
         }
 
