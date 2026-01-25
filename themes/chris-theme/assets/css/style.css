@@ -2243,23 +2243,33 @@ pre code {
     max-width: 800px;
 }
 
-/* 3D YouTube embed effect */
+/* 3D YouTube embed effect - Zoom + Masking + Dimension */
 .youtube-3d-container .embed--3d lite-youtube {
-    transform: perspective(1000px) rotateY(-5deg) rotateX(2deg);
+    /* Subtle floating resting state - not weirdly tilted */
+    transform: perspective(1000px) translateY(0) translateZ(0);
     box-shadow:
-        20px 20px 60px rgba(0, 0, 0, 0.3),
-        -5px -5px 20px rgba(255, 255, 255, 0.05);
+        0 20px 50px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    transition: transform 0.6s var(--ease-out),
-                box-shadow 0.6s var(--ease-out);
+    transition: transform 0.5s var(--ease-out),
+                box-shadow 0.5s var(--ease-out);
+    /* Subtle floating animation for dimension feel */
+    animation: youtube-float 4s ease-in-out infinite;
 }
 
+@keyframes youtube-float {
+    0%, 100% { transform: perspective(1000px) translateY(0) translateZ(0); }
+    50% { transform: perspective(1000px) translateY(-8px) translateZ(10px); }
+}
+
+/* Hover: lift up, scale slightly, deepen shadow */
 .youtube-3d-container .embed--3d:hover lite-youtube {
-    transform: perspective(1000px) rotateY(0) rotateX(0) translateZ(20px);
+    transform: perspective(1000px) translateY(-12px) translateZ(30px) scale(1.02);
     box-shadow:
-        0 30px 80px rgba(0, 0, 0, 0.25),
-        0 0 40px rgba(247, 147, 26, 0.1);
+        0 35px 70px rgba(0, 0, 0, 0.3),
+        0 0 50px rgba(247, 147, 26, 0.15);
+    animation: none; /* Stop float on hover for stability */
 }
 
 /* Ensure lite-youtube responds to aspect ratio properly */
@@ -2291,14 +2301,21 @@ pre code {
 /* Mobile responsive for content creator */
 @media (max-width: 768px) {
     .youtube-3d-container .embed--3d lite-youtube {
-        transform: perspective(1000px) rotateY(-2deg) rotateX(1deg);
+        /* Subtler float on mobile for battery */
+        animation: youtube-float-mobile 5s ease-in-out infinite;
         box-shadow:
-            10px 10px 30px rgba(0, 0, 0, 0.25),
-            -2px -2px 10px rgba(255, 255, 255, 0.03);
+            0 15px 35px rgba(0, 0, 0, 0.2),
+            0 0 0 1px rgba(255, 255, 255, 0.03);
+    }
+
+    @keyframes youtube-float-mobile {
+        0%, 100% { transform: perspective(1000px) translateY(0); }
+        50% { transform: perspective(1000px) translateY(-4px); }
     }
 
     .youtube-3d-container .embed--3d:hover lite-youtube {
-        transform: perspective(1000px) rotateY(0) rotateX(0) translateZ(10px);
+        transform: perspective(1000px) translateY(-6px) scale(1.01);
+        animation: none;
     }
 }
 
@@ -2306,10 +2323,15 @@ pre code {
 @media (prefers-reduced-motion: reduce) {
     .youtube-3d-container .embed--3d lite-youtube {
         transform: none;
+        animation: none;
+        /* Keep shadow for depth without motion */
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
     }
 
     .youtube-3d-container .embed--3d:hover lite-youtube {
         transform: none;
+        /* Subtle shadow change on hover */
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
     }
 
     .content-creator__showcase[data-animate="fade-up"] {

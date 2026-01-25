@@ -326,31 +326,41 @@
         }
 
         // Content Creator 3D YouTube embed animation
+        // Uses Zoom + Masking principles from motion research
         const youtube3dContainer = document.querySelector('.youtube-3d-container');
         if (youtube3dContainer) {
             const embed = youtube3dContainer.querySelector('lite-youtube');
             if (embed) {
-                gsap.fromTo(embed,
-                    {
-                        scale: 0.8,
-                        rotateY: -15,
-                        rotateX: 5,
-                        opacity: 0,
-                    },
-                    {
-                        scale: 1,
-                        rotateY: -5,
-                        rotateX: 2,
-                        opacity: 1,
-                        duration: 0.8,
-                        ease: 'power2.out',
-                        scrollTrigger: {
-                            trigger: youtube3dContainer,
-                            start: 'top 80%',
-                            toggleActions: 'play none none none',
-                        }
+                // Set initial state for mask + zoom reveal
+                gsap.set(embed, {
+                    scale: 0.6,
+                    clipPath: 'inset(15% 15% 15% 15% round 20px)',
+                    opacity: 0,
+                });
+
+                // Create timeline for coordinated entry animation
+                const tl = gsap.timeline({
+                    scrollTrigger: {
+                        trigger: youtube3dContainer,
+                        start: 'top 80%',
+                        toggleActions: 'play none none none',
                     }
-                );
+                });
+
+                // Zoom + mask reveal animation
+                tl.to(embed, {
+                    scale: 1,
+                    clipPath: 'inset(0% 0% 0% 0% round 12px)',
+                    opacity: 1,
+                    duration: 1.0,
+                    ease: 'power2.out',
+                })
+                // Add subtle "landing" bounce for dimension feel
+                .to(embed, {
+                    boxShadow: '0 25px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+                    duration: 0.4,
+                    ease: 'power1.out',
+                }, '-=0.2');
             }
         }
 
