@@ -1039,6 +1039,54 @@
         console.log('Chris Theme: Blog carousel initialized with', cards.length, 'cards');
     }
 
+    // Initialize blog showcase footer video behavior
+    function initShowcaseFooterVideos() {
+        const footer = document.querySelector('.blog-showcase-footer');
+        if (!footer) return;
+
+        const windsweptVideo = footer.querySelector('.windswept-bg');
+        const scrollVideo = footer.querySelector('.scroll-capture');
+
+        if (!windsweptVideo && !scrollVideo) return;
+
+        // Set slow-mo playback for windswept (cinematic effect)
+        if (windsweptVideo) {
+            windsweptVideo.playbackRate = 0.5;
+        }
+
+        // Lazy load and play/pause based on visibility
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Video is visible - play
+                    footer.classList.remove('is-paused');
+                    if (windsweptVideo) {
+                        windsweptVideo.play().catch(() => {});
+                    }
+                    if (scrollVideo) {
+                        scrollVideo.play().catch(() => {});
+                    }
+                } else {
+                    // Video is not visible - pause to save resources
+                    footer.classList.add('is-paused');
+                    if (windsweptVideo) {
+                        windsweptVideo.pause();
+                    }
+                    if (scrollVideo) {
+                        scrollVideo.pause();
+                    }
+                }
+            });
+        }, {
+            rootMargin: '100px', // Start loading slightly before visible
+            threshold: 0.1
+        });
+
+        observer.observe(footer);
+
+        console.log('Chris Theme: Showcase footer videos initialized');
+    }
+
     // Main initialization
     function init() {
         const lenis = initLenis();
@@ -1073,6 +1121,9 @@
 
         // Initialize blog carousel
         initBlogCarousel();
+
+        // Initialize showcase footer videos
+        initShowcaseFooterVideos();
     }
 
     // Initialize when DOM is ready

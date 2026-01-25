@@ -17,7 +17,7 @@
 
     <div class="hero__content">
         <h1 class="hero__title" data-animate="fade-up">CHRIS DILGER</h1>
-        <p class="hero__subtitle" data-animate="fade-up" data-animate-delay="0.1">Software Engineer</p>
+        <p class="hero__subtitle" data-animate="fade-up" data-animate-delay="0.1">Makes things work.</p>
         <div class="hero__cta" data-animate="fade-up" data-animate-delay="0.2">
             <a href="#recent-posts" class="btn btn--primary btn--large">View Work</a>
             <a href="/about/" class="btn btn--secondary btn--large">About Me</a>
@@ -36,8 +36,8 @@
     <div class="container">
         <header class="scene__header" data-animate="fade-up">
             <span class="scene__label">The Coder</span>
-            <h2 class="scene__title">Building Software</h2>
-            <p class="scene__description">Crafting elegant solutions with modern technologies.</p>
+            <h2 class="scene__title">Writes Code That Ships</h2>
+            <p class="scene__description">Fifteen years of putting things into production. Started in a computer shop in Far North Queensland. Now builds systems that handle the load.</p>
         </header>
 
         <div class="coder__content">
@@ -170,8 +170,8 @@
     <div class="container">
         <header class="scene__header" data-animate="fade-up">
             <span class="scene__label">8 Claude Codes</span>
-            <h2 class="scene__title">Parallel AI Development</h2>
-            <p class="scene__description">Orchestrating multiple Claude Code instances to tackle complex software projects simultaneously.</p>
+            <h2 class="scene__title">What I'm Building Right Now</h2>
+            <p class="scene__description">One agent writes specs. Three implement. Two research. One reviews. One deploys. It mostly works. I'm figuring out the rest live.</p>
         </header>
 
         <div class="terminal-grid" data-animate="stagger">
@@ -356,8 +356,8 @@
     <div class="container">
         <header class="scene__header" data-animate="fade-up">
             <span class="scene__label">The Speaker</span>
-            <h2 class="scene__title">Sharing Knowledge</h2>
-            <p class="scene__description">Passionate about sharing insights on software engineering, cloud architecture, and AI at conferences and meetups.</p>
+            <h2 class="scene__title">Talks About Weird Stuff</h2>
+            <p class="scene__description">Hardware wallets and why secure elements are a tradeoff. AI that morphs faces in real-time. Data governance nobody asked for. Cloud architectures that actually scale. I go deep.</p>
         </header>
 
         <div class="speaker__gallery" data-animate="stagger">
@@ -389,8 +389,8 @@
     <div class="container">
         <header class="scene__header" data-animate="fade-up">
             <span class="scene__label">The Content Creator</span>
-            <h2 class="scene__title">Sharing Through Video</h2>
-            <p class="scene__description">Technical tutorials, conference talks, and insights on software engineering and AI development.</p>
+            <h2 class="scene__title">Shows The Work</h2>
+            <p class="scene__description">Conference recordings, project walkthroughs, and the occasional deep-dive into something nobody else is covering.</p>
         </header>
 
         <div class="content-creator__showcase" data-animate="fade-up" data-animate-delay="0.2">
@@ -420,13 +420,13 @@
     </div>
 </section>
 
-{{!-- Scene: The Consultant --}}
-<section class="scene scene--consultant" id="consultant">
+{{!-- Scene: The Builder --}}
+<section class="scene scene--consultant" id="builder">
     <div class="container">
         <header class="scene__header" data-animate="fade-up">
-            <span class="scene__label">The Consultant</span>
-            <h2 class="scene__title">Building Data-Driven Solutions</h2>
-            <p class="scene__description">Four years at Versent plus healthcare and government projects, delivering real outcomes across Australian industries.</p>
+            <span class="scene__label">The Builder</span>
+            <h2 class="scene__title">Enterprise-Scale, Startup-Speed</h2>
+            <p class="scene__description">Banks, hospitals, schools, government. Big migrations, bigger architectures. Built systems that onboard millions. Moved on to weirder things.</p>
         </header>
 
         <div class="consultant__content">
@@ -501,8 +501,8 @@
     <div class="container">
         <header class="scene__header" data-animate="fade-up">
             <span class="scene__label">The Teacher</span>
-            <h2 class="scene__title">Growing Engineers</h2>
-            <p class="scene__description">Instructor at Data Engineer Camp, teaching the modern data stack and helping students build real-world data skills.</p>
+            <h2 class="scene__title">Grows Engineers</h2>
+            <p class="scene__description">Instructor at Data Engineer Camp. The modern data stack: dbt, Snowflake, Airflow. Turns beginners into people who ship pipelines.</p>
         </header>
 
         <div class="teacher__content">
@@ -775,5 +775,29 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </span>
         <span class="carousel-hint__text">Scroll or swipe</span>
+    </div>
+</section>
+
+{{!-- Blog Showcase Footer - Cinematic video blend effect --}}
+<section class="blog-showcase-footer" id="showcase-footer">
+    {{!-- Background: Windswept sand dune video --}}
+    <video class="windswept-bg" autoplay muted loop playsinline poster="{{asset 'images/windswept-poster.jpg'}}">
+        <source src="{{asset 'video/windswept.webm'}}" type="video/webm">
+        <source src="{{asset 'video/windswept.mp4'}}" type="video/mp4">
+    </video>
+
+    {{!-- Foreground: Captured scroll video of blog --}}
+    <video class="scroll-capture" autoplay muted loop playsinline>
+        <source src="{{asset 'video/scroll-capture.webm'}}" type="video/webm">
+        <source src="{{asset 'video/scroll-capture.mp4'}}" type="video/mp4">
+    </video>
+
+    {{!-- Gradient overlay for text readability --}}
+    <div class="blog-showcase-footer__overlay"></div>
+
+    {{!-- Content overlay --}}
+    <div class="blog-showcase-footer__content">
+        <p class="blog-showcase-footer__tagline">Explore the journey</p>
+        <a href="#all-posts" class="btn btn--primary btn--large">View All Posts</a>
     </div>
 </section>
