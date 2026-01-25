@@ -71,6 +71,16 @@
 
     const subscribers = new Set();
 
+    // Mouse-only fallback loop (runs when camera unavailable)
+    let mouseOnlyAnimId = null;
+    function mouseOnlyLoop() {
+        if (isRunning) return; // Camera took over
+        const finalX = Math.max(-1, Math.min(1, mouseX));
+        const finalY = Math.max(-1, Math.min(1, mouseY));
+        subscribers.forEach(cb => { try { cb(finalX, finalY); } catch (e) {} });
+        mouseOnlyAnimId = requestAnimationFrame(mouseOnlyLoop);
+    }
+
     if (CONFIG.MIX_MOUSE) {
         document.addEventListener('mousemove', (e) => {
             mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
@@ -193,6 +203,12 @@
                 video: { facingMode: 'user', width: { ideal: 64 }, height: { ideal: 64 } }
             });
 
+            // Stop mouse-only loop if running
+            if (mouseOnlyAnimId) {
+                cancelAnimationFrame(mouseOnlyAnimId);
+                mouseOnlyAnimId = null;
+            }
+
             video = document.createElement('video');
             video.srcObject = stream;
             video.autoplay = true;
@@ -210,6 +226,10 @@
             animationId = requestAnimationFrame(track);
             return true;
         } catch (err) {
+            // Camera failed - use mouse-only mode on desktop
+            if (CONFIG.MIX_MOUSE && !mouseOnlyAnimId) {
+                mouseOnlyAnimId = requestAnimationFrame(mouseOnlyLoop);
+            }
             return false;
         }
     }
@@ -229,12 +249,24 @@
     window.MotionInput = {
         subscribe(callback) {
             subscribers.add(callback);
-            if (subscribers.size === 1 && !isRunning) init();
+            if (subscribers.size === 1 && !isRunning) {
+                // Start mouse-only immediately while camera initializes
+                if (CONFIG.MIX_MOUSE && !mouseOnlyAnimId) {
+                    mouseOnlyAnimId = requestAnimationFrame(mouseOnlyLoop);
+                }
+                init();
+            }
         },
 
         unsubscribe(callback) {
             subscribers.delete(callback);
-            if (subscribers.size === 0 && isRunning) stop();
+            if (subscribers.size === 0) {
+                if (isRunning) stop();
+                if (mouseOnlyAnimId) {
+                    cancelAnimationFrame(mouseOnlyAnimId);
+                    mouseOnlyAnimId = null;
+                }
+            }
         },
 
         get enabled() { return permissionGranted && isRunning; },
@@ -254,7 +286,7 @@
         get isMobile() { return isMobile; }
     };
 
-    // Info button - shows when motion tracking is active
+    // Info button with live video preview
     function createInfoButton() {
         const btn = document.createElement('button');
         btn.className = 'motion-info-btn';
@@ -273,16 +305,6 @@
 
         const tooltip = document.createElement('div');
         tooltip.className = 'motion-info-tooltip';
-        tooltip.innerHTML = `
-            <strong>Motion Tracking</strong><br><br>
-            This site uses your camera to create parallax effects based on your movement.<br><br>
-            <em>How it works:</em><br>
-            • 32×32 pixel camera feed (ultra low-res)<br>
-            • Optical flow detects motion direction<br>
-            • One-Euro filter smooths the signal<br>
-            • No images are stored or transmitted<br><br>
-            ${isMobile ? '<small>Mobile: Full head tracking</small>' : '<small>Desktop: Camera + mouse mixed</small>'}
-        `;
         tooltip.style.cssText = `
             position: fixed; bottom: 70px; right: 20px;
             width: 280px; padding: 15px;
@@ -294,21 +316,95 @@
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
         `;
 
-        btn.addEventListener('mouseenter', () => {
+        // Preview canvas for live feed
+        const previewCanvas = document.createElement('canvas');
+        previewCanvas.width = 64;
+        previewCanvas.height = 64;
+        previewCanvas.style.cssText = `
+            width: 64px; height: 64px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            image-rendering: pixelated;
+            background: #111;
+        `;
+
+        // Position indicator
+        const indicator = document.createElement('div');
+        indicator.style.cssText = `
+            width: 64px; height: 64px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            background: #111;
+            position: relative;
+        `;
+        const dot = document.createElement('div');
+        dot.style.cssText = `
+            width: 8px; height: 8px;
+            background: #0f0;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 6px #0f0;
+            transition: left 0.05s, top 0.05s;
+        `;
+        indicator.appendChild(dot);
+
+        const previewRow = document.createElement('div');
+        previewRow.style.cssText = 'display: flex; gap: 10px; margin-bottom: 12px;';
+        previewRow.appendChild(previewCanvas);
+        previewRow.appendChild(indicator);
+
+        tooltip.appendChild(previewRow);
+        tooltip.innerHTML += `
+            <strong>Motion Tracking</strong><br><br>
+            • 32×32 camera feed (ultra low-res)<br>
+            • Optical flow detects motion<br>
+            • No images stored or transmitted<br><br>
+            <small>${isMobile ? 'Mobile: Full head tracking' : 'Desktop: Camera + mouse mixed'}</small>
+        `;
+
+        let previewAnimId = null;
+        function updatePreview() {
+            if (!video || !permissionGranted) return;
+            const pctx = previewCanvas.getContext('2d');
+            pctx.drawImage(video, 0, 0, 64, 64);
+
+            // Update position dot
+            const dotEl = indicator.querySelector('div');
+            if (dotEl) {
+                const pos = window.MotionInput.position;
+                dotEl.style.left = (50 + pos.x * 40) + '%';
+                dotEl.style.top = (50 + pos.y * 40) + '%';
+            }
+
+            if (tooltip.style.opacity === '1') {
+                previewAnimId = requestAnimationFrame(updatePreview);
+            }
+        }
+
+        function showTooltip() {
             tooltip.style.opacity = '1';
             tooltip.style.transform = 'translateY(0)';
-        });
+            updatePreview();
+        }
 
-        btn.addEventListener('mouseleave', () => {
+        function hideTooltip() {
             tooltip.style.opacity = '0';
             tooltip.style.transform = 'translateY(10px)';
-        });
+            if (previewAnimId) {
+                cancelAnimationFrame(previewAnimId);
+                previewAnimId = null;
+            }
+        }
+
+        btn.addEventListener('mouseenter', showTooltip);
+        btn.addEventListener('mouseleave', hideTooltip);
 
         btn.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            const isVisible = tooltip.style.opacity === '1';
-            tooltip.style.opacity = isVisible ? '0' : '1';
-            tooltip.style.transform = isVisible ? 'translateY(10px)' : 'translateY(0)';
+            if (tooltip.style.opacity === '1') hideTooltip();
+            else showTooltip();
         });
 
         const checkActive = setInterval(() => {
