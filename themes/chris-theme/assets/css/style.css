@@ -3334,6 +3334,14 @@ pre code {
     transition: transform var(--duration-slow) var(--ease-out);
 }
 
+/* Support for img thumbnails */
+img.project-card__thumbnail {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+}
+
 .project-card:hover .project-card__thumbnail {
     transform: scale(1.05);
 }
