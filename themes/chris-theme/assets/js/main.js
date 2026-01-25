@@ -259,29 +259,11 @@
             );
         }
 
-        // Terminal grid staggered animation (8 Claude Codes scene)
+        // Terminal grid - CHAOS TERMINAL ANIMATION (8 Claude Codes scene)
+        // Typing effect, rotating focus, never-ending loop, active chaos energy
         const terminalGrid = document.querySelector('.terminal-grid[data-animate="stagger"]');
         if (terminalGrid) {
-            const terminals = terminalGrid.querySelectorAll('.terminal');
-
-            gsap.fromTo(terminals,
-                {
-                    opacity: 0,
-                    y: 20,
-                },
-                {
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.5,
-                    ease: 'power2.out',
-                    stagger: 0.1, // 0.1s apart = 0.8s total for 8 terminals
-                    scrollTrigger: {
-                        trigger: terminalGrid,
-                        start: 'top 80%',
-                        toggleActions: 'play none none none',
-                    }
-                }
-            );
+            initChaosTerminals(terminalGrid);
         }
 
         // Code lines staggered animation (The Coder scene)
@@ -1124,6 +1106,352 @@
 
         // Initialize showcase footer videos
         initShowcaseFooterVideos();
+    }
+
+    // ========================================
+    // CHAOS TERMINALS - 8 Claude Codes Animation
+    // ========================================
+    // Typing effect, rotating focus, perpetual chaos loop
+    function initChaosTerminals(terminalGrid) {
+        const terminals = terminalGrid.querySelectorAll('.terminal');
+        if (terminals.length === 0) return;
+
+        // Terminal scripts - each terminal has unique content
+        const terminalScripts = [
+            { // Terminal 1: Feature
+                title: 'claude-1: spec',
+                lines: [
+                    { type: 'prompt', text: 'claude --task "write spec"' },
+                    { type: 'output', text: 'Reading requirements...' },
+                    { type: 'output', text: 'Analyzing codebase' },
+                    { type: 'output', text: 'Drafting PRD sections' },
+                    { type: 'success', text: '✓ Spec v2 complete' },
+                ]
+            },
+            { // Terminal 2: Implement 1
+                title: 'claude-2: impl',
+                lines: [
+                    { type: 'prompt', text: 'claude --task "auth module"' },
+                    { type: 'output', text: 'Creating middleware...' },
+                    { type: 'output', text: 'JWT validation logic' },
+                    { type: 'output', text: 'Session management' },
+                    { type: 'success', text: '✓ Auth shipped' },
+                ]
+            },
+            { // Terminal 3: Implement 2
+                title: 'claude-3: impl',
+                lines: [
+                    { type: 'prompt', text: 'claude --task "api routes"' },
+                    { type: 'output', text: 'Scaffolding endpoints' },
+                    { type: 'output', text: 'Adding validation' },
+                    { type: 'output', text: 'Rate limiting done' },
+                    { type: 'success', text: '✓ Routes complete' },
+                ]
+            },
+            { // Terminal 4: Implement 3
+                title: 'claude-4: impl',
+                lines: [
+                    { type: 'prompt', text: 'claude --task "ui components"' },
+                    { type: 'output', text: 'Building components' },
+                    { type: 'output', text: 'Styling dark mode' },
+                    { type: 'output', text: 'Adding animations' },
+                    { type: 'success', text: '✓ UI polished' },
+                ]
+            },
+            { // Terminal 5: Research 1
+                title: 'claude-5: research',
+                lines: [
+                    { type: 'prompt', text: 'claude --task "perf analysis"' },
+                    { type: 'output', text: 'Profiling hot paths' },
+                    { type: 'output', text: 'Memory leak found' },
+                    { type: 'output', text: 'Optimization plan' },
+                    { type: 'success', text: '✓ Report ready' },
+                ]
+            },
+            { // Terminal 6: Research 2
+                title: 'claude-6: research',
+                lines: [
+                    { type: 'prompt', text: 'claude --task "security audit"' },
+                    { type: 'output', text: 'Scanning deps...' },
+                    { type: 'output', text: 'OWASP checklist' },
+                    { type: 'output', text: '2 CVEs patched' },
+                    { type: 'success', text: '✓ Audit passed' },
+                ]
+            },
+            { // Terminal 7: Review
+                title: 'claude-7: review',
+                lines: [
+                    { type: 'prompt', text: 'claude --task "code review"' },
+                    { type: 'output', text: 'Reading 47 files...' },
+                    { type: 'output', text: 'Checking patterns' },
+                    { type: 'output', text: '12 suggestions' },
+                    { type: 'success', text: '✓ LGTM' },
+                ]
+            },
+            { // Terminal 8: Deploy
+                title: 'claude-8: deploy',
+                lines: [
+                    { type: 'prompt', text: 'claude --task "deploy prod"' },
+                    { type: 'output', text: 'Building bundle...' },
+                    { type: 'output', text: 'Running smoke tests' },
+                    { type: 'output', text: 'Deploying v2.3.1' },
+                    { type: 'success', text: '✓ Live!' },
+                ]
+            }
+        ];
+
+        // State tracking
+        let focusedTerminal = 0;
+        let isAnimating = false;
+        let animationPaused = false;
+        const terminalStates = terminals.length > 0 ? Array(terminals.length).fill(null).map(() => ({
+            lineIndex: 0,
+            charIndex: 0,
+            isTyping: false,
+            element: null,
+            scrollEl: null,
+            typedContent: []
+        })) : [];
+
+        // Initialize terminal DOM - clear existing content and prepare for animation
+        function initTerminalDOM() {
+            terminals.forEach((terminal, i) => {
+                const script = terminalScripts[i];
+                const titleEl = terminal.querySelector('.terminal__title');
+                const scrollEl = terminal.querySelector('.terminal__scroll');
+
+                if (titleEl) titleEl.textContent = script.title;
+                if (scrollEl) {
+                    scrollEl.innerHTML = '';
+                    scrollEl.style.animation = 'none'; // Disable CSS scroll animation
+                }
+
+                terminalStates[i].element = terminal;
+                terminalStates[i].scrollEl = scrollEl;
+
+                // Add focus class tracking
+                terminal.classList.remove('terminal--focused', 'terminal--active');
+            });
+        }
+
+        // Create a line element
+        function createLineElement(line, showCursor = false) {
+            const lineEl = document.createElement('code');
+            lineEl.className = 'terminal__line';
+
+            if (line.type === 'prompt') {
+                lineEl.innerHTML = `<span class="terminal__prompt">$</span> <span class="terminal__text"></span>${showCursor ? '<span class="terminal__cursor">▋</span>' : ''}`;
+            } else if (line.type === 'success') {
+                lineEl.className += ' terminal__line--success';
+                lineEl.innerHTML = `<span class="terminal__text"></span>`;
+            } else {
+                lineEl.className += ' terminal__line--output';
+                lineEl.innerHTML = `<span class="terminal__text"></span>`;
+            }
+
+            return lineEl;
+        }
+
+        // Type a single character
+        function typeChar(terminalIndex, callback) {
+            const state = terminalStates[terminalIndex];
+            const script = terminalScripts[terminalIndex];
+
+            if (!state.scrollEl || state.lineIndex >= script.lines.length) {
+                callback && callback();
+                return;
+            }
+
+            const currentLine = script.lines[state.lineIndex];
+            const textToType = currentLine.type === 'prompt' ? currentLine.text : currentLine.text;
+
+            // Create new line if needed
+            if (state.charIndex === 0) {
+                const lineEl = createLineElement(currentLine, terminalIndex === focusedTerminal);
+                state.scrollEl.appendChild(lineEl);
+                state.typedContent.push({ el: lineEl, line: currentLine });
+            }
+
+            const lineEl = state.typedContent[state.lineIndex]?.el;
+            const textSpan = lineEl?.querySelector('.terminal__text');
+
+            if (textSpan && state.charIndex < textToType.length) {
+                textSpan.textContent = textToType.substring(0, state.charIndex + 1);
+                state.charIndex++;
+
+                // Scroll to bottom
+                state.scrollEl.scrollTop = state.scrollEl.scrollHeight;
+
+                // Typing speed varies by terminal to create chaos
+                const baseSpeed = terminalIndex === focusedTerminal ? 35 : 15;
+                const variance = Math.random() * 20;
+
+                if (!animationPaused) {
+                    setTimeout(() => typeChar(terminalIndex, callback), baseSpeed + variance);
+                }
+            } else {
+                // Line complete, move to next
+                state.lineIndex++;
+                state.charIndex = 0;
+
+                // Remove cursor from completed line
+                const cursor = lineEl?.querySelector('.terminal__cursor');
+                if (cursor) cursor.remove();
+
+                // Brief pause between lines
+                const pauseDuration = currentLine.type === 'success' ? 800 : 200;
+                if (!animationPaused) {
+                    setTimeout(() => callback && callback(), pauseDuration);
+                }
+            }
+        }
+
+        // Type all lines for a terminal
+        function typeTerminal(terminalIndex, onComplete) {
+            const state = terminalStates[terminalIndex];
+            const script = terminalScripts[terminalIndex];
+
+            if (state.lineIndex >= script.lines.length) {
+                onComplete && onComplete();
+                return;
+            }
+
+            state.isTyping = true;
+            typeChar(terminalIndex, () => {
+                if (state.lineIndex < script.lines.length) {
+                    typeTerminal(terminalIndex, onComplete);
+                } else {
+                    state.isTyping = false;
+                    onComplete && onComplete();
+                }
+            });
+        }
+
+        // Set focused terminal with visual emphasis
+        function setFocusedTerminal(index) {
+            focusedTerminal = index;
+
+            terminals.forEach((terminal, i) => {
+                if (i === index) {
+                    terminal.classList.add('terminal--focused');
+                    terminal.classList.add('terminal--active');
+                    gsap.to(terminal, {
+                        scale: 1.02,
+                        boxShadow: '0 0 30px rgba(39, 201, 63, 0.3)',
+                        duration: 0.3,
+                        ease: 'power2.out'
+                    });
+                } else {
+                    terminal.classList.remove('terminal--focused');
+                    gsap.to(terminal, {
+                        scale: 1,
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                        duration: 0.3,
+                        ease: 'power2.out'
+                    });
+                }
+            });
+        }
+
+        // Reset a terminal for the next loop
+        function resetTerminal(terminalIndex) {
+            const state = terminalStates[terminalIndex];
+            if (state.scrollEl) {
+                state.scrollEl.innerHTML = '';
+            }
+            state.lineIndex = 0;
+            state.charIndex = 0;
+            state.isTyping = false;
+            state.typedContent = [];
+        }
+
+        // The chaos loop - runs forever, rotating focus
+        function chaosLoop() {
+            if (animationPaused) {
+                setTimeout(chaosLoop, 500);
+                return;
+            }
+
+            // Pick next terminal to focus on
+            const nextFocus = (focusedTerminal + 1) % terminals.length;
+            setFocusedTerminal(nextFocus);
+
+            // Reset the newly focused terminal
+            resetTerminal(nextFocus);
+
+            // Start typing on focused terminal
+            typeTerminal(nextFocus, () => {
+                // After typing completes, wait then rotate
+                setTimeout(chaosLoop, 1500 + Math.random() * 1000);
+            });
+
+            // Also advance other terminals at random intervals (background activity)
+            terminals.forEach((_, i) => {
+                if (i !== nextFocus && Math.random() > 0.5) {
+                    const state = terminalStates[i];
+                    if (!state.isTyping && state.lineIndex >= terminalScripts[i].lines.length) {
+                        // Reset and start background typing
+                        resetTerminal(i);
+                        setTimeout(() => {
+                            if (!animationPaused) typeTerminal(i);
+                        }, Math.random() * 2000);
+                    }
+                }
+            });
+        }
+
+        // Initial reveal animation then start chaos
+        function startAnimation() {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            // First, fade in all terminals with stagger
+            gsap.fromTo(terminals,
+                { opacity: 0, y: 30, scale: 0.95 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    duration: 0.6,
+                    ease: 'power2.out',
+                    stagger: 0.08,
+                    onComplete: () => {
+                        // Initialize DOM and start chaos loop
+                        initTerminalDOM();
+
+                        // Start all terminals with staggered delays for initial chaos
+                        terminals.forEach((_, i) => {
+                            setTimeout(() => {
+                                if (!animationPaused) typeTerminal(i);
+                            }, i * 400 + Math.random() * 500);
+                        });
+
+                        // Start focus rotation after initial typing settles
+                        setTimeout(chaosLoop, 3000);
+                    }
+                }
+            );
+        }
+
+        // ScrollTrigger to start/pause animation based on visibility
+        ScrollTrigger.create({
+            trigger: terminalGrid,
+            start: 'top 85%',
+            end: 'bottom 15%',
+            onEnter: () => {
+                animationPaused = false;
+                startAnimation();
+            },
+            onLeave: () => {
+                animationPaused = true;
+            },
+            onEnterBack: () => {
+                animationPaused = false;
+            },
+            onLeaveBack: () => {
+                animationPaused = true;
+            }
+        });
     }
 
     // Initialize when DOM is ready

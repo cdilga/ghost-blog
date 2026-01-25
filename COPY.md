@@ -32,7 +32,7 @@ No "Software Engineer". No explanation. They scroll to find out.
 
 **Label:** 8 Claude Codes
 **Title:** What I'm Building Right Now
-**Description:** One agent writes specs. Three implement. Two research. One reviews. One deploys. It mostly works. I'm figuring out the rest live.
+**Description:** One agent writes specs. Three implement. Two research. One reviews. One deploys. It mostly works. I'm figuring out the rest as we go.
 
 **Animation notes:** Text types out character by character. Input prompt ($ command) appears on only 1 terminal at a time. All 8 show activity but focus rotates. Massive loop - never stops. Convey active chaos of wrangling 8 agents.
 

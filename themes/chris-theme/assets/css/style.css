@@ -3182,6 +3182,106 @@ pre code {
     }
 }
 
+/* ----------------------------------------
+   Chaos Terminal Animation Styles
+   ---------------------------------------- */
+
+/* Focused terminal - active typing state */
+.terminal--focused {
+    border-color: rgba(39, 201, 63, 0.4);
+    z-index: 10;
+}
+
+.terminal--focused .terminal__header {
+    background: rgba(39, 201, 63, 0.1);
+}
+
+.terminal--focused .terminal__title {
+    color: #27c93f;
+}
+
+/* Unfocused terminals are slightly dimmed for contrast */
+.terminal:not(.terminal--focused) {
+    opacity: 0.75;
+}
+
+.terminal:not(.terminal--focused):hover {
+    opacity: 1;
+}
+
+/* Active indicator - small pulse on focused terminal's dots */
+.terminal--focused .terminal__dot--green {
+    animation: terminal-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes terminal-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(39, 201, 63, 0.4); }
+    50% { box-shadow: 0 0 8px 3px rgba(39, 201, 63, 0.6); }
+}
+
+/* Typing cursor - blinking block cursor */
+.terminal__cursor {
+    display: inline-block;
+    color: #27c93f;
+    animation: cursor-blink 0.8s step-end infinite;
+    margin-left: 1px;
+    font-weight: normal;
+}
+
+@keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Terminal text span for typing effect */
+.terminal__text {
+    display: inline;
+}
+
+/* Prompt line styling for active typing */
+.terminal--focused .terminal__prompt {
+    color: #27c93f;
+}
+
+/* Active terminal has slightly brighter text */
+.terminal--focused .terminal__line {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.terminal--focused .terminal__line--output {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Override hover scale when GSAP is controlling */
+.terminal--active {
+    transform: scale(1.02) !important;
+}
+
+/* Terminal scroll container - disable CSS animation when JS takes over */
+.terminal--active .terminal__scroll,
+.terminal--focused .terminal__scroll {
+    animation: none;
+    transform: none;
+    overflow-y: auto;
+}
+
+/* Hide scrollbar but keep functionality */
+.terminal__scroll::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+/* Mobile: reduce visual complexity of focus effect */
+@media (max-width: 640px) {
+    .terminal:not(.terminal--focused) {
+        opacity: 0.85;
+    }
+
+    .terminal--focused {
+        box-shadow: 0 0 20px rgba(39, 201, 63, 0.25) !important;
+    }
+}
+
 /* ==========================================================================
    17c3. Scene: The Consultant
    ========================================================================== */
