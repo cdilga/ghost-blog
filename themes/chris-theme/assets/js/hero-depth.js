@@ -259,21 +259,23 @@
         }
 
         try {
-            // Request camera permission
+            // Request camera permission - use 640x480 for reliable face detection
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: 'user',
-                    width: { ideal: 320 },
-                    height: { ideal: 240 }
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
                 }
             });
 
-            // Create hidden video element (needs real dimensions for face detection)
+            // Create video element matching the working test setup
             videoElement = document.createElement('video');
             videoElement.srcObject = stream;
             videoElement.autoplay = true;
             videoElement.playsInline = true;
             videoElement.muted = true;
+            videoElement.width = 640;
+            videoElement.height = 480;
             // DEBUG: Make video visible temporarily to verify it's working
             videoElement.style.cssText = 'position:fixed;bottom:10px;left:10px;width:160px;height:120px;opacity:1;pointer-events:none;z-index:9998;border:2px solid lime;';
             document.body.appendChild(videoElement);
@@ -345,59 +347,70 @@
             const debugEl = document.getElementById('face-debug');
             if (debugEl && faces.length > 0) {
                 const face = faces[0];
-                const box = face.box || face.boundingBox || {};
-                const xMin = box.xMin !== undefined ? box.xMin : (box.x || 0);
-                const yMin = box.yMin !== undefined ? box.yMin : (box.y || 0);
-                const w = box.width || 0;
-                const h = box.height || 0;
-                const cx = (xMin + w/2).toFixed(0);
-                const cy = (yMin + h/2).toFixed(0);
+                const vt = videoElement ? videoElement.currentTime.toFixed(1) : '-';
                 const bx = faceBaseline ? faceBaseline.x.toFixed(3) : '-';
                 const by = faceBaseline ? faceBaseline.y.toFixed(3) : '-';
-                const vt = videoElement ? videoElement.currentTime.toFixed(1) : '-';
-                debugEl.innerHTML = `Video: ${vt}s<br>Faces: ${faces.length}<br>Box: ${cx},${cy} (${w.toFixed(0)}x${h.toFixed(0)})<br>Baseline: ${bx},${by}<br>Target: ${targetX.toFixed(2)},${targetY.toFixed(2)}`;
+
+                // Show keypoint info if available
+                let posInfo = 'No keypoints';
+                if (face.keypoints && face.keypoints.length > 0) {
+                    const nose = face.keypoints.find(kp => kp.name === 'noseTip');
+                    if (nose) {
+                        posInfo = `Nose: ${nose.x.toFixed(0)},${nose.y.toFixed(0)}`;
+                    } else {
+                        posInfo = `KP0: ${face.keypoints[0].x.toFixed(0)},${face.keypoints[0].y.toFixed(0)}`;
+                    }
+                }
+
+                debugEl.innerHTML = `Video: ${vt}s | Faces: ${faces.length}<br>${posInfo}<br>Baseline: ${bx},${by}<br>Target: ${targetX.toFixed(2)},${targetY.toFixed(2)}`;
             } else if (debugEl) {
                 const vt = videoElement ? videoElement.currentTime.toFixed(1) : '-';
                 debugEl.innerHTML = `Video: ${vt}s<br>Faces: 0`;
             }
 
-            // Log periodically for debugging
+            // Log periodically for debugging - show RAW result
             const now = Date.now();
             if (now - lastFaceLog > 2000) {
-                console.log('Hero Depth: Frame', faceTrackingFrameCount,
-                    '- video.currentTime:', videoElement.currentTime.toFixed(2),
-                    '- Faces:', faces.length,
-                    faces.length > 0 ? JSON.stringify(faces[0].box) : '(none)');
+                console.log('Hero Depth: RAW face result:', JSON.stringify(faces[0], null, 2));
                 lastFaceLog = now;
             }
 
             if (faces.length > 0) {
                 const face = faces[0];
-                // TensorFlow.js face-detection returns boundingBox with xMin, yMin, width, height
-                // or box depending on version - handle both
-                const box = face.box || face.boundingBox;
 
-                if (!box) {
-                    console.log('Hero Depth: Face detected but no bounding box', JSON.stringify(face));
-                    requestAnimationFrame(trackFace);
-                    return;
+                // Use keypoints for more accurate tracking (noseTip is most stable)
+                // Keypoints: rightEye, leftEye, noseTip, mouthCenter, rightEarTragion, leftEarTragion
+                let faceCenterX, faceCenterY;
+
+                if (face.keypoints && face.keypoints.length > 0) {
+                    // Find noseTip or use center of eyes
+                    const noseTip = face.keypoints.find(kp => kp.name === 'noseTip');
+                    if (noseTip) {
+                        faceCenterX = noseTip.x / videoElement.videoWidth;
+                        faceCenterY = noseTip.y / videoElement.videoHeight;
+                    } else {
+                        // Fallback to first keypoint
+                        faceCenterX = face.keypoints[0].x / videoElement.videoWidth;
+                        faceCenterY = face.keypoints[0].y / videoElement.videoHeight;
+                    }
+                } else {
+                    // Fallback to bounding box
+                    const box = face.box || face.boundingBox;
+                    if (!box) {
+                        isDetecting = false;
+                        requestAnimationFrame(trackFace);
+                        return;
+                    }
+                    const xMin = box.xMin !== undefined ? box.xMin : box.x;
+                    const yMin = box.yMin !== undefined ? box.yMin : box.y;
+                    faceCenterX = (xMin + box.width / 2) / videoElement.videoWidth;
+                    faceCenterY = (yMin + box.height / 2) / videoElement.videoHeight;
                 }
-
-                // Handle both API formats (xMin/yMin vs x/y)
-                const xMin = box.xMin !== undefined ? box.xMin : box.x;
-                const yMin = box.yMin !== undefined ? box.yMin : box.y;
-                const width = box.width;
-                const height = box.height;
-
-                // Calculate face center (normalized 0-1)
-                const faceCenterX = (xMin + width / 2) / videoElement.videoWidth;
-                const faceCenterY = (yMin + height / 2) / videoElement.videoHeight;
 
                 // Set baseline on first detection
                 if (!faceBaseline) {
                     faceBaseline = { x: faceCenterX, y: faceCenterY };
                     console.log('Hero Depth: Face baseline set at', faceCenterX.toFixed(2), faceCenterY.toFixed(2));
-                    console.log('Hero Depth: Box raw values - xMin:', xMin, 'yMin:', yMin, 'width:', width, 'height:', height);
                 }
 
                 // Calculate delta (invert X because camera is mirrored)
