@@ -274,8 +274,8 @@
             videoElement.autoplay = true;
             videoElement.playsInline = true;
             videoElement.muted = true;
-            // Keep on-screen but invisible (off-screen positioning can cause browser throttling)
-            videoElement.style.cssText = 'position:fixed;top:0;left:0;width:320px;height:240px;opacity:0.001;pointer-events:none;z-index:-1;';
+            // DEBUG: Make video visible temporarily to verify it's working
+            videoElement.style.cssText = 'position:fixed;bottom:10px;left:10px;width:160px;height:120px;opacity:1;pointer-events:none;z-index:9998;border:2px solid lime;';
             document.body.appendChild(videoElement);
 
             await videoElement.play();
@@ -354,9 +354,11 @@
                 const cy = (yMin + h/2).toFixed(0);
                 const bx = faceBaseline ? faceBaseline.x.toFixed(3) : '-';
                 const by = faceBaseline ? faceBaseline.y.toFixed(3) : '-';
-                debugEl.innerHTML = `Faces: ${faces.length}<br>Box: ${cx},${cy} (${w.toFixed(0)}x${h.toFixed(0)})<br>Baseline: ${bx},${by}<br>Target: ${targetX.toFixed(2)},${targetY.toFixed(2)}<br>Frame: ${faceTrackingFrameCount}`;
+                const vt = videoElement ? videoElement.currentTime.toFixed(1) : '-';
+                debugEl.innerHTML = `Video: ${vt}s<br>Faces: ${faces.length}<br>Box: ${cx},${cy} (${w.toFixed(0)}x${h.toFixed(0)})<br>Baseline: ${bx},${by}<br>Target: ${targetX.toFixed(2)},${targetY.toFixed(2)}`;
             } else if (debugEl) {
-                debugEl.innerHTML = `Faces: 0<br>Frame: ${faceTrackingFrameCount}`;
+                const vt = videoElement ? videoElement.currentTime.toFixed(1) : '-';
+                debugEl.innerHTML = `Video: ${vt}s<br>Faces: 0`;
             }
 
             // Log periodically for debugging
