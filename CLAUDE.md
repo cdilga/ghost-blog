@@ -6,6 +6,7 @@
 
 - **Maintenance tasks**: See [MAINTENANCE_LIST.md](MAINTENANCE_LIST.md)
 - **Backup setup**: See [BACKUPS.md](BACKUPS.md)
+- **Image workflow**: See [THEME_IMAGES.md](THEME_IMAGES.md)
 - **SSH**: `ssh ghost-blog` (connects as root)
 - **Ghost CLI**: Must run as `chris` user, not root
 
@@ -33,6 +34,8 @@ npm test     # Run ALL tests
 | `npm run package` | Zip theme for upload |
 | `npm run test:validate` | Theme validation only |
 | `npm run test:smoke` | Smoke tests only |
+| `npm run images:optimize` | Optimize theme images |
+| `npm run images:dry-run` | Preview image optimization |
 
 ## Issue Tracking
 

@@ -1,0 +1,15 @@
+{
+  "name": "ghost-storage-optimized-local",
+  "version": "1.0.0",
+  "description": "Ghost storage adapter with Sharp-based image optimization",
+  "main": "index.js",
+  "keywords": ["ghost", "storage", "adapter", "image", "optimization", "sharp"],
+  "author": "Chris Dilger",
+  "license": "MIT",
+  "dependencies": {
+    "sharp": "^0.33.0"
+  },
+  "peerDependencies": {
+    "ghost-storage-base": ">=1.0.0"
+  }
+}
