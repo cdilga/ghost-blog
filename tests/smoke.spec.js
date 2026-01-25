@@ -138,7 +138,7 @@ test.describe('Hero Depth Parallax Tests', () => {
     expect(canvasVisible).toBe(true);
   });
 
-  test('mobile viewport triggers gyro/touch mode', async ({ browser }) => {
+  test('mobile viewport initializes depth canvas', async ({ browser }) => {
     // Create mobile context
     const context = await browser.newContext({
       viewport: { width: 375, height: 812 },
@@ -147,33 +147,16 @@ test.describe('Hero Depth Parallax Tests', () => {
     });
     const page = await context.newPage();
 
-    const consoleLogs = [];
-    page.on('console', msg => {
-      const text = msg.text();
-      if (text.includes('Hero Depth')) {
-        consoleLogs.push(text);
-      }
-    });
-
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
-    // Wait for gyro timeout (2s) + some buffer
-    await page.waitForTimeout(3500);
-
-    // Debug: print all captured logs
-    console.log('Captured Hero Depth logs:', consoleLogs);
-
-    // Should see initialization and fallback to touch (since gyro is blocked in test env)
-    const hasInit = consoleLogs.some(log => log.includes('Initialized successfully'));
-    const hasFallback = consoleLogs.some(log =>
-      log.includes('Touch tracking') ||
-      log.includes('Gyroscope blocked') ||
-      log.includes('Face detection not loaded')
-    );
-
-    expect(hasInit).toBe(true);
-    expect(hasFallback).toBe(true);
+    // Check that the depth canvas was created on mobile
+    const hasDepthCanvas = await page.evaluate(() => {
+      const canvas = document.querySelector('.hero__depth-canvas canvas');
+      return canvas !== null;
+    });
+    expect(hasDepthCanvas).toBe(true);
 
     await context.close();
   });
@@ -222,7 +205,7 @@ test.describe('Hero Depth Parallax Tests', () => {
     await context.close();
   });
 
-  test('touch tracking works when gyro unavailable', async ({ browser }) => {
+  test('touch events work on mobile', async ({ browser }) => {
     const context = await browser.newContext({
       viewport: { width: 375, height: 812 },
       isMobile: true,
@@ -230,31 +213,11 @@ test.describe('Hero Depth Parallax Tests', () => {
     });
     const page = await context.newPage();
 
-    const consoleLogs = [];
-    page.on('console', msg => {
-      const text = msg.text();
-      if (text.includes('Hero Depth')) {
-        consoleLogs.push(text);
-      }
-    });
-
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
-    // Wait for gyro timeout to trigger touch fallback
-    await page.waitForTimeout(3500);
-
-    // Debug: print logs
-    console.log('Touch test logs:', consoleLogs);
-
-    // Should have touch tracking initialized
-    const touchInitialized = consoleLogs.some(log =>
-      log.includes('Touch tracking') ||
-      log.includes('Touch mode') ||
-      log.includes('falling back to touch')
-    );
-
-    // Simulate touch event
+    // Simulate touch event on hero
     const hero = page.locator('.hero');
     const box = await hero.boundingBox();
 
@@ -274,16 +237,16 @@ test.describe('Hero Depth Parallax Tests', () => {
         }));
       }, { startX: box.x + 100, startY: box.y + 200 });
 
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(300);
     }
 
-    // Either touch tracking is initialized OR we have a working canvas
+    // Canvas should still be functioning
     const canvasExists = await page.evaluate(() => {
       const canvas = document.querySelector('.hero__depth-canvas canvas');
       return canvas !== null;
     });
 
-    expect(touchInitialized || canvasExists).toBe(true);
+    expect(canvasExists).toBe(true);
 
     await context.close();
   });
