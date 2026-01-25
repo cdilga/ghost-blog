@@ -333,3 +333,39 @@ test.describe('Hero Depth Parallax Tests', () => {
   });
 
 });
+
+test.describe('Content Quality Tests', () => {
+
+  test('no placeholder content', async ({ page }) => {
+    await page.goto('/');
+    const html = await page.content();
+
+    const placeholders = [
+      'dQw4w9WgXcQ',           // Rick Astley YouTube video ID
+      'Lorem ipsum',
+      'TODO',
+      'PLACEHOLDER',
+      'example.com',
+      'VIDEO_ID',
+      'Website scroll video goes here',
+    ];
+
+    for (const p of placeholders) {
+      expect(html, `Found placeholder content: "${p}"`).not.toContain(p);
+    }
+  });
+
+  test('internal links resolve', async ({ page }) => {
+    await page.goto('/');
+    const links = await page.locator('a[href^="/"]').all();
+
+    for (const link of links) {
+      const href = await link.getAttribute('href');
+      if (href && href !== '/') {
+        const resp = await page.request.get(href);
+        expect(resp.status(), `Link ${href} returned 404`).not.toBe(404);
+      }
+    }
+  });
+
+});
