@@ -79,7 +79,17 @@
         });
     }
 
-    // Initialize hero parallax animations
+    // ========================================
+    // SCROLL-CAPTURED CHOREOGRAPHY SYSTEM
+    // ========================================
+    // This is the FOUNDATION for all motion work.
+    // Key concepts:
+    //   - pin: true = page doesn't move during sequence
+    //   - scrub: 1 = scroll position drives animation progress
+    //   - Timeline = choreographed sequence of element animations
+    //
+    // See LANDING_PAGE_SKETCH.md "CRITICAL: Scroll-Captured Choreography"
+
     function initHeroParallax() {
         const hero = document.querySelector('.hero--parallax');
         if (!hero || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
@@ -87,89 +97,124 @@
             return;
         }
 
+        // Elements for choreography
+        const heroTitle = hero.querySelector('.hero__title');
+        const heroSubtitle = hero.querySelector('.hero__subtitle');
+        const heroCta = hero.querySelector('.hero__cta');
+        const heroContent = hero.querySelector('.hero__content');
+        const scrollIndicator = hero.querySelector('.hero__scroll-indicator');
+        const layers = hero.querySelectorAll('.hero__layer[data-parallax-speed]');
+
         // Parallax speed multiplier (reduce on mobile for better UX)
         const parallaxMultiplier = isMobile ? 0.5 : 1;
 
-        // Get parallax layers
-        const layers = hero.querySelectorAll('.hero__layer[data-parallax-speed]');
+        // Set initial states for choreographed elements
+        gsap.set([heroTitle, heroSubtitle, heroCta], {
+            opacity: 0,
+            y: 50
+        });
+        if (scrollIndicator) {
+            gsap.set(scrollIndicator, { opacity: 0, y: 20 });
+        }
 
+        // ========================================
+        // PINNED HERO CHOREOGRAPHY TIMELINE
+        // ========================================
+        // User scrolls ~2000px but hero stays PINNED
+        // Scroll progress (0-100%) maps to animation phases:
+        //   0-15%:  Title fades/slides in
+        //   15-30%: Subtitle fades/slides in
+        //   30-45%: CTA buttons fade/slide in
+        //   45-55%: Scroll indicator appears, hold moment
+        //   55-75%: Content holds (user reads)
+        //   75-100%: Hero slides UP and OUT, unpin
+
+        const heroTimeline = gsap.timeline({
+            scrollTrigger: {
+                trigger: hero,
+                start: 'top top',
+                end: '+=2000',  // 2000px of scroll = full sequence
+                pin: true,      // 🔥 NON-NEGOTIABLE: Page stays fixed
+                scrub: 1,       // 🔥 NON-NEGOTIABLE: Scroll drives timeline
+                anticipatePin: 1, // Smoother pin initiation
+            }
+        });
+
+        // Phase 1: Title enters (0% - 15% of scroll = 0-300px)
+        heroTimeline.to(heroTitle, {
+            opacity: 1,
+            y: 0,
+            duration: 0.15,
+            ease: 'power2.out'
+        });
+
+        // Phase 2: Subtitle enters (15% - 30% = 300-600px)
+        heroTimeline.to(heroSubtitle, {
+            opacity: 1,
+            y: 0,
+            duration: 0.15,
+            ease: 'power2.out'
+        });
+
+        // Phase 3: CTA buttons enter (30% - 45% = 600-900px)
+        heroTimeline.to(heroCta, {
+            opacity: 1,
+            y: 0,
+            duration: 0.15,
+            ease: 'power2.out'
+        });
+
+        // Phase 4: Scroll indicator appears (45% - 50% = 900-1000px)
+        if (scrollIndicator) {
+            heroTimeline.to(scrollIndicator, {
+                opacity: 1,
+                y: 0,
+                duration: 0.05,
+                ease: 'power2.out'
+            });
+        }
+
+        // Phase 5: Hold moment - let user absorb content (50% - 65% = 1000-1300px)
+        heroTimeline.to({}, { duration: 0.15 });
+
+        // Phase 6: Scroll indicator fades out (65% - 70% = 1300-1400px)
+        if (scrollIndicator) {
+            heroTimeline.to(scrollIndicator, {
+                opacity: 0,
+                duration: 0.05,
+                ease: 'power2.in'
+            });
+        }
+
+        // Phase 7: Hero content slides UP and exits (70% - 100% = 1400-2000px)
+        // Using clip-path for a "peel away" effect
+        heroTimeline.to(hero, {
+            clipPath: 'inset(0 0 100% 0)',
+            duration: 0.30,
+            ease: 'power2.inOut'
+        });
+
+        // ========================================
+        // PARALLAX LAYERS (runs alongside main timeline)
+        // ========================================
+        // Layers move at different speeds during the pinned sequence
         layers.forEach(layer => {
             const speed = parseFloat(layer.dataset.parallaxSpeed) * parallaxMultiplier;
             if (speed === 0) return;
 
             gsap.to(layer, {
-                yPercent: speed * -50, // Move up as user scrolls down
+                yPercent: speed * -30,
                 ease: 'none',
                 scrollTrigger: {
                     trigger: hero,
                     start: 'top top',
-                    end: 'bottom top',
+                    end: '+=2000',
                     scrub: true,
                 }
             });
         });
 
-        // Fade-up animations for hero content
-        const animatedElements = hero.querySelectorAll('[data-animate="fade-up"]');
-
-        // Hero content entrance animation (staggered, starts after mask reveal begins)
-        gsap.fromTo(animatedElements,
-            {
-                opacity: 0,
-                y: 30,
-            },
-            {
-                opacity: 1,
-                y: 0,
-                duration: 0.8,
-                ease: 'power2.out',
-                stagger: 0.1,
-                delay: 0.5, // Delay to let mask reveal start first
-            }
-        );
-
-        // Clip-path reveal on scroll with non-linear "peel away" easing
-        // The hero resists initially, then accelerates away for a designed feel
-        ScrollTrigger.create({
-            trigger: hero,
-            start: 'center top',
-            end: 'bottom top',
-            scrub: true,
-            onUpdate: (self) => {
-                // Apply easeInQuart: starts slow, accelerates at end
-                // This creates a "resists then peels away" feel
-                const progress = self.progress;
-                const eased = progress * progress * progress * progress; // easeInQuart
-
-                // Convert to clip-path percentage (0% = fully visible, 100% = fully clipped)
-                const clipPercent = eased * 100;
-                hero.style.clipPath = `inset(0 0 ${clipPercent}% 0)`;
-            },
-            onLeave: () => {
-                // Ensure fully clipped when scroll past
-                hero.style.clipPath = 'inset(0 0 100% 0)';
-            },
-            onEnterBack: () => {
-                // Reset when scrolling back
-                hero.style.clipPath = 'inset(0 0 0% 0)';
-            }
-        });
-
-        // Fade out scroll indicator when user starts scrolling
-        const scrollIndicator = hero.querySelector('.hero__scroll-indicator');
-        if (scrollIndicator) {
-            gsap.to(scrollIndicator, {
-                opacity: 0,
-                scrollTrigger: {
-                    trigger: hero,
-                    start: 'top top',
-                    end: '10% top',
-                    scrub: true,
-                }
-            });
-        }
-
-        console.log('Chris Theme: Hero parallax initialized');
+        console.log('Chris Theme: Hero scroll-captured choreography initialized (pin: true, scrub: 1)');
     }
 
     // Initialize scene scroll animations (Speaker, Projects, etc.)
@@ -1027,9 +1072,8 @@
         if (!footer) return;
 
         const windsweptVideo = footer.querySelector('.windswept-bg');
-        const scrollVideo = footer.querySelector('.scroll-capture');
 
-        if (!windsweptVideo && !scrollVideo) return;
+        if (!windsweptVideo) return;
 
         // Set slow-mo playback for windswept (cinematic effect)
         if (windsweptVideo) {
@@ -1042,21 +1086,11 @@
                 if (entry.isIntersecting) {
                     // Video is visible - play
                     footer.classList.remove('is-paused');
-                    if (windsweptVideo) {
-                        windsweptVideo.play().catch(() => {});
-                    }
-                    if (scrollVideo) {
-                        scrollVideo.play().catch(() => {});
-                    }
+                    windsweptVideo.play().catch(() => {});
                 } else {
                     // Video is not visible - pause to save resources
                     footer.classList.add('is-paused');
-                    if (windsweptVideo) {
-                        windsweptVideo.pause();
-                    }
-                    if (scrollVideo) {
-                        scrollVideo.pause();
-                    }
+                    windsweptVideo.pause();
                 }
             });
         }, {
