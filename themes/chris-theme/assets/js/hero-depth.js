@@ -288,6 +288,8 @@
             });
 
             console.log('Hero Depth: Video ready, dimensions:', videoElement.videoWidth, 'x', videoElement.videoHeight);
+            console.log('Hero Depth: Video readyState:', videoElement.readyState, '(4 = ready)');
+            console.log('Hero Depth: TensorFlow.js backend:', tf.getBackend());
 
             // Initialize face detector
             const model = faceDetection.SupportedModels.MediaPipeFaceDetector;
@@ -314,11 +316,17 @@
 
     let faceTrackingFrameCount = 0;
     let lastFaceLog = 0;
+    let isDetecting = false; // Prevent overlapping detections
 
     async function trackFace() {
         if (!faceTrackingActive || !faceDetector || !videoElement) return;
+        if (isDetecting) {
+            requestAnimationFrame(trackFace);
+            return;
+        }
 
         faceTrackingFrameCount++;
+        isDetecting = true;
 
         try {
             const faces = await faceDetector.estimateFaces(videoElement);
@@ -326,8 +334,10 @@
             // Log periodically for debugging
             const now = Date.now();
             if (now - lastFaceLog > 2000) {
-                console.log('Hero Depth: Frame', faceTrackingFrameCount, '- Faces detected:', faces.length,
-                    faces.length > 0 ? JSON.stringify(faces[0]) : '');
+                console.log('Hero Depth: Frame', faceTrackingFrameCount,
+                    '- video.currentTime:', videoElement.currentTime.toFixed(2),
+                    '- Faces:', faces.length,
+                    faces.length > 0 ? JSON.stringify(faces[0].box) : '(none)');
                 lastFaceLog = now;
             }
 
@@ -371,6 +381,8 @@
         } catch (error) {
             console.log('Hero Depth: Face tracking error -', error.message);
         }
+
+        isDetecting = false;
 
         // Continue tracking at ~30fps
         requestAnimationFrame(trackFace);
