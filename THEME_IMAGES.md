@@ -166,18 +166,49 @@ See `ghost/adapters/storage/optimized-local/README.md` for deployment instructio
 For existing Ghost images that weren't optimized on upload:
 
 ```bash
-# Preview changes
+# Preview file changes only
 npm run images:migrate:dry-run
 
-# Run migration (on server)
+# Create WebP files (no database changes)
 node scripts/migrate-existing-images.js --content-path /var/www/ghost/content/images
+
+# Full migration with database update (recommended)
+node scripts/migrate-existing-images.js \
+  --content-path /var/www/ghost/content/images \
+  --update-database \
+  --db-user your-mysql-user \
+  --db-password "your-password" \
+  --db-name ghost_prod
+
+# Preview full migration (dry-run with database)
+node scripts/migrate-existing-images.js \
+  --dry-run \
+  --update-database \
+  --db-user your-mysql-user \
+  --db-password "your-password"
 ```
+
+### Migration Options
+
+| Option | Description |
+|--------|-------------|
+| `--dry-run` | Preview changes without modifying anything |
+| `--content-path` | Path to Ghost's content/images directory |
+| `--update-database` | Update Ghost database to use WebP paths |
+| `--db-host` | MySQL host (default: 127.0.0.1) |
+| `--db-user` | MySQL username (required for database update) |
+| `--db-password` | MySQL password (required for database update) |
+| `--db-name` | MySQL database name (default: ghost_prod) |
+| `--verbose` | Show detailed output |
 
 ### Safety Notes
 
 - Non-destructive: originals are preserved
 - Idempotent: safe to run multiple times
 - Skips already-processed images
+- Database updates use safe REPLACE (not regex) - one path at a time
+- Always backup database before running with `--update-database`
+- Favicons/icons are NOT converted (kept as PNG for browser compatibility)
 
 ## Troubleshooting
 

@@ -2,27 +2,41 @@
 /**
  * Migration script for existing Ghost images
  *
- * Processes all existing images in Ghost's content/images directory
- * and generates optimized WebP versions + responsive sizes.
+ * Processes all existing images in Ghost's content/images directory,
+ * generates optimized WebP versions + responsive sizes, and optionally
+ * updates the Ghost database to reference the new WebP files.
  *
  * Usage:
  *   node scripts/migrate-existing-images.js [options]
  *
  * Options:
- *   --dry-run         Show what would be done without making changes
- *   --content-path    Override content/images path (default: /var/www/ghost/content/images)
- *   --verbose         Show detailed output
- *   --skip-responsive Skip generating responsive sizes (only create WebP)
+ *   --dry-run           Show what would be done without making changes
+ *   --content-path      Override content/images path (default: /var/www/ghost/content/images)
+ *   --verbose           Show detailed output
+ *   --skip-responsive   Skip generating responsive sizes (only create WebP)
+ *   --update-database   Update Ghost database to use WebP paths
+ *   --db-host           MySQL host (default: 127.0.0.1)
+ *   --db-user           MySQL user (required for --update-database)
+ *   --db-password       MySQL password (required for --update-database)
+ *   --db-name           MySQL database name (default: ghost_prod)
  *
  * Examples:
- *   # Dry run on production
+ *   # Dry run - preview file changes
  *   node scripts/migrate-existing-images.js --dry-run
  *
- *   # Run migration
- *   node scripts/migrate-existing-images.js
+ *   # Create WebP files only (no database changes)
+ *   node scripts/migrate-existing-images.js --content-path /var/www/ghost/content/images
  *
- *   # Custom path for local testing
- *   node scripts/migrate-existing-images.js --content-path ./test-images
+ *   # Full migration with database update
+ *   node scripts/migrate-existing-images.js \
+ *     --content-path /var/www/ghost/content/images \
+ *     --update-database \
+ *     --db-user ghost-508 \
+ *     --db-password "yourpassword" \
+ *     --db-name ghost_prod
+ *
+ *   # Dry run with database preview
+ *   node scripts/migrate-existing-images.js --dry-run --update-database --db-user ghost --db-password pass
  */
 
 const sharp = require('sharp');
@@ -41,12 +55,17 @@ const options = {
   dryRun: args.includes('--dry-run'),
   verbose: args.includes('--verbose'),
   skipResponsive: args.includes('--skip-responsive'),
-  contentPath: getArgValue('--content-path') || DEFAULT_CONTENT_PATH
+  updateDatabase: args.includes('--update-database'),
+  contentPath: getArgValue('--content-path') || DEFAULT_CONTENT_PATH,
+  dbHost: getArgValue('--db-host') || '127.0.0.1',
+  dbUser: getArgValue('--db-user'),
+  dbPassword: getArgValue('--db-password'),
+  dbName: getArgValue('--db-name') || 'ghost_prod'
 };
 
 function getArgValue(flag) {
   const index = args.indexOf(flag);
-  if (index !== -1 && args[index + 1]) {
+  if (index !== -1 && args[index + 1] && !args[index + 1].startsWith('--')) {
     return args[index + 1];
   }
   return null;
@@ -58,9 +77,13 @@ const stats = {
   processed: 0,
   skipped: 0,
   errors: 0,
+  dbUpdates: 0,
   totalSourceBytes: 0,
   totalOutputBytes: 0
 };
+
+// Track created WebP files for database update
+const createdWebpFiles = new Map(); // originalPath -> webpPath
 
 function log(message, level = 'info') {
   if (level === 'verbose' && !options.verbose) return;
@@ -83,6 +106,23 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+/**
+ * Convert an image path to its WebP equivalent
+ * /content/images/2019/09/photo.jpg -> /content/images/2019/09/photo.webp
+ */
+function toWebpPath(imagePath) {
+  return imagePath.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+}
+
+/**
+ * Check if a WebP version exists for a given image path
+ */
+function webpExists(contentPath, relativePath) {
+  const webpRelative = toWebpPath(relativePath);
+  const fullPath = path.join(contentPath, webpRelative);
+  return fs.existsSync(fullPath);
+}
+
 async function processImage(imagePath) {
   const dir = path.dirname(imagePath);
   const ext = path.extname(imagePath);
@@ -90,7 +130,10 @@ async function processImage(imagePath) {
   const sourceSize = fs.statSync(imagePath).size;
   stats.totalSourceBytes += sourceSize;
 
-  log(`Processing: ${path.relative(options.contentPath, imagePath)}`, 'progress');
+  // Track relative path for database update
+  const relativePath = path.relative(options.contentPath, imagePath);
+
+  log(`Processing: ${relativePath}`, 'progress');
 
   // Get image metadata to avoid enlarging small images
   let metadata;
@@ -115,6 +158,9 @@ async function processImage(imagePath) {
         stats.totalOutputBytes += outSize;
         log(`  Created: ${base}.webp (${formatBytes(outSize)})`, 'verbose');
         stats.processed++;
+
+        // Track for database update
+        createdWebpFiles.set(relativePath, toWebpPath(relativePath));
       } catch (err) {
         log(`  Error creating WebP: ${err.message}`, 'error');
         stats.errors++;
@@ -122,10 +168,13 @@ async function processImage(imagePath) {
     } else {
       log(`  Would create: ${base}.webp`, 'verbose');
       stats.processed++;
+      createdWebpFiles.set(relativePath, toWebpPath(relativePath));
     }
   } else {
     log(`  Skipped: ${base}.webp (exists)`, 'verbose');
     stats.skipped++;
+    // Still track existing WebP for database update
+    createdWebpFiles.set(relativePath, toWebpPath(relativePath));
   }
 
   // Generate responsive sizes
@@ -173,17 +222,141 @@ async function processImage(imagePath) {
   }
 }
 
+/**
+ * Update Ghost database to use WebP paths
+ * Uses safe, individual updates instead of regex replace
+ */
+async function updateDatabase() {
+  if (!options.dbUser || !options.dbPassword) {
+    log('Database credentials required for --update-database', 'error');
+    log('Use --db-user and --db-password flags', 'info');
+    process.exit(1);
+  }
+
+  let mysql;
+  try {
+    mysql = require('mysql2/promise');
+  } catch (err) {
+    log('mysql2 package required for database updates', 'error');
+    log('Run: npm install mysql2', 'info');
+    process.exit(1);
+  }
+
+  console.log('─'.repeat(50));
+  log('Updating Ghost database...', 'info');
+
+  const conn = await mysql.createConnection({
+    host: options.dbHost,
+    user: options.dbUser,
+    password: options.dbPassword,
+    database: options.dbName
+  });
+
+  try {
+    // Build list of path replacements we can safely make
+    // Only replace paths where we verified WebP exists
+    const replacements = [];
+
+    for (const [original, webp] of createdWebpFiles) {
+      // Skip if WebP doesn't actually exist (safety check)
+      const webpFullPath = path.join(options.contentPath, webp);
+      if (!options.dryRun && !fs.existsSync(webpFullPath)) {
+        log(`  Skipping ${original}: WebP not found`, 'verbose');
+        continue;
+      }
+
+      // Build the content/images paths (what's stored in DB)
+      const originalDbPath = `/content/images/${original}`;
+      const webpDbPath = `/content/images/${webp}`;
+
+      replacements.push({ original: originalDbPath, webp: webpDbPath });
+    }
+
+    log(`Found ${replacements.length} paths to update`, 'info');
+
+    // Update posts table - feature_image
+    for (const { original, webp } of replacements) {
+      const [result] = await conn.execute(
+        'UPDATE posts SET feature_image = REPLACE(feature_image, ?, ?) WHERE feature_image LIKE ?',
+        [original, webp, `%${original}%`]
+      );
+      if (result.affectedRows > 0) {
+        log(`  Updated feature_image: ${original} -> ${webp} (${result.affectedRows} rows)`, 'verbose');
+        stats.dbUpdates += result.affectedRows;
+      }
+    }
+
+    // Update posts table - html content
+    // Do this carefully, one path at a time
+    for (const { original, webp } of replacements) {
+      if (!options.dryRun) {
+        const [result] = await conn.execute(
+          'UPDATE posts SET html = REPLACE(html, ?, ?) WHERE html LIKE ?',
+          [original, webp, `%${original}%`]
+        );
+        if (result.affectedRows > 0) {
+          log(`  Updated html: ${path.basename(original)} (${result.affectedRows} rows)`, 'verbose');
+          stats.dbUpdates += result.affectedRows;
+        }
+      }
+    }
+
+    // Update posts table - mobiledoc content
+    for (const { original, webp } of replacements) {
+      if (!options.dryRun) {
+        const [result] = await conn.execute(
+          'UPDATE posts SET mobiledoc = REPLACE(mobiledoc, ?, ?) WHERE mobiledoc LIKE ?',
+          [original, webp, `%${original}%`]
+        );
+        if (result.affectedRows > 0) {
+          log(`  Updated mobiledoc: ${path.basename(original)} (${result.affectedRows} rows)`, 'verbose');
+          stats.dbUpdates += result.affectedRows;
+        }
+      }
+    }
+
+    // Update settings table - cover_image, og_image, twitter_image
+    // But NOT icon/favicon (keep as PNG for browser compatibility)
+    for (const { original, webp } of replacements) {
+      if (!options.dryRun) {
+        const [result] = await conn.execute(
+          `UPDATE settings SET value = REPLACE(value, ?, ?)
+           WHERE \`key\` IN ('cover_image', 'og_image', 'twitter_image')
+           AND value LIKE ?`,
+          [original, webp, `%${original}%`]
+        );
+        if (result.affectedRows > 0) {
+          log(`  Updated settings: ${path.basename(original)}`, 'verbose');
+          stats.dbUpdates += result.affectedRows;
+        }
+      }
+    }
+
+    if (options.dryRun) {
+      log(`Would update ${replacements.length} image paths in database`, 'info');
+    } else {
+      log(`Database updates complete: ${stats.dbUpdates} total changes`, 'success');
+    }
+
+  } finally {
+    await conn.end();
+  }
+}
+
 async function main() {
   console.log('\n\x1b[1mGhost Image Migration\x1b[0m');
   console.log('─'.repeat(50));
 
   if (options.dryRun) {
-    log('Dry run mode - no files will be modified', 'warning');
+    log('Dry run mode - no changes will be made', 'warning');
   }
 
   log(`Content path: ${options.contentPath}`, 'info');
   log(`Sizes: ${SIZES.join(', ')}`, 'info');
   log(`Quality: ${QUALITY}`, 'info');
+  if (options.updateDatabase) {
+    log(`Database: ${options.dbName}@${options.dbHost}`, 'info');
+  }
 
   // Check if content path exists
   if (!fs.existsSync(options.contentPath)) {
@@ -223,7 +396,7 @@ async function main() {
   log(`Found ${sourceFiles.length} source image(s) to process`, 'info');
   console.log('─'.repeat(50));
 
-  // Process each image
+  // Process each image (create WebP files)
   let count = 0;
   for (const file of sourceFiles) {
     count++;
@@ -242,7 +415,7 @@ async function main() {
     process.stdout.write('\r' + ' '.repeat(50) + '\r');
   }
 
-  // Summary
+  // Summary for file processing
   console.log('─'.repeat(50));
   log(`Found: ${stats.found} source image(s)`, 'info');
 
@@ -257,11 +430,12 @@ async function main() {
   }
 
   if (!options.dryRun && stats.totalSourceBytes > 0 && stats.totalOutputBytes > 0) {
-    const savings = stats.totalSourceBytes - stats.totalOutputBytes;
-    if (savings > 0) {
-      const percent = ((savings / stats.totalSourceBytes) * 100).toFixed(1);
-      log(`Storage used by new files: ${formatBytes(stats.totalOutputBytes)}`, 'info');
-    }
+    log(`Storage used by new files: ${formatBytes(stats.totalOutputBytes)}`, 'info');
+  }
+
+  // Update database if requested
+  if (options.updateDatabase) {
+    await updateDatabase();
   }
 
   console.log();
