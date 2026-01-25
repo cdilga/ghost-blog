@@ -80,15 +80,11 @@
         z-index: 1;
     `;
 
-    // Insert canvas container, hiding original images
+    // Insert canvas container (keep original image visible until PixiJS loads)
     heroLayer.appendChild(container);
-    heroImage.style.visibility = 'hidden';
 
-    // Hide sky layer - we only want dunes with depth effect
+    // Get sky layer reference for later hiding
     const skyLayer = document.querySelector('.hero__layer--sky');
-    if (skyLayer) {
-        skyLayer.style.visibility = 'hidden';
-    }
 
     // PixiJS setup
     let app = null;
@@ -149,6 +145,12 @@
             mainSprite.filters = [displacementFilter];
             app.stage.addChild(displacementSprite);
             app.stage.addChild(mainSprite);
+
+            // NOW hide the original images (PixiJS canvas is ready)
+            heroImage.style.visibility = 'hidden';
+            if (skyLayer) {
+                skyLayer.style.visibility = 'hidden';
+            }
 
             // Start animation loop
             app.ticker.add(animate);
