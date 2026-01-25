@@ -375,8 +375,16 @@
                 const deltaY = faceCenterY - faceBaseline.y;
 
                 // Scale to -1 to 1 range
-                targetX = Math.max(-1, Math.min(1, deltaX * CONFIG.faceTracking.sensitivity * 4));
-                targetY = Math.max(-1, Math.min(1, deltaY * CONFIG.faceTracking.sensitivity * 4));
+                const newTargetX = Math.max(-1, Math.min(1, deltaX * CONFIG.faceTracking.sensitivity * 4));
+                const newTargetY = Math.max(-1, Math.min(1, deltaY * CONFIG.faceTracking.sensitivity * 4));
+
+                // Log significant movements
+                if (Math.abs(newTargetX - targetX) > 0.05 || Math.abs(newTargetY - targetY) > 0.05) {
+                    console.log('Hero Depth: Target updated:', newTargetX.toFixed(2), newTargetY.toFixed(2));
+                }
+
+                targetX = newTargetX;
+                targetY = newTargetY;
             }
         } catch (error) {
             console.log('Hero Depth: Face tracking error -', error.message);
