@@ -192,8 +192,8 @@ async function main() {
     process.exit(1);
   }
 
-  // Find all source images
-  const patterns = ['**/*.jpg', '**/*.jpeg', '**/*.png'];
+  // Find all source images (include uppercase extensions)
+  const patterns = ['**/*.jpg', '**/*.jpeg', '**/*.png', '**/*.JPG', '**/*.JPEG', '**/*.PNG'];
   const ignorePatterns = [
     '**/size/**',      // Skip already-resized images
     '**/*.webp'        // Skip WebP files
