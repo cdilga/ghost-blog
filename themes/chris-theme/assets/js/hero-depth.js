@@ -495,12 +495,18 @@
         if (!heroSection) return;
 
         heroSection.addEventListener('mousemove', (e) => {
+            // Don't override if face tracking is active
+            if (activeInputMethod === 'face') return;
+
             const rect = heroSection.getBoundingClientRect();
             targetX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
             targetY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
         });
 
         heroSection.addEventListener('mouseleave', () => {
+            // Don't override if face tracking is active
+            if (activeInputMethod === 'face') return;
+
             targetX = 0;
             targetY = 0;
         });
