@@ -179,28 +179,65 @@
     }
 
     // =========================================================================
-    // Input Method Chain: Face Tracking -> Gyroscope (iOS) -> Mouse/Touch
+    // Input Method Chain: Mouse/Touch first (instant), then upgrade to Face/Gyro
     // =========================================================================
 
     async function initInputMethods() {
-        // Try face tracking first (works everywhere with camera permission)
-        if (CONFIG.faceTracking.enabled) {
-            const faceTrackingWorked = await initFaceTracking();
-            if (faceTrackingWorked) return;
-        }
-
-        // Try gyroscope on mobile (only works on iOS Safari with permission)
-        if (isMobile && CONFIG.gyroscope.enabled) {
-            const gyroWorked = await initGyroscope();
-            if (gyroWorked) return;
-        }
-
-        // Fall back to mouse/touch
+        // INSTANT: Start with mouse/touch immediately (no loading delay)
         if (isMobile) {
             initTouchTracking();
+            // Try gyroscope on iOS (will upgrade from touch if permission granted)
+            if (CONFIG.gyroscope.enabled) {
+                initGyroscope(); // Non-blocking, upgrades on success
+            }
         } else {
             initMouseTracking();
         }
+
+        // DEFERRED: Load face tracking in background (doesn't block first paint)
+        if (CONFIG.faceTracking.enabled) {
+            loadFaceTrackingAsync();
+        }
+    }
+
+    // Dynamically load TensorFlow.js after initial render
+    async function loadFaceTrackingAsync() {
+        // Wait for idle time to avoid blocking main thread
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => doLoadFaceTracking(), { timeout: 5000 });
+        } else {
+            setTimeout(doLoadFaceTracking, 2000);
+        }
+    }
+
+    async function doLoadFaceTracking() {
+        try {
+            console.log('Hero Depth: Loading face tracking libraries...');
+
+            // Dynamically load TensorFlow.js
+            await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js');
+            await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/face-detection@1.0.2/dist/face-detection.min.js');
+
+            console.log('Hero Depth: Face tracking libraries loaded');
+
+            // Now try to initialize face tracking
+            const success = await initFaceTracking();
+            if (success) {
+                console.log('Hero Depth: Upgraded to face tracking');
+            }
+        } catch (error) {
+            console.log('Hero Depth: Face tracking load failed -', error.message);
+        }
+    }
+
+    function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
     }
 
     // =========================================================================
@@ -240,12 +277,25 @@
 
             await videoElement.play();
 
+            // Wait for video dimensions to be available
+            await new Promise((resolve) => {
+                if (videoElement.videoWidth > 0 && videoElement.videoHeight > 0) {
+                    resolve();
+                } else {
+                    videoElement.addEventListener('loadedmetadata', resolve, { once: true });
+                }
+            });
+
+            console.log('Hero Depth: Video ready, dimensions:', videoElement.videoWidth, 'x', videoElement.videoHeight);
+
             // Initialize face detector
             const model = faceDetection.SupportedModels.MediaPipeFaceDetector;
+            console.log('Hero Depth: Creating face detector...');
             faceDetector = await faceDetection.createDetector(model, {
                 runtime: 'tfjs',
                 maxFaces: 1
             });
+            console.log('Hero Depth: Face detector created');
 
             faceTrackingActive = true;
             activeInputMethod = 'face';
@@ -260,24 +310,52 @@
         }
     }
 
+    let faceTrackingFrameCount = 0;
+    let lastFaceLog = 0;
+
     async function trackFace() {
         if (!faceTrackingActive || !faceDetector || !videoElement) return;
+
+        faceTrackingFrameCount++;
 
         try {
             const faces = await faceDetector.estimateFaces(videoElement);
 
+            // Log periodically for debugging
+            const now = Date.now();
+            if (now - lastFaceLog > 2000) {
+                console.log('Hero Depth: Frame', faceTrackingFrameCount, '- Faces detected:', faces.length,
+                    faces.length > 0 ? JSON.stringify(faces[0]) : '');
+                lastFaceLog = now;
+            }
+
             if (faces.length > 0) {
                 const face = faces[0];
-                const box = face.box;
+                // TensorFlow.js face-detection returns boundingBox with xMin, yMin, width, height
+                // or box depending on version - handle both
+                const box = face.box || face.boundingBox;
+
+                if (!box) {
+                    console.log('Hero Depth: Face detected but no bounding box', JSON.stringify(face));
+                    requestAnimationFrame(trackFace);
+                    return;
+                }
+
+                // Handle both API formats (xMin/yMin vs x/y)
+                const xMin = box.xMin !== undefined ? box.xMin : box.x;
+                const yMin = box.yMin !== undefined ? box.yMin : box.y;
+                const width = box.width;
+                const height = box.height;
 
                 // Calculate face center (normalized 0-1)
-                const faceCenterX = (box.xMin + box.width / 2) / videoElement.videoWidth;
-                const faceCenterY = (box.yMin + box.height / 2) / videoElement.videoHeight;
+                const faceCenterX = (xMin + width / 2) / videoElement.videoWidth;
+                const faceCenterY = (yMin + height / 2) / videoElement.videoHeight;
 
                 // Set baseline on first detection
                 if (!faceBaseline) {
                     faceBaseline = { x: faceCenterX, y: faceCenterY };
-                    console.log('Hero Depth: Face baseline set');
+                    console.log('Hero Depth: Face baseline set at', faceCenterX.toFixed(2), faceCenterY.toFixed(2));
+                    console.log('Hero Depth: Box raw values - xMin:', xMin, 'yMin:', yMin, 'width:', width, 'height:', height);
                 }
 
                 // Calculate delta (invert X because camera is mirrored)
@@ -289,7 +367,7 @@
                 targetY = Math.max(-1, Math.min(1, deltaY * CONFIG.faceTracking.sensitivity * 4));
             }
         } catch (error) {
-            // Silently continue on detection errors
+            console.log('Hero Depth: Face tracking error -', error.message);
         }
 
         // Continue tracking at ~30fps
@@ -298,83 +376,72 @@
 
     // =========================================================================
     // Gyroscope (iOS Safari only - Android browsers block this)
+    // Non-blocking: upgrades from touch if available
     // =========================================================================
 
     let gyroBaseline = null;
 
-    async function initGyroscope() {
-        return new Promise((resolve) => {
-            if (!('DeviceOrientationEvent' in window)) {
-                console.log('Hero Depth: DeviceOrientationEvent not supported');
-                resolve(false);
-                return;
-            }
+    function initGyroscope() {
+        if (!('DeviceOrientationEvent' in window)) {
+            console.log('Hero Depth: DeviceOrientationEvent not supported');
+            return;
+        }
 
-            // iOS 13+ requires permission via user gesture
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                // We need a user gesture - create a one-time touch handler
-                const requestOnTouch = async () => {
-                    document.removeEventListener('touchstart', requestOnTouch);
-                    try {
-                        const permission = await DeviceOrientationEvent.requestPermission();
-                        if (permission === 'granted') {
-                            attachGyroHandler();
-                            activeInputMethod = 'gyroscope';
-                            console.log('Hero Depth: Gyroscope enabled (iOS)');
-                            resolve(true);
-                        } else {
-                            console.log('Hero Depth: Gyroscope permission denied');
-                            resolve(false);
-                        }
-                    } catch (err) {
-                        console.log('Hero Depth: Gyroscope permission error');
-                        resolve(false);
+        // iOS 13+ requires permission via user gesture
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            // Wait for first touch to request permission (non-blocking)
+            const requestOnTouch = async () => {
+                document.removeEventListener('touchstart', requestOnTouch);
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission === 'granted') {
+                        attachGyroHandler();
+                        activeInputMethod = 'gyroscope';
+                        console.log('Hero Depth: Upgraded to gyroscope (iOS)');
+                    } else {
+                        console.log('Hero Depth: Gyroscope permission denied');
                     }
-                };
-
-                // iOS Safari - wait for first touch to request permission
-                document.addEventListener('touchstart', requestOnTouch, { once: true });
-                console.log('Hero Depth: Waiting for touch to request gyro permission (iOS)');
-
-                // Don't block - resolve false for now, touch handler will enable it later
-                resolve(false);
-                return;
-            }
-
-            // Android/other - try direct attach, but it's likely blocked
-            let validEvents = 0;
-            const handler = (e) => {
-                if (e.gamma !== null && e.beta !== null) {
-                    validEvents++;
-
-                    if (!gyroBaseline) {
-                        gyroBaseline = { beta: e.beta, gamma: e.gamma };
-                    }
-
-                    const deltaGamma = e.gamma - gyroBaseline.gamma;
-                    const deltaBeta = e.beta - gyroBaseline.beta;
-                    const tiltRange = 15;
-
-                    targetX = Math.max(-1, Math.min(1, deltaGamma / tiltRange)) * CONFIG.gyroscope.sensitivity;
-                    targetY = Math.max(-1, Math.min(1, deltaBeta / tiltRange)) * CONFIG.gyroscope.sensitivity;
+                } catch (err) {
+                    console.log('Hero Depth: Gyroscope permission error');
                 }
             };
 
-            window.addEventListener('deviceorientation', handler, { passive: true });
+            document.addEventListener('touchstart', requestOnTouch, { once: true });
+            console.log('Hero Depth: Tap to enable gyroscope (iOS)');
+            return;
+        }
 
-            // Check if we get valid data within 1.5 seconds
-            setTimeout(() => {
-                if (validEvents > 0) {
-                    activeInputMethod = 'gyroscope';
-                    console.log('Hero Depth: Gyroscope enabled');
-                    resolve(true);
-                } else {
-                    window.removeEventListener('deviceorientation', handler);
-                    console.log('Hero Depth: Gyroscope blocked (likely Brave/privacy browser)');
-                    resolve(false);
+        // Android/other - try direct attach, but likely blocked by Brave etc.
+        let validEvents = 0;
+        const handler = (e) => {
+            if (e.gamma !== null && e.beta !== null) {
+                validEvents++;
+
+                if (!gyroBaseline) {
+                    gyroBaseline = { beta: e.beta, gamma: e.gamma };
                 }
-            }, 1500);
-        });
+
+                const deltaGamma = e.gamma - gyroBaseline.gamma;
+                const deltaBeta = e.beta - gyroBaseline.beta;
+                const tiltRange = 15;
+
+                targetX = Math.max(-1, Math.min(1, deltaGamma / tiltRange)) * CONFIG.gyroscope.sensitivity;
+                targetY = Math.max(-1, Math.min(1, deltaBeta / tiltRange)) * CONFIG.gyroscope.sensitivity;
+            }
+        };
+
+        window.addEventListener('deviceorientation', handler, { passive: true });
+
+        // Check if we get valid data - if so, upgrade from touch
+        setTimeout(() => {
+            if (validEvents > 0) {
+                activeInputMethod = 'gyroscope';
+                console.log('Hero Depth: Upgraded to gyroscope');
+            } else {
+                window.removeEventListener('deviceorientation', handler);
+                console.log('Hero Depth: Gyroscope blocked (likely Brave/privacy browser)');
+            }
+        }, 1500);
     }
 
     function attachGyroHandler() {
