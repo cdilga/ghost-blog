@@ -109,10 +109,28 @@
             });
         });
 
+        // Hero mask entry reveal - dramatic expanding circle on page load
+        // Creates "wow" factor per LANDING_PAGE_SKETCH.md requirements
+        const heroBackground = hero.querySelector('.hero__background');
+        if (heroBackground) {
+            // Set initial state - hidden via clip-path
+            gsap.set(heroBackground, {
+                clipPath: 'circle(0% at 50% 50%)'
+            });
+
+            // Animate the reveal
+            gsap.to(heroBackground, {
+                clipPath: 'circle(150% at 50% 50%)', // 150% ensures full coverage
+                duration: 1.2,
+                ease: 'power2.out',
+                delay: 0.1, // Tiny delay for page paint
+            });
+        }
+
         // Fade-up animations for hero content
         const animatedElements = hero.querySelectorAll('[data-animate="fade-up"]');
 
-        // Hero content entrance animation (on page load)
+        // Hero content entrance animation (staggered, starts after mask reveal begins)
         gsap.fromTo(animatedElements,
             {
                 opacity: 0,
@@ -124,7 +142,7 @@
                 duration: 0.8,
                 ease: 'power2.out',
                 stagger: 0.1,
-                delay: 0.3, // Small delay for page load
+                delay: 0.5, // Delay to let mask reveal start first
             }
         );
 
