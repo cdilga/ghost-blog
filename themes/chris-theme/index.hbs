@@ -571,81 +571,6 @@
     </div>
 </section>
 
-{{!-- Dev Playground: Experimental .dev projects --}}
-<section class="dev-playground" id="playground">
-    <div class="container">
-        <header class="section-header" data-animate="fade-up">
-            <span class="section-label">Experiments</span>
-            <h2 class="section-title">Dev Playground</h2>
-            <p class="section-subtitle">Works in progress and weekend experiments</p>
-        </header>
-
-        <div class="playground-grid">
-            <a href="https://bitcoin.dev" target="_blank" rel="noopener noreferrer" class="playground-tile" data-animate="fade-up" data-animate-delay="0.1" aria-label="Visit bitcoin.dev (Active)">
-                <span class="playground-tile__icon" aria-hidden="true">₿</span>
-                <span class="playground-tile__domain">bitcoin.dev</span>
-                <span class="playground-tile__status">Active</span>
-            </a>
-            <a href="https://remotion.dilger.dev" target="_blank" rel="noopener noreferrer" class="playground-tile" data-animate="fade-up" data-animate-delay="0.15" aria-label="Visit remotion.dilger.dev (Work in progress)">
-                <span class="playground-tile__icon" aria-hidden="true">🎬</span>
-                <span class="playground-tile__domain">remotion.dilger.dev</span>
-                <span class="playground-tile__status">WIP</span>
-            </a>
-            <a href="https://beads.dilger.dev" target="_blank" rel="noopener noreferrer" class="playground-tile" data-animate="fade-up" data-animate-delay="0.2" aria-label="Visit beads.dilger.dev (Active)">
-                <span class="playground-tile__icon" aria-hidden="true">🔗</span>
-                <span class="playground-tile__domain">beads.dilger.dev</span>
-                <span class="playground-tile__status">Active</span>
-            </a>
-            <a href="https://mcp.dilger.dev" target="_blank" rel="noopener noreferrer" class="playground-tile" data-animate="fade-up" data-animate-delay="0.25" aria-label="Visit mcp.dilger.dev (Work in progress)">
-                <span class="playground-tile__icon" aria-hidden="true">🔌</span>
-                <span class="playground-tile__domain">mcp.dilger.dev</span>
-                <span class="playground-tile__status">WIP</span>
-            </a>
-        </div>
-    </div>
-</section>
-
-{{!-- Infinite Blog Carousel Section --}}
-<section class="carousel-section" id="all-posts">
-    <div class="carousel-section__header">
-        <h2 class="carousel-section__title" data-animate="fade-up">All My Writing</h2>
-        <p class="carousel-section__subtitle" data-animate="fade-up" data-animate-delay="0.1">Scroll to explore articles</p>
-    </div>
-
-    {{!-- Carousel Container with Edge Fades --}}
-    <div class="carousel-container">
-        <div class="carousel-track" role="list" aria-label="Blog posts carousel">
-            {{#foreach posts}}
-            <article class="carousel-card" role="listitem">
-                <a href="{{url}}" class="carousel-card__link">
-                    {{#if feature_image}}
-                    <div class="carousel-card__image" style="background-image: url({{feature_image}})"></div>
-                    {{else}}
-                    <div class="carousel-card__image carousel-card__image--placeholder">
-                        <span class="carousel-card__placeholder-icon" aria-hidden="true">📝</span>
-                    </div>
-                    {{/if}}
-                    <div class="carousel-card__content">
-                        <time class="carousel-card__date" datetime="{{date format="YYYY-MM-DD"}}">{{date format="D MMM YYYY"}}</time>
-                        <h3 class="carousel-card__title">{{title}}</h3>
-                        <p class="carousel-card__excerpt">{{excerpt words="20"}}</p>
-                    </div>
-                </a>
-            </article>
-            {{/foreach}}
-        </div>
-    </div>
-
-    {{!-- Carousel Navigation Hint --}}
-    <div class="carousel-hint" aria-hidden="true">
-        <span class="carousel-hint__arrows">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </span>
-        <span class="carousel-hint__text">Scroll or swipe</span>
-    </div>
-</section>
-
 {{!-- Top Articles Section (Featured layout + reduced motion fallback) --}}
 <section class="top-articles" id="recent-posts">
     <div class="container">
@@ -737,7 +662,77 @@
     </div>
 </section>
 
-{{!-- Pagination --}}
-<div class="container pagination-container">
-    {{pagination}}
-</div>
+{{!-- Dev Playground: Experimental .dev projects --}}
+<section class="dev-playground" id="playground">
+    <div class="container">
+        <header class="section-header" data-animate="fade-up">
+            <span class="section-label">Experiments</span>
+            <h2 class="section-title">Dev Playground</h2>
+            <p class="section-subtitle">Works in progress and weekend experiments</p>
+        </header>
+
+        <div class="playground-grid">
+            <a href="https://bitcoin.dev" target="_blank" rel="noopener noreferrer" class="playground-tile" data-animate="fade-up" data-animate-delay="0.1" aria-label="Visit bitcoin.dev (Active)">
+                <span class="playground-tile__icon" aria-hidden="true">₿</span>
+                <span class="playground-tile__domain">bitcoin.dev</span>
+                <span class="playground-tile__status">Active</span>
+            </a>
+            <a href="https://remotion.dilger.dev" target="_blank" rel="noopener noreferrer" class="playground-tile" data-animate="fade-up" data-animate-delay="0.15" aria-label="Visit remotion.dilger.dev (Work in progress)">
+                <span class="playground-tile__icon" aria-hidden="true">🎬</span>
+                <span class="playground-tile__domain">remotion.dilger.dev</span>
+                <span class="playground-tile__status">WIP</span>
+            </a>
+            <a href="https://beads.dilger.dev" target="_blank" rel="noopener noreferrer" class="playground-tile" data-animate="fade-up" data-animate-delay="0.2" aria-label="Visit beads.dilger.dev (Active)">
+                <span class="playground-tile__icon" aria-hidden="true">🔗</span>
+                <span class="playground-tile__domain">beads.dilger.dev</span>
+                <span class="playground-tile__status">Active</span>
+            </a>
+            <a href="https://mcp.dilger.dev" target="_blank" rel="noopener noreferrer" class="playground-tile" data-animate="fade-up" data-animate-delay="0.25" aria-label="Visit mcp.dilger.dev (Work in progress)">
+                <span class="playground-tile__icon" aria-hidden="true">🔌</span>
+                <span class="playground-tile__domain">mcp.dilger.dev</span>
+                <span class="playground-tile__status">WIP</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+{{!-- Infinite Blog Carousel Section (FINAL section before footer) --}}
+<section class="carousel-section" id="all-posts">
+    <div class="carousel-section__header">
+        <h2 class="carousel-section__title" data-animate="fade-up">All My Writing</h2>
+        <p class="carousel-section__subtitle" data-animate="fade-up" data-animate-delay="0.1">Scroll to explore articles</p>
+    </div>
+
+    {{!-- Carousel Container with Edge Fades --}}
+    <div class="carousel-container">
+        <div class="carousel-track" role="list" aria-label="Blog posts carousel">
+            {{#foreach posts}}
+            <article class="carousel-card" role="listitem">
+                <a href="{{url}}" class="carousel-card__link">
+                    {{#if feature_image}}
+                    <div class="carousel-card__image" style="background-image: url({{feature_image}})"></div>
+                    {{else}}
+                    <div class="carousel-card__image carousel-card__image--placeholder">
+                        <span class="carousel-card__placeholder-icon" aria-hidden="true">📝</span>
+                    </div>
+                    {{/if}}
+                    <div class="carousel-card__content">
+                        <time class="carousel-card__date" datetime="{{date format="YYYY-MM-DD"}}">{{date format="D MMM YYYY"}}</time>
+                        <h3 class="carousel-card__title">{{title}}</h3>
+                        <p class="carousel-card__excerpt">{{excerpt words="20"}}</p>
+                    </div>
+                </a>
+            </article>
+            {{/foreach}}
+        </div>
+    </div>
+
+    {{!-- Carousel Navigation Hint --}}
+    <div class="carousel-hint" aria-hidden="true">
+        <span class="carousel-hint__arrows">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </span>
+        <span class="carousel-hint__text">Scroll or swipe</span>
+    </div>
+</section>
