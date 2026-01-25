@@ -355,8 +355,8 @@
         previewRow.appendChild(previewCanvas);
         previewRow.appendChild(indicator);
 
-        tooltip.appendChild(previewRow);
-        tooltip.innerHTML += `
+        const infoText = document.createElement('div');
+        infoText.innerHTML = `
             <strong>Motion Tracking</strong><br><br>
             • 32×32 camera feed (ultra low-res)<br>
             • Optical flow detects motion<br>
@@ -364,19 +364,30 @@
             <small>${isMobile ? 'Mobile: Full head tracking' : 'Desktop: Camera + mouse mixed'}</small>
         `;
 
+        tooltip.appendChild(previewRow);
+        tooltip.appendChild(infoText);
+
         let previewAnimId = null;
         function updatePreview() {
-            if (!video || !permissionGranted) return;
             const pctx = previewCanvas.getContext('2d');
-            pctx.drawImage(video, 0, 0, 64, 64);
+
+            // Draw video feed if available
+            if (video && isRunning) {
+                pctx.drawImage(video, 0, 0, 64, 64);
+            } else {
+                // Show placeholder when no camera
+                pctx.fillStyle = '#222';
+                pctx.fillRect(0, 0, 64, 64);
+                pctx.fillStyle = '#666';
+                pctx.font = '10px sans-serif';
+                pctx.textAlign = 'center';
+                pctx.fillText('no cam', 32, 36);
+            }
 
             // Update position dot
-            const dotEl = indicator.querySelector('div');
-            if (dotEl) {
-                const pos = window.MotionInput.position;
-                dotEl.style.left = (50 + pos.x * 40) + '%';
-                dotEl.style.top = (50 + pos.y * 40) + '%';
-            }
+            const pos = window.MotionInput.position;
+            dot.style.left = (50 + pos.x * 40) + '%';
+            dot.style.top = (50 + pos.y * 40) + '%';
 
             if (tooltip.style.opacity === '1') {
                 previewAnimId = requestAnimationFrame(updatePreview);
@@ -407,6 +418,7 @@
             else showTooltip();
         });
 
+        // Show button only when camera is active
         const checkActive = setInterval(() => {
             if (permissionGranted) {
                 btn.style.opacity = '1';
