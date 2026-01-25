@@ -164,17 +164,15 @@ test.describe('Hero Depth Parallax Tests', () => {
     // Debug: print all captured logs
     console.log('Captured Hero Depth logs:', consoleLogs);
 
-    // Should see gyro init attempt
-    const hasGyroInit = consoleLogs.some(log => log.includes('initGyroscope called'));
-
-    // Should see fallback (either touch tracking enabled or no gyro events)
+    // Should see initialization and fallback to touch (since gyro is blocked in test env)
+    const hasInit = consoleLogs.some(log => log.includes('Initialized successfully'));
     const hasFallback = consoleLogs.some(log =>
       log.includes('Touch tracking') ||
-      log.includes('No gyro events') ||
-      log.includes('falling back')
+      log.includes('Gyroscope blocked') ||
+      log.includes('Face detection not loaded')
     );
 
-    expect(hasGyroInit).toBe(true);
+    expect(hasInit).toBe(true);
     expect(hasFallback).toBe(true);
 
     await context.close();

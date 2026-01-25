@@ -22,12 +22,16 @@
 - **Transitions**: Eased, natural feeling (no linear/robotic motion)
 - **No layout thrashing**: Avoid reflows during animations
 
-### Loading
+### Loading (ULTRA OPTIMIZED)
+- **First Paint**: INSTANT - milliseconds, not seconds. Static content displays immediately.
 - **LCP**: < 2.5s (Largest Contentful Paint)
 - **FID**: < 100ms (First Input Delay)
 - **CLS**: < 0.1 (Cumulative Layout Shift)
-- **Progressive enhancement**: Core content works without JS, animations enhance
+- **Progressive enhancement**: Core content works without JS, fancy features enhance
 - **Lazy loading**: Below-fold content, videos, heavy assets
+- **Priority loading**: Features load in scroll order (hero first, footer last)
+- **Non-blocking**: All fancy features (face tracking, animations, etc.) load async/deferred
+- **Critical CSS**: Inline above-fold styles, defer the rest
 
 ### Graceful Degradation
 - Reduce motion for `prefers-reduced-motion`
