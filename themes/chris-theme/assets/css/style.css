@@ -2655,7 +2655,10 @@ pre code {
    ========================================================================== */
 
 .scene--coder {
-    background: var(--color-bg);
+    /* Transparent to show unified depth-map canvas beneath */
+    background: transparent;
+    /* Position above the fixed depth-map canvas (z-index: 0) */
+    z-index: 1;
 }
 
 .coder__content {
