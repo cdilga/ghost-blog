@@ -46,7 +46,21 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          # Retry ssh-keyscan to handle transient connection issues
+          for i in 1 2 3 4 5; do
+            if ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null; then
+              break
+            fi
+            echo "ssh-keyscan attempt $i failed, retrying in 5s..."
+            sleep 5
+          done
+          # Configure SSH to retry on connection failures
+          cat >> ~/.ssh/config << EOF
+          Host *
+            ServerAliveInterval 60
+            ConnectionAttempts 3
+            ConnectTimeout 30
+          EOF
 
       - name: Backup current theme
         run: |
@@ -73,9 +87,15 @@ jobs:
           "
 
   deploy-storage-adapter:
-    needs: test
+    # Run after deploy-theme to avoid parallel SSH connections hitting MaxStartups
+    needs: [test, deploy-theme]
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'ghost/adapters/') || github.event_name == 'workflow_dispatch'
+    # Run if adapter changed, OR on workflow_dispatch, but skip if deploy-theme was skipped (not just failed)
+    if: |
+      always() &&
+      (needs.test.result == 'success') &&
+      (needs.deploy-theme.result == 'success' || needs.deploy-theme.result == 'skipped') &&
+      (contains(github.event.head_commit.modified, 'ghost/adapters/') || github.event_name == 'workflow_dispatch')
     steps:
       - uses: actions/checkout@v4
 
@@ -84,7 +104,21 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          # Retry ssh-keyscan to handle transient connection issues
+          for i in 1 2 3 4 5; do
+            if ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null; then
+              break
+            fi
+            echo "ssh-keyscan attempt $i failed, retrying in 5s..."
+            sleep 5
+          done
+          # Configure SSH to retry on connection failures
+          cat >> ~/.ssh/config << EOF
+          Host *
+            ServerAliveInterval 60
+            ConnectionAttempts 3
+            ConnectTimeout 30
+          EOF
 
       - name: Deploy storage adapter
         run: |
@@ -142,7 +176,21 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          # Retry ssh-keyscan to handle transient connection issues
+          for i in 1 2 3 4 5; do
+            if ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null; then
+              break
+            fi
+            echo "ssh-keyscan attempt $i failed, retrying in 5s..."
+            sleep 5
+          done
+          # Configure SSH to retry on connection failures
+          cat >> ~/.ssh/config << EOF
+          Host *
+            ServerAliveInterval 60
+            ConnectionAttempts 3
+            ConnectTimeout 30
+          EOF
 
       - name: Restart Ghost
         run: |
