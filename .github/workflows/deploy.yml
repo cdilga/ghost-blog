@@ -108,6 +108,45 @@ jobs:
             chown -R ghost:ghost ${{ env.GHOST_PATH }}/content/adapters
           "
 
+      - name: Configure Ghost storage
+        run: |
+          ssh -i ~/.ssh/deploy_key root@${{ secrets.VPS_HOST }} '
+            CONFIG_FILE="${{ env.GHOST_PATH }}/config.production.json"
+            STORAGE_PATH="${{ env.GHOST_PATH }}/content/images"
+
+            # Backup current config
+            cp "$CONFIG_FILE" "$CONFIG_FILE.backup"
+
+            # Add storage adapter config using Python
+            python3 << EOF
+import json
+
+config_file = "'"$CONFIG_FILE"'"
+storage_path = "'"$STORAGE_PATH"'"
+
+with open(config_file, "r") as f:
+    config = json.load(f)
+
+config["storage"] = {
+    "active": "optimized-local",
+    "optimized-local": {
+        "storagePath": storage_path,
+        "sizes": [600, 1000, 1600, 2000],
+        "quality": 82,
+        "keepOriginal": True
+    }
+}
+
+with open(config_file, "w") as f:
+    json.dump(config, f, indent=2)
+
+print("Storage adapter configured successfully")
+EOF
+
+            # Fix ownership
+            chown ghost:ghost "$CONFIG_FILE"
+          '
+
   restart-ghost:
     needs: [deploy-theme, deploy-storage-adapter]
     runs-on: ubuntu-latest
