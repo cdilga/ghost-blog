@@ -21,38 +21,36 @@
         // Transition zone: 20% of viewport width for seam coverage
         transitionWidth: 0.22,
 
-        // Blob shape settings
+        // Blob shape settings - all extend LEFT from edge to create unified front
         blobs: {
-            // Large background blobs - wide coverage
-            large: { count: 5, radiusMin: 0.18, radiusMax: 0.30, vertexCount: 24 },
-            // Medium blobs - fill gaps
-            medium: { count: 8, radiusMin: 0.10, radiusMax: 0.18, vertexCount: 18 },
-            // Small accent blobs - detail
-            small: { count: 12, radiusMin: 0.05, radiusMax: 0.10, vertexCount: 14 },
-            // Edge blobs - tight seam coverage
-            edge: { count: 18, radiusMin: 0.06, radiusMax: 0.12, vertexCount: 16 }
+            // Large blobs - deep fingers extending left
+            large: { count: 8, radiusMin: 0.12, radiusMax: 0.22, vertexCount: 20 },
+            // Medium blobs - fill coverage
+            medium: { count: 12, radiusMin: 0.08, radiusMax: 0.14, vertexCount: 16 },
+            // Small accent blobs - edge detail
+            small: { count: 16, radiusMin: 0.04, radiusMax: 0.08, vertexCount: 12 },
+            // Edge blobs - ensure no gaps along the edge
+            edge: { count: 24, radiusMin: 0.05, radiusMax: 0.10, vertexCount: 14 }
         },
 
         // Noise settings for shape distortion
         noise: {
-            // How much to displace vertices (0-1, multiplied by radius)
-            displacement: 0.5,
-            // Noise frequency (smaller = larger features)
-            frequency: 3,
-            // Multiple octaves for fractal detail
-            octaves: 4
+            displacement: 0.4,
+            frequency: 2.5,
+            octaves: 3
         },
 
-        // Animation - wave motion for organic life while anchored to edge
-        waveAmplitude: 25,
-        waveFrequency: 0.6,
-        // Horizontal wobble (small, doesn't cause drift)
-        wobbleAmplitude: 15,
-        wobbleFrequency: 0.4,
+        // Animation - faster wave motion for wind feel
+        waveAmplitude: 35,
+        waveFrequency: 1.2,
+        wobbleAmplitude: 25,
+        wobbleFrequency: 0.8,
+        // Velocity multiplier - animation speeds up with scroll speed
+        velocityMultiplier: 3.0,
 
         // Exit animation
-        exitDuration: 1500,
-        exitAcceleration: 3
+        exitDuration: 800,
+        exitAcceleration: 5
     };
 
     // State
@@ -68,6 +66,8 @@
     let exitStartTime = 0;
     let animationStartTime = 0;
     let currentProgress = 0;
+    let lastProgress = 0;
+    let scrollVelocity = 0;
     let maskInitialized = false;
 
     // Noise generator
@@ -175,30 +175,33 @@
 
     /**
      * Create blob shape data
+     * CRITICAL: All blobs extend LEFT from edge (negative xOffset) to ensure unified front
      */
     function createBlob(type, config, index, total) {
         const radius = (config.radiusMin + Math.random() * (config.radiusMax - config.radiusMin)) *
                       Math.min(viewportWidth, viewportHeight);
 
-        // Position based on type
+        // Position based on type - ALL xOffsets are NEGATIVE (extend left only)
         let xOffset, yPos;
         const transitionZone = viewportWidth * CONFIG.transitionWidth;
 
         if (type === 'edge') {
-            // Edge blobs - evenly distributed vertically, centered on edge
-            yPos = (index / total) * viewportHeight * 1.3 - viewportHeight * 0.15;
-            xOffset = (Math.random() - 0.3) * transitionZone * 0.4;
+            // Edge blobs - evenly distributed vertically, hug the edge
+            yPos = (index / total) * viewportHeight * 1.2 - viewportHeight * 0.1;
+            // Small negative offset - these blobs overlap the edge
+            xOffset = -Math.random() * transitionZone * 0.3;
         } else if (type === 'large') {
-            // Large blobs - spread wide, extend into both images
+            // Large blobs - deep fingers extending left
             yPos = Math.random() * viewportHeight;
-            xOffset = (Math.random() - 0.5) * transitionZone * 2;
+            xOffset = -Math.random() * transitionZone * 1.5 - radius * 0.3;
         } else if (type === 'medium') {
+            // Medium blobs - fill the transition zone
             yPos = Math.random() * viewportHeight;
-            xOffset = (Math.random() - 0.4) * transitionZone * 1.2;
+            xOffset = -Math.random() * transitionZone * 1.0 - radius * 0.2;
         } else {
-            // Small blobs - scattered
+            // Small blobs - scattered in transition zone
             yPos = Math.random() * viewportHeight;
-            xOffset = (Math.random() - 0.5) * transitionZone;
+            xOffset = -Math.random() * transitionZone * 0.8;
         }
 
         // Create SVG path element
@@ -275,23 +278,29 @@
 
     /**
      * Update all blob shapes
-     * Blobs stay anchored to the transition edge with wave + wobble motion
+     * Blobs stay anchored to the transition edge with velocity-scaled wave + wobble
      */
     function updateBlobShapes(time, progress) {
         const edgeX = progress * viewportWidth;
+
+        // Animation speed scales with scroll velocity for wind feel
+        const velocityBoost = 1 + scrollVelocity * CONFIG.velocityMultiplier;
 
         // During exit: drift blobs off to the RIGHT (continuing transition direction)
         let exitDrift = 0;
         if (isExiting) {
             const exitTime = time - exitStartTime;
-            exitDrift = exitTime * exitTime * viewportWidth * 0.5; // Accelerating drift
+            exitDrift = exitTime * exitTime * viewportWidth * CONFIG.exitAcceleration;
         }
 
         blobShapes.forEach(blob => {
-            // Vertical wave motion
-            const wave = Math.sin(time * blob.waveFreq + blob.driftPhase) * blob.waveAmp;
-            // Horizontal wobble (offset phase so it's not synchronized with wave)
-            const wobble = Math.sin(time * blob.wobbleFreq + blob.driftPhase + Math.PI * 0.5) * blob.wobbleAmp;
+            // Velocity-scaled animation time for wind effect
+            const animTime = time * velocityBoost;
+
+            // Vertical wave motion - faster when scrolling
+            const wave = Math.sin(animTime * blob.waveFreq + blob.driftPhase) * blob.waveAmp;
+            // Horizontal wobble - faster when scrolling
+            const wobble = Math.sin(animTime * blob.wobbleFreq + blob.driftPhase + Math.PI * 0.5) * blob.wobbleAmp;
 
             // Position anchored to transition edge with wobble, plus exit drift to move RIGHT
             const cx = edgeX + blob.baseXOffset + wobble + exitDrift;
@@ -370,6 +379,11 @@
     }
 
     function updateMaskPosition(progress) {
+        // Track scroll velocity for animation speed
+        const deltaProgress = Math.abs(progress - lastProgress);
+        scrollVelocity = Math.min(1, deltaProgress * 10); // Normalize to 0-1
+        lastProgress = progress;
+
         currentProgress = progress;
         if (!isAnimating) {
             updateMaskRect(progress);
