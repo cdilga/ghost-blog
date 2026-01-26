@@ -56,19 +56,19 @@ test.describe('Storage Adapter', () => {
     // Upload via adapter
     const savedPath = await adapter.save(file, '2026/01');
 
-    // Verify the returned path format (includes /content/images/ for Ghost)
-    expect(savedPath).toMatch(/^\/content\/images\/2026\/01\/test-image-\d+-[a-f0-9]+\.jpg$/);
+    // Verify the returned path format (WebP URL for optimized images)
+    expect(savedPath).toMatch(/^\/content\/images\/2026\/01\/test-image-\d+-[a-f0-9]+\.webp$/);
 
-    // Extract the actual filename from the path
-    const filename = path.basename(savedPath);
-    const base = path.basename(filename, '.jpg');
+    // Extract the actual filename from the path (now returns .webp)
+    const webpFilename = path.basename(savedPath);
+    const base = path.basename(webpFilename, '.webp');
     const outputDir = path.join(testDir, '2026/01');
 
-    // Verify original saved
-    expect(fs.existsSync(path.join(outputDir, filename))).toBe(true);
+    // Verify WebP file exists (this is what save() now returns)
+    expect(fs.existsSync(path.join(outputDir, webpFilename))).toBe(true);
 
-    // Verify WebP created
-    expect(fs.existsSync(path.join(outputDir, `${base}.webp`))).toBe(true);
+    // Verify original was also saved
+    expect(fs.existsSync(path.join(outputDir, `${base}.jpg`))).toBe(true);
 
     // Verify responsive sizes created (400, 800, 1200 - all smaller than 1600)
     expect(fs.existsSync(path.join(outputDir, 'size/w400', `${base}.webp`))).toBe(true);
@@ -76,8 +76,8 @@ test.describe('Storage Adapter', () => {
     expect(fs.existsSync(path.join(outputDir, 'size/w1200', `${base}.webp`))).toBe(true);
 
     // Verify WebP is smaller than original
-    const originalSize = fs.statSync(path.join(outputDir, filename)).size;
-    const webpSize = fs.statSync(path.join(outputDir, `${base}.webp`)).size;
+    const originalSize = fs.statSync(path.join(outputDir, `${base}.jpg`)).size;
+    const webpSize = fs.statSync(path.join(outputDir, webpFilename)).size;
     expect(webpSize).toBeLessThan(originalSize);
   });
 

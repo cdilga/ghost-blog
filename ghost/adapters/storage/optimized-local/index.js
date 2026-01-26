@@ -92,13 +92,17 @@ class OptimizedLocalStorage extends StorageBase {
     if (this.isOptimizable(file.name)) {
       try {
         await this.generateOptimizedVersions(buffer, fullDir, uniqueName);
+        // Return WebP URL for optimized images
+        const ext = path.extname(uniqueName);
+        const base = path.basename(uniqueName, ext);
+        return `/content/images/${dir}/${base}.webp`;
       } catch (err) {
         console.error('Error optimizing image:', err.message);
-        // Continue even if optimization fails - original is still saved
+        // Fall through to return original URL if optimization fails
       }
     }
 
-    // Return the full URL path for Ghost to use
+    // Return original URL for non-optimizable files or if optimization failed
     return `/content/images/${dir}/${uniqueName}`;
   }
 
