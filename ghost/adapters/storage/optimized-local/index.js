@@ -98,8 +98,8 @@ class OptimizedLocalStorage extends StorageBase {
       }
     }
 
-    // Return the URL path (relative to content/images)
-    return `/${dir}/${uniqueName}`;
+    // Return the full URL path for Ghost to use
+    return `/content/images/${dir}/${uniqueName}`;
   }
 
   /**
