@@ -46,21 +46,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # Retry ssh-keyscan to handle transient connection issues
+          # Retry ssh-keyscan with exponential backoff
+          delay=2
           for i in 1 2 3 4 5; do
             if ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null; then
               break
             fi
-            echo "ssh-keyscan attempt $i failed, retrying in 5s..."
-            sleep 5
+            echo "ssh-keyscan attempt $i failed, retrying in ${delay}s..."
+            sleep $delay
+            delay=$((delay * 2))
           done
-          # Configure SSH to retry on connection failures
-          cat >> ~/.ssh/config << EOF
-          Host *
-            ServerAliveInterval 60
-            ConnectionAttempts 3
-            ConnectTimeout 30
-          EOF
 
       - name: Backup current theme
         run: |
@@ -104,21 +99,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # Retry ssh-keyscan to handle transient connection issues
+          # Retry ssh-keyscan with exponential backoff
+          delay=2
           for i in 1 2 3 4 5; do
             if ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null; then
               break
             fi
-            echo "ssh-keyscan attempt $i failed, retrying in 5s..."
-            sleep 5
+            echo "ssh-keyscan attempt $i failed, retrying in ${delay}s..."
+            sleep $delay
+            delay=$((delay * 2))
           done
-          # Configure SSH to retry on connection failures
-          cat >> ~/.ssh/config << EOF
-          Host *
-            ServerAliveInterval 60
-            ConnectionAttempts 3
-            ConnectTimeout 30
-          EOF
 
       - name: Deploy storage adapter
         run: |
@@ -176,21 +166,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # Retry ssh-keyscan to handle transient connection issues
+          # Retry ssh-keyscan with exponential backoff
+          delay=2
           for i in 1 2 3 4 5; do
             if ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null; then
               break
             fi
-            echo "ssh-keyscan attempt $i failed, retrying in 5s..."
-            sleep 5
+            echo "ssh-keyscan attempt $i failed, retrying in ${delay}s..."
+            sleep $delay
+            delay=$((delay * 2))
           done
-          # Configure SSH to retry on connection failures
-          cat >> ~/.ssh/config << EOF
-          Host *
-            ServerAliveInterval 60
-            ConnectionAttempts 3
-            ConnectTimeout 30
-          EOF
 
       - name: Restart Ghost
         run: |
