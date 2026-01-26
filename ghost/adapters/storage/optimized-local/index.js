@@ -159,8 +159,8 @@ class OptimizedLocalStorage extends StorageBase {
   serve() {
     // Return express middleware for serving files
     return (req, res, next) => {
-      // Remove leading /content/images/ from URL
-      let filePath = req.path;
+      // URL-decode and remove leading slash
+      let filePath = decodeURIComponent(req.path);
       if (filePath.startsWith('/')) {
         filePath = filePath.slice(1);
       }
@@ -168,6 +168,20 @@ class OptimizedLocalStorage extends StorageBase {
       const fullPath = path.join(this.storagePath, filePath);
 
       if (existsSync(fullPath)) {
+        // Set appropriate Content-Type
+        const ext = path.extname(fullPath).toLowerCase();
+        const mimeTypes = {
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.png': 'image/png',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp',
+          '.svg': 'image/svg+xml'
+        };
+        if (mimeTypes[ext]) {
+          res.setHeader('Content-Type', mimeTypes[ext]);
+        }
+
         const stream = createReadStream(fullPath);
         stream.pipe(res);
       } else {
