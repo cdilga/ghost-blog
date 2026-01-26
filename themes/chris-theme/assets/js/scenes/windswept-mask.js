@@ -280,7 +280,7 @@
     function updateBlobShapes(time, progress) {
         const edgeX = progress * viewportWidth;
 
-        // During exit: drift blobs off to the left
+        // During exit: drift blobs off to the RIGHT (continuing transition direction)
         let exitDrift = 0;
         if (isExiting) {
             const exitTime = time - exitStartTime;
@@ -293,8 +293,8 @@
             // Horizontal wobble (offset phase so it's not synchronized with wave)
             const wobble = Math.sin(time * blob.wobbleFreq + blob.driftPhase + Math.PI * 0.5) * blob.wobbleAmp;
 
-            // Position anchored to transition edge with wobble, minus exit drift
-            const cx = edgeX + blob.baseXOffset + wobble - exitDrift;
+            // Position anchored to transition edge with wobble, plus exit drift to move RIGHT
+            const cx = edgeX + blob.baseXOffset + wobble + exitDrift;
             const cy = blob.baseY + wave;
 
             // Generate noise-distorted path (fixed shape per blob)
