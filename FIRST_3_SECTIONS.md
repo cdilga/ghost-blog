@@ -1,5 +1,7 @@
 # First Three Sections: Architectural Analysis & Implementation Guide
 
+> **Tracking Issue:** `ghost-blog-cog` - SVG windswept particle mask transition system
+
 This document expands upon [LANDING_PAGE_SKETCH.md](LANDING_PAGE_SKETCH.md) to address specific architectural issues in the Hero → Coder → Claude Codes transition sequence.
 
 ## Current Problems Identified
