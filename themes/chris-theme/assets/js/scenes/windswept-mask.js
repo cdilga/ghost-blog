@@ -1,14 +1,15 @@
 /**
- * Windswept Dust Mask Transition
+ * Windswept Wisp Mask Transition
  *
- * Creates an SVG mask with animated dust/sand particles that form
- * organic "fingers" - elongated streaks that naturally spawn and migrate.
+ * Creates an SVG mask with flowing bezier curve "wisps" that feel like
+ * windblown smoke/sand. Uses variable-thickness paths rendered as filled
+ * polygons for organic, flowing transitions.
  *
  * Uses:
- * - SVG mask (not clipPath) for alpha/transparency support
- * - Gaussian blur filter for soft dust edges
- * - Simplex-like noise for organic flow field
- * - Finger system: particles cluster into migrating streams
+ * - SVG clipPath with path elements (binary mask, works with canvas)
+ * - Cubic bezier curves for smooth flowing shapes
+ * - Variable thickness via filled polygons (tapered ends)
+ * - Exit animation when scroll completes
  */
 (function() {
     'use strict';
@@ -21,75 +22,52 @@
 
     // Configuration
     const CONFIG = {
-        // Total particle count (fingers + loose + edge)
-        // Will be calculated: fingers.count * fingers.particlesPerFinger + looseParticles.count + edgeParticles.count
-        particleCount: 1025,  // 15*35 + 100 + 400 = 1025
-
-        // Particle size range (px) - smaller for dust effect
-        particleSizeMin: 1,
-        particleSizeMax: 8,
+        // Wisp distribution
+        wisps: {
+            long: { count: 22, lengthMin: 150, lengthMax: 300, thicknessMin: 10, thicknessMax: 20 },
+            medium: { count: 28, lengthMin: 80, lengthMax: 150, thicknessMin: 6, thicknessMax: 12 },
+            short: { count: 20, lengthMin: 40, lengthMax: 80, thicknessMin: 4, thicknessMax: 8 }
+        },
 
         // Scatter width from mask edge (px)
-        scatterWidth: 300,
+        scatterWidth: 350,
 
-        // Blur amount for soft edges (px)
-        blurAmount: 3,
+        // Animation parameters
+        driftSpeed: { min: 30, max: 80 },      // px/s
+        waveAmplitude: { min: 15, max: 40 },   // px
+        waveFrequency: { min: 0.3, max: 0.8 }, // Hz
 
-        // Finger system - elongated dust streams
-        fingers: {
-            count: 15,              // Number of active fingers
-            lengthMin: 80,          // Min finger length (px)
-            lengthMax: 250,         // Max finger length (px)
-            widthMin: 20,           // Min finger width (px)
-            widthMax: 60,           // Max finger width (px)
-            particlesPerFinger: 35, // Particles in each finger
-            spawnRate: 0.3,         // New fingers per second
-            lifespan: { min: 4, max: 10 }, // Finger lifetime (seconds)
-            driftSpeed: { min: 15, max: 40 }, // Horizontal drift (px/s)
-            waveAmplitude: 30,      // Vertical wave amplitude
-            waveFrequency: 0.5      // Wave cycles per second
-        },
+        // Bezier curve segments (polygon vertices)
+        segmentCount: 8,
 
-        // Loose particles (not in fingers)
-        looseParticles: {
-            count: 100,
-            driftSpeed: { min: 5, max: 20 }
-        },
-
-        // Edge particles - dedicated to completely obscuring the hard rect edge
-        edgeParticles: {
-            count: 400,              // Very dense coverage along the edge
-            sizeMin: 10,             // Large enough to overlap
-            sizeMax: 30,
-            scatterWidth: 25,        // Tight scatter right on the edge
-            wobbleAmount: 8,         // Small wobble to stay on edge
-            verticalOverlap: 2.0     // Double coverage to ensure no gaps
-        },
+        // Exit animation
+        exitAcceleration: 3.0,
+        exitDuration: 1.5, // seconds
 
         // Noise field for organic movement
         noise: {
-            scale: 0.003,           // Spatial scale (smaller = larger features)
-            speed: 0.5,             // Time evolution speed
-            strength: 25            // Displacement strength (px)
+            scale: 0.003,
+            speed: 0.5,
+            strength: 25
         }
     };
 
     // State
     let viewportWidth = window.innerWidth;
     let viewportHeight = window.innerHeight;
-    let fingers = [];
-    let looseParticles = [];
-    let edgeParticles = [];
-    let particleElements = [];
+    let wisps = [];
+    let wispElements = [];
     let animationId = null;
     let isAnimating = false;
+    let isExiting = false;
+    let exitStartTime = 0;
+    let animationStartTime = 0;
     let currentProgress = 0;
     let lastTime = 0;
     let maskInitialized = false;
 
     // Simple 2D noise implementation (value noise with smoothing)
     const NoiseGenerator = {
-        // Permutation table
         perm: null,
 
         init() {
@@ -99,17 +77,14 @@
             }
         },
 
-        // Smoothstep interpolation
         fade(t) {
             return t * t * t * (t * (t * 6 - 15) + 10);
         },
 
-        // Linear interpolation
         lerp(a, b, t) {
             return a + t * (b - a);
         },
 
-        // 2D gradient
         grad(hash, x, y) {
             const h = hash & 7;
             const u = h < 4 ? x : y;
@@ -117,7 +92,6 @@
             return ((h & 1) ? -u : u) + ((h & 2) ? -2 * v : 2 * v);
         },
 
-        // 2D noise function (returns -1 to 1)
         noise2D(x, y) {
             if (!this.perm) this.init();
 
@@ -137,10 +111,9 @@
                 this.lerp(this.grad(this.perm[A], x, y), this.grad(this.perm[B], x - 1, y), u),
                 this.lerp(this.grad(this.perm[A + 1], x, y - 1), this.grad(this.perm[B + 1], x - 1, y - 1), u),
                 v
-            ) * 0.5 + 0.5; // Normalize to 0-1
+            ) * 0.5 + 0.5;
         },
 
-        // Fractal brownian motion for more organic noise
         fbm(x, y, octaves = 3) {
             let value = 0;
             let amplitude = 1;
@@ -158,256 +131,424 @@
         }
     };
 
-    /**
-     * Create a new finger (elongated dust stream)
-     */
-    function createFinger(time) {
-        const { fingers: cfg } = CONFIG;
-        const randRange = (r) => r.min + Math.random() * (r.max - r.min);
+    // Bezier math helpers
+    function cubicBezierPoint(p0, p1, p2, p3, t) {
+        const mt = 1 - t;
+        const mt2 = mt * mt;
+        const mt3 = mt2 * mt;
+        const t2 = t * t;
+        const t3 = t2 * t;
 
         return {
-            // Position (y is 0-1 relative to viewport)
-            y: Math.random(),
-            offsetX: -Math.random() * 0.8, // Start mostly on leading edge
+            x: mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x,
+            y: mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
+        };
+    }
 
-            // Dimensions
-            length: randRange({ min: cfg.lengthMin, max: cfg.lengthMax }),
-            width: randRange({ min: cfg.widthMin, max: cfg.widthMax }),
+    function cubicBezierTangent(p0, p1, p2, p3, t) {
+        const mt = 1 - t;
+        const mt2 = mt * mt;
+        const t2 = t * t;
 
-            // Movement
-            driftSpeed: randRange(cfg.driftSpeed),
+        // Derivative of cubic bezier
+        const dx = 3 * mt2 * (p1.x - p0.x) + 6 * mt * t * (p2.x - p1.x) + 3 * t2 * (p3.x - p2.x);
+        const dy = 3 * mt2 * (p1.y - p0.y) + 6 * mt * t * (p2.y - p1.y) + 3 * t2 * (p3.y - p2.y);
+
+        // Normalize
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        return { x: dx / len, y: dy / len };
+    }
+
+    function randRange(range) {
+        return range.min + Math.random() * (range.max - range.min);
+    }
+
+    /**
+     * Create a wisp with bezier control points
+     */
+    function createWisp(type, config) {
+        const length = config.lengthMin + Math.random() * (config.lengthMax - config.lengthMin);
+        const thickness = config.thicknessMin + Math.random() * (config.thicknessMax - config.thicknessMin);
+
+        // Starting position (y is 0-1 relative to viewport)
+        const yPosition = Math.random();
+
+        // X offset from mask edge (-1 to 1, with short wisps more clustered at edge)
+        let xOffset;
+        if (type === 'short') {
+            // Short wisps cluster near the edge
+            xOffset = (Math.random() - 0.5) * 0.5;
+        } else if (type === 'medium') {
+            xOffset = (Math.random() - 0.5) * 1.2;
+        } else {
+            // Long wisps can extend further
+            xOffset = (Math.random() - 0.5) * 1.8;
+        }
+
+        return {
+            type,
+            baseLength: length,
+            maxThickness: thickness,
+
+            // Animation parameters
+            driftSpeed: randRange(CONFIG.driftSpeed),
+            waveAmplitude: randRange(CONFIG.waveAmplitude),
+            waveFrequency: randRange(CONFIG.waveFrequency),
             wavePhase: Math.random() * Math.PI * 2,
+            noiseOffset: Math.random() * 1000,
 
-            // Lifetime
-            birthTime: time,
-            lifespan: randRange(cfg.lifespan),
+            // Position
+            yPosition,
+            xOffset,
 
-            // Particles in this finger (indices into particleElements)
-            particleIndices: [],
+            // Bezier curve angle/curvature
+            curvature: (Math.random() - 0.5) * 0.6,
+            angle: (Math.random() - 0.5) * 0.4,
 
-            // Visual properties
-            baseAlpha: 0.6 + Math.random() * 0.4
+            // Exit animation state
+            isExiting: false,
+            exitThicknessMultiplier: 1
         };
     }
 
     /**
-     * Create a loose particle (not in a finger)
+     * Initialize all wisps
      */
-    function createLooseParticle() {
-        const { looseParticles: cfg, particleSizeMin, particleSizeMax } = CONFIG;
-        const randRange = (r) => r.min + Math.random() * (r.max - r.min);
+    function initWisps() {
+        wisps = [];
 
-        return {
-            y: Math.random(),
-            offsetX: (Math.random() - 0.5) * 2, // Full scatter range
-            size: particleSizeMin + Math.random() * (particleSizeMax - particleSizeMin),
-            driftSpeed: randRange(cfg.driftSpeed),
-            phase: Math.random() * Math.PI * 2,
-            alpha: 0.3 + Math.random() * 0.5
-        };
+        // Create wisps of each type
+        for (let i = 0; i < CONFIG.wisps.long.count; i++) {
+            wisps.push(createWisp('long', CONFIG.wisps.long));
+        }
+        for (let i = 0; i < CONFIG.wisps.medium.count; i++) {
+            wisps.push(createWisp('medium', CONFIG.wisps.medium));
+        }
+        for (let i = 0; i < CONFIG.wisps.short.count; i++) {
+            wisps.push(createWisp('short', CONFIG.wisps.short));
+        }
     }
 
     /**
-     * Create an edge particle - these hug the rect edge to completely obscure it
-     * Distributed with heavy overlap along the full height to guarantee no gaps
+     * Calculate wisp's 4 bezier control points at given time
      */
-    function createEdgeParticle(index, total) {
-        const { edgeParticles: cfg } = CONFIG;
+    function getWispControlPoints(wisp, time, edgeX) {
+        // Calculate drift with wrapping (wisps cycle back when they drift too far)
+        // Cycle period is based on scatter width - wisps wrap around every ~scatterWidth pixels
+        const cycleWidth = CONFIG.scatterWidth * 2;
+        let driftOffset = time * wisp.driftSpeed * (wisp.isExiting ? CONFIG.exitAcceleration : 1);
 
-        // Distribute with overlap - more particles than strictly needed
-        // This ensures complete coverage even with movement
-        const baseY = (index / total) * cfg.verticalOverlap;
-        const yJitter = (Math.random() - 0.5) * (4 / total);
-
-        return {
-            y: Math.max(-0.1, Math.min(1.1, baseY + yJitter)), // Allow overflow top/bottom
-            // Center on edge with small scatter - MUST cover the line
-            offsetX: (Math.random() - 0.5), // -0.5 to 0.5, centered on edge
-            size: cfg.sizeMin + Math.random() * (cfg.sizeMax - cfg.sizeMin),
-            phase: Math.random() * Math.PI * 2,
-            wobblePhase: Math.random() * Math.PI * 2,
-            // Vary wobble frequency per particle
-            wobbleFreq: 0.5 + Math.random() * 1.5
-        };
-    }
-
-    /**
-     * Initialize the finger system
-     */
-    function initFingerSystem(time) {
-        fingers = [];
-        looseParticles = [];
-        edgeParticles = [];
-
-        // Create initial fingers
-        for (let i = 0; i < CONFIG.fingers.count; i++) {
-            const finger = createFinger(time - Math.random() * CONFIG.fingers.lifespan.max);
-            fingers.push(finger);
+        // When not exiting, wrap the drift to keep wisps near the edge
+        if (!wisp.isExiting) {
+            driftOffset = driftOffset % cycleWidth;
         }
 
-        // Create loose particles
-        for (let i = 0; i < CONFIG.looseParticles.count; i++) {
-            looseParticles.push(createLooseParticle());
-        }
-
-        // Create edge particles - evenly distributed to guarantee full coverage
-        for (let i = 0; i < CONFIG.edgeParticles.count; i++) {
-            edgeParticles.push(createEdgeParticle(i, CONFIG.edgeParticles.count));
-        }
-
-        // Assign particles to fingers
-        assignParticlesToFingers();
-    }
-
-    /**
-     * Assign particle elements to fingers
-     */
-    function assignParticlesToFingers() {
-        let particleIndex = 0;
-
-        // Assign particles to fingers
-        fingers.forEach(finger => {
-            finger.particleIndices = [];
-            for (let i = 0; i < CONFIG.fingers.particlesPerFinger && particleIndex < particleElements.length; i++) {
-                finger.particleIndices.push(particleIndex++);
-            }
-        });
-
-        // Remaining particles are loose
-        // (loose particles use their own indices, starting after finger particles)
-    }
-
-    /**
-     * Update finger system (spawn/despawn fingers)
-     */
-    function updateFingerSystem(time, dt) {
-        const { fingers: cfg } = CONFIG;
-
-        // Check for dead fingers and respawn
-        fingers.forEach((finger, i) => {
-            const age = time - finger.birthTime;
-            if (age > finger.lifespan) {
-                // Respawn finger
-                fingers[i] = createFinger(time);
-                fingers[i].particleIndices = finger.particleIndices; // Reuse particle slots
-            }
-        });
-    }
-
-    /**
-     * Get finger particle positions at given time
-     */
-    function getFingerParticlePositions(finger, time, edgeX) {
-        const age = time - finger.birthTime;
-        const lifeProgress = age / finger.lifespan;
-
-        // Fade in/out
-        const fadeIn = Math.min(1, age * 2);
-        const fadeOut = Math.max(0, 1 - (lifeProgress - 0.7) / 0.3);
-        const alpha = finger.baseAlpha * fadeIn * fadeOut;
-
-        // Finger base position with drift
-        const driftOffset = age * finger.driftSpeed;
-        const baseX = edgeX + (finger.offsetX * CONFIG.scatterWidth) - driftOffset;
+        // Base position with xOffset distributed across the scatter zone
+        const baseX = edgeX + (wisp.xOffset * CONFIG.scatterWidth) - driftOffset;
+        const baseY = wisp.yPosition * viewportHeight;
 
         // Wave motion
-        const waveY = Math.sin(time * CONFIG.fingers.waveFrequency * Math.PI * 2 + finger.wavePhase)
-                     * CONFIG.fingers.waveAmplitude;
-        const baseY = finger.y * viewportHeight + waveY;
+        const waveOffset = Math.sin(time * wisp.waveFrequency * Math.PI * 2 + wisp.wavePhase) * wisp.waveAmplitude;
 
-        // Generate particles along the finger
-        const positions = [];
-        const count = finger.particleIndices.length;
+        // Noise displacement for organic movement
+        const noiseX = (NoiseGenerator.fbm(
+            (baseX + wisp.noiseOffset) * CONFIG.noise.scale,
+            baseY * CONFIG.noise.scale + time * CONFIG.noise.speed
+        ) - 0.5) * CONFIG.noise.strength * 2;
 
-        for (let i = 0; i < count; i++) {
-            const t = i / (count - 1); // 0 to 1 along finger
+        const noiseY = (NoiseGenerator.fbm(
+            (baseX + wisp.noiseOffset + 100) * CONFIG.noise.scale,
+            baseY * CONFIG.noise.scale + time * CONFIG.noise.speed
+        ) - 0.5) * CONFIG.noise.strength * 2;
 
-            // Position along finger axis (angled slightly)
-            const angle = -0.2 + NoiseGenerator.fbm(finger.y * 10, time * 0.5) * 0.4;
-            const alongX = t * finger.length;
-            const alongY = t * finger.length * Math.tan(angle);
+        // Head position (P0)
+        const p0 = {
+            x: baseX + noiseX,
+            y: baseY + waveOffset + noiseY
+        };
 
-            // Scatter within finger width
-            const scatter = (NoiseGenerator.noise2D(i * 0.5, time + finger.wavePhase) - 0.5) * finger.width;
+        // Calculate curve direction (angled, flowing left)
+        const angle = wisp.angle + Math.sin(time * 0.3 + wisp.wavePhase) * 0.1;
+        const dirX = -Math.cos(angle);
+        const dirY = Math.sin(angle);
 
-            // Noise displacement
-            const noiseX = (NoiseGenerator.fbm(baseX * CONFIG.noise.scale, baseY * CONFIG.noise.scale + time * CONFIG.noise.speed) - 0.5)
-                          * CONFIG.noise.strength * 2;
-            const noiseY = (NoiseGenerator.fbm(baseX * CONFIG.noise.scale + 100, baseY * CONFIG.noise.scale + time * CONFIG.noise.speed) - 0.5)
-                          * CONFIG.noise.strength * 2;
+        // Control points along the curve
+        const len = wisp.baseLength;
+        const curve = wisp.curvature * len;
 
-            // Size varies along finger (larger at head)
-            const sizeFactor = 0.5 + (1 - t) * 0.5;
-            const size = (CONFIG.particleSizeMin + Math.random() * (CONFIG.particleSizeMax - CONFIG.particleSizeMin)) * sizeFactor;
+        // P1: First control point (influences head curvature)
+        const p1 = {
+            x: p0.x + dirX * len * 0.33 + curve * dirY * 0.5,
+            y: p0.y + dirY * len * 0.33 - curve * dirX * 0.5
+        };
 
-            // Alpha varies (denser at center of finger)
-            const centerDist = Math.abs(scatter) / (finger.width * 0.5);
-            const particleAlpha = alpha * (1 - centerDist * 0.5);
+        // P2: Second control point (influences tail curvature)
+        const p2 = {
+            x: p0.x + dirX * len * 0.66 - curve * dirY * 0.5,
+            y: p0.y + dirY * len * 0.66 + curve * dirX * 0.5
+        };
 
-            positions.push({
-                x: baseX - alongX + noiseX,
-                y: baseY + alongY + scatter + noiseY,
-                size: size,
-                alpha: Math.max(0, Math.min(1, particleAlpha))
+        // P3: Tail position
+        const p3 = {
+            x: p0.x + dirX * len,
+            y: p0.y + dirY * len
+        };
+
+        return [p0, p1, p2, p3];
+    }
+
+    /**
+     * Generate SVG path data for a wisp as a filled polygon
+     * (Variable thickness by offsetting points along normals)
+     */
+    function wispToPolygonPath(wisp, time, edgeX) {
+        const [p0, p1, p2, p3] = getWispControlPoints(wisp, time, edgeX);
+        const segments = CONFIG.segmentCount;
+
+        // Calculate thickness multiplier for exit animation
+        const thicknessMult = wisp.isExiting ? wisp.exitThicknessMultiplier : 1;
+        if (thicknessMult <= 0) return '';
+
+        // Sample points along the curve
+        const topPoints = [];
+        const bottomPoints = [];
+
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+
+            // Point on curve
+            const point = cubicBezierPoint(p0, p1, p2, p3, t);
+
+            // Tangent at this point
+            const tangent = cubicBezierTangent(p0, p1, p2, p3, t);
+
+            // Normal (perpendicular to tangent)
+            const normal = { x: -tangent.y, y: tangent.x };
+
+            // Thickness at this point (tapers at ends)
+            // sin(π * t) gives 0 at ends, 1 at middle
+            const thickness = wisp.maxThickness * Math.sin(Math.PI * t) * thicknessMult;
+            const halfThickness = thickness / 2;
+
+            // Offset points
+            topPoints.push({
+                x: point.x + normal.x * halfThickness,
+                y: point.y + normal.y * halfThickness
+            });
+            bottomPoints.push({
+                x: point.x - normal.x * halfThickness,
+                y: point.y - normal.y * halfThickness
             });
         }
 
-        return positions;
+        // Build path: top edge forward, bottom edge backward (closed polygon)
+        let d = `M ${topPoints[0].x.toFixed(1)},${topPoints[0].y.toFixed(1)}`;
+
+        // Top edge
+        for (let i = 1; i < topPoints.length; i++) {
+            d += ` L ${topPoints[i].x.toFixed(1)},${topPoints[i].y.toFixed(1)}`;
+        }
+
+        // Bottom edge (reversed)
+        for (let i = bottomPoints.length - 1; i >= 0; i--) {
+            d += ` L ${bottomPoints[i].x.toFixed(1)},${bottomPoints[i].y.toFixed(1)}`;
+        }
+
+        d += ' Z';
+        return d;
     }
 
     /**
-     * Get loose particle position
+     * Create the SVG clipPath element
      */
-    function getLooseParticlePosition(particle, time, edgeX) {
-        const driftOffset = time * particle.driftSpeed;
+    function createMaskSVG() {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '0');
+        svg.setAttribute('height', '0');
+        svg.style.cssText = 'position: absolute; pointer-events: none;';
 
-        // Base position
-        let x = edgeX + (particle.offsetX * CONFIG.scatterWidth) - driftOffset;
-        let y = particle.y * viewportHeight;
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
 
-        // Noise displacement
-        const noiseX = (NoiseGenerator.fbm(x * CONFIG.noise.scale, y * CONFIG.noise.scale + time * CONFIG.noise.speed) - 0.5)
-                      * CONFIG.noise.strength;
-        const noiseY = (NoiseGenerator.fbm(x * CONFIG.noise.scale + 50, y * CONFIG.noise.scale + time * CONFIG.noise.speed) - 0.5)
-                      * CONFIG.noise.strength;
+        // Create clipPath
+        const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+        clipPath.setAttribute('id', 'windswept-mask');
+        clipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
 
-        // Gentle wobble
-        const wobbleX = Math.sin(time * 1.5 + particle.phase) * 5;
-        const wobbleY = Math.sin(time * 2 + particle.phase + 1) * 3;
+        // Main rect covering visible area
+        const maskRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        maskRect.setAttribute('x', '0');
+        maskRect.setAttribute('y', '0');
+        maskRect.setAttribute('width', String(viewportWidth));
+        maskRect.setAttribute('height', String(viewportHeight));
+        clipPath.appendChild(maskRect);
 
-        return {
-            x: x + noiseX + wobbleX,
-            y: y + noiseY + wobbleY,
-            size: particle.size,
-            alpha: particle.alpha
-        };
+        // Create path elements for wisps
+        const paths = [];
+        const totalWisps = CONFIG.wisps.long.count + CONFIG.wisps.medium.count + CONFIG.wisps.short.count;
+
+        for (let i = 0; i < totalWisps; i++) {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', '');
+            clipPath.appendChild(path);
+            paths.push(path);
+        }
+
+        defs.appendChild(clipPath);
+        svg.appendChild(defs);
+
+        return { svg, clipPath, maskRect, paths };
     }
 
     /**
-     * Get edge particle position - these always hug the rect edge
-     * to completely obscure the hard line with organic movement
+     * Update all wisp positions
      */
-    function getEdgeParticlePosition(particle, time, edgeX) {
-        const { edgeParticles: cfg } = CONFIG;
+    function updateWispPositions(time) {
+        const edgeX = currentProgress * viewportWidth;
 
-        // Base position - distributed along the edge
-        const baseY = particle.y * viewportHeight;
+        wisps.forEach((wisp, i) => {
+            if (wispElements[i]) {
+                const pathData = wispToPolygonPath(wisp, time, edgeX);
+                wispElements[i].setAttribute('d', pathData);
+            }
+        });
+    }
 
-        // Wobble to add organic feel while maintaining coverage
-        const wobbleX = Math.sin(time * particle.wobbleFreq + particle.wobblePhase) * cfg.wobbleAmount;
-        const wobbleY = Math.sin(time * (particle.wobbleFreq * 0.7) + particle.phase) * (cfg.wobbleAmount * 0.6);
+    /**
+     * Check if all wisps have exited the viewport
+     */
+    function allWispsExited(time) {
+        const edgeX = currentProgress * viewportWidth;
 
-        // Scatter around edge
-        const scatterX = particle.offsetX * cfg.scatterWidth;
+        return wisps.every(wisp => {
+            const [p0] = getWispControlPoints(wisp, time, edgeX);
+            // Wisp is exited if its head is off the left edge
+            return p0.x < -wisp.baseLength - 100;
+        });
+    }
 
-        // Noise for organic movement
-        const noiseOffset = (NoiseGenerator.noise2D(particle.y * 5, time * 0.5) - 0.5) * 15;
+    /**
+     * Start exit animation
+     */
+    function startExitAnimation() {
+        if (isExiting) return;
 
-        return {
-            x: edgeX + scatterX + wobbleX + noiseOffset,
-            y: baseY + wobbleY,
-            size: particle.size
-        };
+        isExiting = true;
+        // Use relative time from animation start
+        exitStartTime = (performance.now() - animationStartTime) / 1000;
+
+        // Mark all wisps as exiting
+        wisps.forEach(wisp => {
+            wisp.isExiting = true;
+        });
+    }
+
+    /**
+     * Update exit animation state
+     */
+    function updateExitAnimation(time) {
+        if (!isExiting) return false;
+
+        const elapsed = time - exitStartTime;
+        const progress = Math.min(1, elapsed / CONFIG.exitDuration);
+
+        // Fade thickness during exit
+        wisps.forEach(wisp => {
+            wisp.exitThicknessMultiplier = 1 - progress * 0.7; // Don't fully fade, just thin out
+        });
+
+        // Check if exit is complete
+        if (allWispsExited(time)) {
+            return true; // Exit complete
+        }
+
+        return false; // Still exiting
+    }
+
+    function animationLoop(timestamp) {
+        if (!isAnimating) return;
+
+        // Use relative time from animation start (not absolute page time)
+        const time = (timestamp - animationStartTime) / 1000;
+        lastTime = time;
+
+        const maskRect = window.ChrisTheme?.windsweptMask?.maskRect;
+        if (maskRect) {
+            const rectX = currentProgress * viewportWidth;
+            maskRect.setAttribute('x', String(rectX));
+            updateWispPositions(time);
+
+            // Handle exit animation
+            if (isExiting) {
+                const exitComplete = updateExitAnimation(time);
+                if (exitComplete) {
+                    // Exit animation done - hide canvas and stop
+                    const heroCoderCanvas = document.getElementById('depth-canvas-hero-coder');
+                    if (heroCoderCanvas) {
+                        heroCoderCanvas.style.opacity = '0';
+                    }
+                    stopAnimation();
+                    return;
+                }
+            }
+        }
+
+        animationId = requestAnimationFrame(animationLoop);
+    }
+
+    function startAnimation() {
+        if (isAnimating) return;
+        isAnimating = true;
+        isExiting = false;
+        lastTime = 0;
+        animationStartTime = performance.now();
+
+        // Reset exit state
+        wisps.forEach(wisp => {
+            wisp.isExiting = false;
+            wisp.exitThicknessMultiplier = 1;
+        });
+
+        animationId = requestAnimationFrame(animationLoop);
+    }
+
+    function stopAnimation() {
+        isAnimating = false;
+        isExiting = false;
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+    }
+
+    function updateMaskPosition(progress, maskRect) {
+        currentProgress = progress;
+        if (!isAnimating) {
+            const rectX = progress * viewportWidth;
+            maskRect.setAttribute('x', String(rectX));
+            updateWispPositions(0);
+        }
+    }
+
+    function resetMask(maskRect) {
+        maskRect.setAttribute('x', '0');
+        currentProgress = 0;
+        isExiting = false;
+        wisps.forEach(wisp => {
+            wisp.isExiting = false;
+            wisp.exitThicknessMultiplier = 1;
+        });
+        updateWispPositions(0);
+    }
+
+    function positionForTransition(heroCoderCanvas, claudeCodesCanvas, forTransition) {
+        if (forTransition) {
+            claudeCodesCanvas.style.zIndex = '-1';
+            claudeCodesCanvas.style.opacity = '1';
+            heroCoderCanvas.style.zIndex = '0';
+        } else {
+            heroCoderCanvas.style.zIndex = '-1';
+            claudeCodesCanvas.style.zIndex = '-1';
+        }
     }
 
     function initWindsweptMask() {
@@ -452,13 +593,13 @@
         // Initialize noise
         NoiseGenerator.init();
 
-        // Create the SVG mask
-        const { svg, mask, maskRect, particles } = createMaskSVG();
-        document.body.appendChild(svg);
-        particleElements = particles;
+        // Initialize wisps
+        initWisps();
 
-        // Initialize finger system
-        initFingerSystem(0);
+        // Create the SVG mask
+        const { svg, maskRect, paths } = createMaskSVG();
+        document.body.appendChild(svg);
+        wispElements = paths;
 
         // Apply clipPath to the Hero+Coder canvas
         heroCoderCanvas.style.clipPath = 'url(#windswept-mask)';
@@ -490,8 +631,8 @@
                 startAnimation();
             },
             onLeave: () => {
-                heroCoderCanvas.style.opacity = '0';
-                stopAnimation();
+                // Don't hide immediately - start exit animation
+                startExitAnimation();
             },
             onEnterBack: () => {
                 positionForTransition(heroCoderCanvas, claudeCodesCanvas, true);
@@ -511,171 +652,19 @@
             trigger: transitionTrigger,
             svg,
             maskRect,
-            particles: particleElements,
-            fingers,
+            wisps,
             reset: () => resetMask(maskRect),
             setProgress: (p) => updateMaskPosition(p, maskRect),
             startAnimation,
             stopAnimation,
+            startExitAnimation,
             isAnimating: () => isAnimating,
+            isExiting: () => isExiting,
             noise: NoiseGenerator
         };
 
-        console.log('[windswept-mask] Initialized with', CONFIG.particleCount, 'particles,', CONFIG.fingers.count, 'fingers');
-    }
-
-    /**
-     * Create the SVG clipPath element
-     * Note: clipPath is binary (visible/hidden) - no alpha support
-     * but works reliably with canvas elements
-     */
-    function createMaskSVG() {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', '0');
-        svg.setAttribute('height', '0');
-        svg.style.cssText = 'position: absolute; pointer-events: none;';
-
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-
-        // Create clipPath (binary mask - works reliably with canvas)
-        const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
-        clipPath.setAttribute('id', 'windswept-mask');
-        clipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
-
-        // Main rect covering visible area
-        const maskRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        maskRect.setAttribute('x', '0');
-        maskRect.setAttribute('y', '0');
-        maskRect.setAttribute('width', String(viewportWidth));
-        maskRect.setAttribute('height', String(viewportHeight));
-        clipPath.appendChild(maskRect);
-
-        // Create particle circles directly in clipPath
-        // (groups don't work in clipPath - must add circles directly)
-        const particles = [];
-        for (let i = 0; i < CONFIG.particleCount; i++) {
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', '0');
-            circle.setAttribute('cy', '0');
-            circle.setAttribute('r', '0');
-            clipPath.appendChild(circle);
-            particles.push(circle);
-        }
-
-        defs.appendChild(clipPath);
-        svg.appendChild(defs);
-
-        return { svg, clipPath, maskRect, particles };
-    }
-
-    /**
-     * Update all particle positions
-     * Note: Using clipPath (binary) - no alpha support, particles are fully visible or not
-     */
-    function updateParticlePositions(time) {
-        const edgeX = currentProgress * viewportWidth;
-
-        // Update finger system
-        updateFingerSystem(time, 1/60);
-
-        // Update finger particles
-        fingers.forEach(finger => {
-            const positions = getFingerParticlePositions(finger, time, edgeX);
-
-            positions.forEach((pos, i) => {
-                const idx = finger.particleIndices[i];
-                if (idx !== undefined && particleElements[idx]) {
-                    const circle = particleElements[idx];
-                    circle.setAttribute('cx', String(pos.x));
-                    circle.setAttribute('cy', String(pos.y));
-                    circle.setAttribute('r', String(Math.max(0.5, pos.size)));
-                }
-            });
-        });
-
-        // Update loose particles
-        const looseStartIdx = CONFIG.fingers.count * CONFIG.fingers.particlesPerFinger;
-        looseParticles.forEach((particle, i) => {
-            const idx = looseStartIdx + i;
-            if (particleElements[idx]) {
-                const pos = getLooseParticlePosition(particle, time, edgeX);
-                const circle = particleElements[idx];
-                circle.setAttribute('cx', String(pos.x));
-                circle.setAttribute('cy', String(pos.y));
-                circle.setAttribute('r', String(Math.max(0.5, pos.size)));
-            }
-        });
-
-        // Update edge particles - these must always completely cover the rect edge
-        const edgeStartIdx = looseStartIdx + CONFIG.looseParticles.count;
-        edgeParticles.forEach((particle, i) => {
-            const idx = edgeStartIdx + i;
-            if (particleElements[idx]) {
-                const pos = getEdgeParticlePosition(particle, time, edgeX);
-                const circle = particleElements[idx];
-                circle.setAttribute('cx', String(pos.x));
-                circle.setAttribute('cy', String(pos.y));
-                circle.setAttribute('r', String(Math.max(0.5, pos.size)));
-            }
-        });
-    }
-
-    function animationLoop(timestamp) {
-        if (!isAnimating) return;
-
-        const time = timestamp / 1000;
-        const dt = lastTime ? time - lastTime : 1/60;
-        lastTime = time;
-
-        const maskRect = window.ChrisTheme?.windsweptMask?.maskRect;
-        if (maskRect) {
-            const rectX = currentProgress * viewportWidth;
-            maskRect.setAttribute('x', String(rectX));
-            updateParticlePositions(time);
-        }
-
-        animationId = requestAnimationFrame(animationLoop);
-    }
-
-    function startAnimation() {
-        if (isAnimating) return;
-        isAnimating = true;
-        lastTime = 0;
-        animationId = requestAnimationFrame(animationLoop);
-    }
-
-    function stopAnimation() {
-        isAnimating = false;
-        if (animationId) {
-            cancelAnimationFrame(animationId);
-            animationId = null;
-        }
-    }
-
-    function updateMaskPosition(progress, maskRect) {
-        currentProgress = progress;
-        if (!isAnimating) {
-            const rectX = progress * viewportWidth;
-            maskRect.setAttribute('x', String(rectX));
-            updateParticlePositions(0);
-        }
-    }
-
-    function resetMask(maskRect) {
-        maskRect.setAttribute('x', '0');
-        currentProgress = 0;
-        updateParticlePositions(0);
-    }
-
-    function positionForTransition(heroCoderCanvas, claudeCodesCanvas, forTransition) {
-        if (forTransition) {
-            claudeCodesCanvas.style.zIndex = '-1';
-            claudeCodesCanvas.style.opacity = '1';
-            heroCoderCanvas.style.zIndex = '0';
-        } else {
-            heroCoderCanvas.style.zIndex = '-1';
-            claudeCodesCanvas.style.zIndex = '-1';
-        }
+        const totalWisps = CONFIG.wisps.long.count + CONFIG.wisps.medium.count + CONFIG.wisps.short.count;
+        console.log('[windswept-mask] Initialized with', totalWisps, 'wisps (bezier curves)');
     }
 
     function waitForChrisTheme(callback, maxAttempts = 30) {

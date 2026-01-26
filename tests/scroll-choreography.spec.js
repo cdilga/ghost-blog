@@ -67,31 +67,43 @@ test('scroll up reverses coder section animation', async ({ page }) => {
   expect(headerHiddenUp.hidden).toBe(true);
 });
 
-test('particle mask has organic scatter, not solid line', async ({ page }) => {
+test('wisp mask has organic bezier paths, not solid line', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
 
   // Scroll gradually to transition zone
   await scrollGradually(page, 0, 5100, 8);
 
-  const particleSpread = await page.evaluate(() => {
-    const circles = document.querySelectorAll('#windswept-mask circle');
-    if (circles.length === 0) return { exists: false };
+  const wispSpread = await page.evaluate(() => {
+    // Check for path elements (bezier wisps) instead of circles
+    const paths = document.querySelectorAll('#windswept-mask path');
+    if (paths.length === 0) return { exists: false };
 
-    const xPositions = Array.from(circles).map(c => parseFloat(c.getAttribute('cx') || '0'));
-    const range = Math.max(...xPositions) - Math.min(...xPositions);
+    // Extract bounding boxes of paths to check spread
+    const pathData = Array.from(paths).map(p => p.getAttribute('d') || '');
+    const nonEmptyPaths = pathData.filter(d => d.length > 0);
+
+    // Parse first coordinates from each path to check spread
+    const xCoords = nonEmptyPaths.map(d => {
+      const match = d.match(/M\s+([\d.-]+)/);
+      return match ? parseFloat(match[1]) : 0;
+    }).filter(x => x !== 0);
+
+    const range = xCoords.length > 0 ? Math.max(...xCoords) - Math.min(...xCoords) : 0;
 
     return {
       exists: true,
-      count: circles.length,
+      count: paths.length,
+      nonEmptyCount: nonEmptyPaths.length,
       xRange: Math.round(range),
-      isOrganic: range > 100
+      isOrganic: range > 50 // Wisps should be spread organically
     };
   });
 
-  console.log('Particle spread:', JSON.stringify(particleSpread));
-  expect(particleSpread.exists).toBe(true);
-  expect(particleSpread.isOrganic).toBe(true);
+  console.log('Wisp spread:', JSON.stringify(wispSpread));
+  expect(wispSpread.exists).toBe(true);
+  expect(wispSpread.nonEmptyCount).toBeGreaterThan(0);
+  expect(wispSpread.isOrganic).toBe(true);
 });
 
 test('canvas transition: hero visible at top, claude visible after transition', async ({ page }) => {
