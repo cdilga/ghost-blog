@@ -40,15 +40,12 @@
             // Noise frequency (smaller = larger features)
             frequency: 3,
             // Multiple octaves for fractal detail
-            octaves: 4,
-            // Time-based animation speed
-            animationSpeed: 0.3
+            octaves: 4
         },
 
-        // Animation
-        driftSpeed: 0.015,
-        waveAmplitude: 15,
-        waveFrequency: 0.4,
+        // Animation - only wave for subtle life, no drift during transition
+        waveAmplitude: 8,
+        waveFrequency: 0.3,
 
         // Exit animation
         exitDuration: 1500,
@@ -131,17 +128,18 @@
 
     /**
      * Generate a noise-distorted blob path
+     * Uses fixed noise offset per blob - no time-based animation for stability
      */
-    function generateBlobPath(cx, cy, baseRadius, vertexCount, noiseOffset, time) {
+    function generateBlobPath(cx, cy, baseRadius, vertexCount, noiseOffset) {
         const points = [];
-        const { displacement, frequency, octaves, animationSpeed } = CONFIG.noise;
+        const { displacement, frequency, octaves } = CONFIG.noise;
 
         for (let i = 0; i < vertexCount; i++) {
             const angle = (i / vertexCount) * Math.PI * 2;
 
-            // Sample noise at this angle
+            // Sample noise at this angle - fixed per blob, no time animation
             const nx = Math.cos(angle) * frequency + noiseOffset;
-            const ny = Math.sin(angle) * frequency + time * animationSpeed;
+            const ny = Math.sin(angle) * frequency + noiseOffset * 0.7;
             const noiseVal = Noise.fbm(nx, ny, octaves);
 
             // Displace radius by noise (-0.5 to 0.5 range, scaled by displacement)
@@ -272,27 +270,32 @@
 
     /**
      * Update all blob shapes
+     * Blobs stay anchored to the transition edge - only subtle wave motion for life
      */
     function updateBlobShapes(time, progress) {
         const edgeX = progress * viewportWidth;
-        const exitMult = isExiting ?
-            Math.min(CONFIG.exitAcceleration, 1 + (time - exitStartTime) * 2) : 1;
+
+        // During exit: drift blobs off to the left
+        let exitDrift = 0;
+        if (isExiting) {
+            const exitTime = time - exitStartTime;
+            exitDrift = exitTime * exitTime * viewportWidth * 0.5; // Accelerating drift
+        }
 
         blobShapes.forEach(blob => {
-            // Calculate position with drift and wave
-            const drift = time * CONFIG.driftSpeed * viewportWidth * exitMult;
+            // Subtle wave motion for organic feel (only vertical, very gentle)
             const wave = Math.sin(time * blob.waveFreq + blob.driftPhase) * blob.waveAmp;
 
-            const cx = edgeX + blob.baseXOffset - (drift % (viewportWidth * 0.4));
+            // Position anchored to transition edge, minus exit drift
+            const cx = edgeX + blob.baseXOffset - exitDrift;
             const cy = blob.baseY + wave;
 
-            // Generate noise-distorted path
+            // Generate noise-distorted path (fixed shape per blob)
             const pathData = generateBlobPath(
                 cx, cy,
                 blob.radius,
                 blob.vertexCount,
-                blob.noiseOffset,
-                time
+                blob.noiseOffset
             );
 
             blob.element.setAttribute('d', pathData);
