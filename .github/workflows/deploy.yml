@@ -143,8 +143,8 @@ with open(config_file, "w") as f:
 print("Storage adapter configured successfully")
 EOF
 
-            # Fix ownership
-            chown ghost:ghost "$CONFIG_FILE"
+            # Fix ownership (config must be owned by chris for Ghost CLI)
+            chown chris:chris "$CONFIG_FILE"
           '
 
   restart-ghost:
