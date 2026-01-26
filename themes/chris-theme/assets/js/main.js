@@ -72,6 +72,11 @@
 
     // Show hero content without animation (for reduced motion)
     function showHeroContent() {
+        const hero = document.querySelector('.hero--parallax');
+        if (hero) {
+            // Ensure hero is fully visible (no clip-path)
+            hero.style.clipPath = 'none';
+        }
         const heroElements = document.querySelectorAll('.hero--parallax [data-animate]');
         heroElements.forEach(el => {
             el.style.opacity = '1';
