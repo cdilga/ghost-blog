@@ -56,6 +56,7 @@
     const depthMapSrc = imageBaseName + '_depth_anything_2_greyscale.png';
 
     // Create PixiJS canvas container - position fixed to cover viewport during scroll
+    // z-index: -1 places canvas between html background and body content
     const container = document.createElement('div');
     container.className = 'hero__depth-canvas';
     container.id = 'depth-canvas-hero-coder';
@@ -66,7 +67,7 @@
         width: 100vw;
         height: 100vh;
         pointer-events: none;
-        z-index: 0;
+        z-index: -1;
         opacity: 1;
     `;
     document.body.appendChild(container);
@@ -261,7 +262,7 @@
             }
         });
         updateCanvasVisibility();
-    }, { threshold: 0.1 });
+    }, { threshold: 0 });
 
     // Observe both Hero and Coder sections
     if (heroSection) {

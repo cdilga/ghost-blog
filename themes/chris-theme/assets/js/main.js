@@ -107,13 +107,18 @@
 
             parallaxElements.forEach(el => {
                 // Get custom values from data attributes or use defaults
-                const xAmount = parseFloat(el.dataset.scrollParallaxX) || 8;
-                const yAmount = parseFloat(el.dataset.scrollParallaxY) || 15;
+                // Default values should be PRONOUNCED - clearly visible parallax
+                const xAmount = parseFloat(el.dataset.scrollParallaxX) || 25;
+                const yAmount = parseFloat(el.dataset.scrollParallaxY) || 50;
+
+                // Set initial scale (image slightly larger to allow movement without gaps)
+                gsap.set(el, { scale: 1.15 });
 
                 // Create the scroll-driven parallax animation
                 gsap.to(el, {
                     x: xAmount,
                     y: -yAmount, // Negative = moves up as you scroll down
+                    scale: 1.15, // Maintain scale during animation
                     ease: 'none',
                     scrollTrigger: {
                         trigger: el,
@@ -146,14 +151,16 @@
                 // Progress: -1 when element at bottom of viewport, 1 when at top
                 const progress = (1 - (elementCenter / viewportHeight)) * 2 - 1;
 
-                const xAmount = parseFloat(el.dataset.scrollParallaxX) || 8;
-                const yAmount = parseFloat(el.dataset.scrollParallaxY) || 15;
+                // Default values should be PRONOUNCED - clearly visible parallax
+                const xAmount = parseFloat(el.dataset.scrollParallaxX) || 25;
+                const yAmount = parseFloat(el.dataset.scrollParallaxY) || 50;
 
                 // Full intensity - progress maps to half the configured amount at extremes
                 const x = progress * xAmount * 0.5;
                 const y = progress * -yAmount * 0.5;
 
-                el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+                // Include scale to prevent gaps during movement
+                el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(1.15)`;
             });
 
             ticking = false;
@@ -221,6 +228,16 @@
         //   55-75%: Content holds (user reads)
         //   75-100%: Hero slides UP and OUT, unpin
 
+        // Set hero content visible IMMEDIATELY on load
+        // User wants content "there on load" - no entry animation needed
+        gsap.set([heroTitle, heroSubtitle, heroCta], {
+            opacity: 1,
+            y: 0
+        });
+        if (scrollIndicator) {
+            gsap.set(scrollIndicator, { opacity: 1, y: 0 });
+        }
+
         const heroTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: hero,
@@ -232,44 +249,11 @@
             }
         });
 
-        // Phase 1: Title enters (0% - 15% of scroll = 0-300px)
-        heroTimeline.to(heroTitle, {
-            opacity: 1,
-            y: 0,
-            duration: 0.15,
-            ease: 'power2.out'
-        });
+        // Content is already visible - hold for first 65% of scroll (0-1300px)
+        // This gives user time to read the content
+        heroTimeline.to({}, { duration: 0.65 });
 
-        // Phase 2: Subtitle enters (15% - 30% = 300-600px)
-        heroTimeline.to(heroSubtitle, {
-            opacity: 1,
-            y: 0,
-            duration: 0.15,
-            ease: 'power2.out'
-        });
-
-        // Phase 3: CTA buttons enter (30% - 45% = 600-900px)
-        heroTimeline.to(heroCta, {
-            opacity: 1,
-            y: 0,
-            duration: 0.15,
-            ease: 'power2.out'
-        });
-
-        // Phase 4: Scroll indicator appears (45% - 50% = 900-1000px)
-        if (scrollIndicator) {
-            heroTimeline.to(scrollIndicator, {
-                opacity: 1,
-                y: 0,
-                duration: 0.05,
-                ease: 'power2.out'
-            });
-        }
-
-        // Phase 5: Hold moment - let user absorb content (50% - 65% = 1000-1300px)
-        heroTimeline.to({}, { duration: 0.15 });
-
-        // Phase 6: Scroll indicator fades out (65% - 70% = 1300-1400px)
+        // Scroll indicator fades out (65% - 70% = 1300-1400px)
         if (scrollIndicator) {
             heroTimeline.to(scrollIndicator, {
                 opacity: 0,
@@ -278,7 +262,7 @@
             });
         }
 
-        // Phase 7: Hero content slides UP and exits (70% - 100% = 1400-2000px)
+        // Hero content slides UP and exits (70% - 100% = 1400-2000px)
         // Using clip-path for a "peel away" effect
         heroTimeline.to(hero, {
             clipPath: 'inset(0 0 100% 0)',

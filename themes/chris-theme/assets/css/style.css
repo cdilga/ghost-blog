@@ -180,11 +180,17 @@ html.reduced-motion *::after {
     transition-duration: 0.01ms !important;
 }
 
+/* Background on html allows fixed depth-map canvas to show through transparent body */
+html {
+    background: var(--color-bg);
+}
+
 body {
     font-family: var(--font-sans);
     font-size: var(--text-base);
     color: var(--color-text);
-    background: var(--color-bg);
+    /* Transparent to allow depth-map canvas (z-index: -1) to show through */
+    background: transparent;
     min-height: 100vh;
 }
 
@@ -510,7 +516,8 @@ pre code {
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: var(--color-bg-dark);
+    /* Transparent to show depth-map canvas beneath */
+    background: transparent;
     /* Initial state for scroll-captured choreography */
     clip-path: inset(0 0 0% 0);
     will-change: clip-path;
@@ -648,10 +655,11 @@ pre code {
     }
 }
 
-/* Initial animation states (before GSAP takes over) */
+/* Hero content visible by default - shows immediately on load
+   GSAP scroll choreography handles the exit animation */
 .hero--parallax [data-animate="fade-up"] {
-    opacity: 0;
-    transform: translateY(30px);
+    opacity: 1;
+    transform: none;
 }
 
 /* Reduced motion: show content immediately */
@@ -4016,80 +4024,93 @@ img.project-card__thumbnail {
     display: block;
 }
 
-/* Carousel Section */
-.carousel-section {
+/* ==========================================================================
+   17e. Reel Navigator - Circular Article Wheel
+   ========================================================================== */
+
+.reel-navigator {
     position: relative;
-    padding: var(--space-16) 0;
-    background: var(--color-bg-dark);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: var(--color-bg-dark, #1a1a1a);
     color: var(--color-text-on-dark);
     overflow: hidden;
+    padding: var(--space-8) 0;
 }
 
-.carousel-section__header {
+/* Background Video */
+.reel-navigator__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    opacity: 0.5;
+}
+
+/* Gradient overlay for depth */
+.reel-navigator__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: radial-gradient(
+        ellipse 80% 60% at 50% 70%,
+        transparent 0%,
+        rgba(0, 0, 0, 0.4) 50%,
+        rgba(0, 0, 0, 0.8) 100%
+    );
+    pointer-events: none;
+}
+
+/* Header */
+.reel-navigator__header {
+    position: relative;
+    z-index: 10;
     text-align: center;
     padding: 0 var(--space-6);
-    margin-bottom: var(--space-12);
+    margin-bottom: var(--space-8);
 }
 
-.carousel-section__title {
+.reel-navigator__title {
     font-size: var(--text-2xl);
     font-weight: var(--weight-bold);
     color: var(--color-text-on-dark);
     margin-bottom: var(--space-2);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
-.carousel-section__subtitle {
+.reel-navigator__subtitle {
     font-size: var(--text-base);
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.7);
     margin: 0;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Carousel Container - Edge Fades */
-.carousel-container {
+/* Wheel Container */
+.reel-navigator__wheel {
     position: relative;
+    z-index: 5;
     width: 100%;
-    height: 400px;
-    perspective: 1200px;
-    overflow: hidden;
-
-    /* Edge fade effect */
-    mask-image: linear-gradient(
-        to right,
-        transparent 0%,
-        black 15%,
-        black 85%,
-        transparent 100%
-    );
-    -webkit-mask-image: linear-gradient(
-        to right,
-        transparent 0%,
-        black 15%,
-        black 85%,
-        transparent 100%
-    );
-}
-
-/* Carousel Track - 3D Cylinder */
-.carousel-track {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    transform-style: preserve-3d;
+    height: 450px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Carousel Card */
-.carousel-card {
+/* Reel Card */
+.reel-card {
     position: absolute;
-    width: 300px;
-    height: 360px;
-    backface-visibility: hidden;
-    transition: opacity var(--duration-fast) var(--ease-out);
+    width: 280px;
+    height: 340px;
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    will-change: transform, opacity;
 }
 
-.carousel-card__link {
+.reel-card__link {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -4098,50 +4119,49 @@ img.project-card__thumbnail {
     background: white;
     border-radius: var(--radius-lg);
     overflow: hidden;
-    box-shadow: var(--shadow-lg);
-    transition: transform var(--duration-normal) var(--ease-out),
-                box-shadow var(--duration-normal) var(--ease-out);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
 }
 
-.carousel-card__link:hover {
-    transform: scale(1.02);
-    box-shadow: var(--shadow-xl);
+.reel-card__link:hover {
+    transform: scale(1.03);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
 }
 
-.carousel-card__link:focus-visible {
+.reel-card__link:focus-visible {
     outline: 3px solid var(--color-accent);
     outline-offset: 4px;
 }
 
 /* Card Image */
-.carousel-card__image {
+.reel-card__image {
     height: 180px;
     background-size: cover;
     background-position: center;
     background-color: var(--color-bg-alt);
 }
 
-.carousel-card__image--placeholder {
+.reel-card__image--placeholder {
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-earth) 100%);
 }
 
-.carousel-card__placeholder-icon {
+.reel-card__placeholder-icon {
     font-size: 3rem;
 }
 
 /* Card Content */
-.carousel-card__content {
+.reel-card__content {
     flex: 1;
-    padding: var(--space-5);
+    padding: var(--space-4);
     display: flex;
     flex-direction: column;
     color: var(--color-text);
 }
 
-.carousel-card__date {
+.reel-card__date {
     font-size: var(--text-xs);
     color: var(--color-text-muted);
     text-transform: uppercase;
@@ -4149,12 +4169,12 @@ img.project-card__thumbnail {
     margin-bottom: var(--space-2);
 }
 
-.carousel-card__title {
+.reel-card__title {
     font-size: var(--text-lg);
     font-weight: var(--weight-semibold);
     line-height: var(--leading-snug);
-    margin-bottom: var(--space-2);
     color: var(--color-text);
+    margin: 0;
 
     /* Truncate after 2 lines */
     display: -webkit-box;
@@ -4163,221 +4183,159 @@ img.project-card__thumbnail {
     overflow: hidden;
 }
 
-.carousel-card__excerpt {
-    font-size: var(--text-sm);
-    color: var(--color-text-soft);
-    line-height: var(--leading-relaxed);
-    margin: 0;
-
-    /* Truncate after 3 lines */
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+/* Scroll Hint */
+.reel-navigator__hint {
+    position: relative;
+    z-index: 10;
+    margin-top: var(--space-8);
+    text-align: center;
 }
 
-/* Carousel Hint */
-.carousel-hint {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-3);
-    padding-top: var(--space-8);
+.reel-navigator__hint-text {
+    font-size: var(--text-sm);
     color: rgba(255, 255, 255, 0.5);
-}
-
-.carousel-hint__arrows {
-    display: flex;
-    gap: var(--space-2);
-    animation: carousel-hint-pulse 2s ease-in-out infinite;
-}
-
-.carousel-hint__text {
-    font-size: var(--text-sm);
     text-transform: uppercase;
     letter-spacing: 0.1em;
+    animation: reel-hint-pulse 2s ease-in-out infinite;
 }
 
-@keyframes carousel-hint-pulse {
-    0%, 100% {
-        opacity: 0.5;
-    }
-    50% {
-        opacity: 1;
-    }
-}
-
-/* Pinned state (while scroll-hijacking) */
-.carousel-section.is-pinned {
-    /* Ensure full viewport height when pinned */
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+@keyframes reel-hint-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
 }
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
-    .carousel-container {
-        height: 340px;
+    .reel-navigator {
+        min-height: 90vh;
     }
 
-    .carousel-card {
-        width: 260px;
-        height: 320px;
+    .reel-navigator__wheel {
+        height: 380px;
     }
 
-    .carousel-card__image {
-        height: 140px;
+    .reel-card {
+        width: 240px;
+        height: 300px;
     }
 
-    .carousel-card__content {
-        padding: var(--space-4);
+    .reel-card__image {
+        height: 150px;
     }
 
-    .carousel-card__title {
-        font-size: var(--text-base);
-    }
-
-    .carousel-section__title {
+    .reel-navigator__title {
         font-size: var(--text-xl);
     }
 }
 
 @media (max-width: 480px) {
-    .carousel-card {
-        width: 240px;
-        height: 300px;
+    .reel-card {
+        width: 200px;
+        height: 260px;
     }
 
-    .carousel-card__image {
+    .reel-card__image {
         height: 120px;
     }
 
-    /* Narrower fade edges on mobile */
-    .carousel-container {
-        mask-image: linear-gradient(
-            to right,
-            transparent 0%,
-            black 8%,
-            black 92%,
-            transparent 100%
-        );
-        -webkit-mask-image: linear-gradient(
-            to right,
-            transparent 0%,
-            black 8%,
-            black 92%,
-            transparent 100%
-        );
-    }
-}
-
-/* ==========================================================================
-   17e2. Blog Showcase Footer - Cinematic Video Blend
-   ========================================================================== */
-
-.blog-showcase-footer {
-    position: relative;
-    height: 70vh;
-    min-height: 500px;
-    max-height: 800px;
-    overflow: hidden;
-    background: var(--color-bg-dark, #1a1a1a);
-}
-
-/* Background: Windswept sand dune video */
-.blog-showcase-footer .windswept-bg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 1;
-    opacity: 0.7;
-}
-
-/* Gradient overlay for depth and text readability */
-.blog-showcase-footer__overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    background: linear-gradient(
-        to bottom,
-        rgba(0, 0, 0, 0.3) 0%,
-        rgba(0, 0, 0, 0.1) 30%,
-        rgba(0, 0, 0, 0.1) 70%,
-        rgba(0, 0, 0, 0.5) 100%
-    );
-    pointer-events: none;
-}
-
-/* Content overlay */
-.blog-showcase-footer__content {
-    position: absolute;
-    bottom: var(--space-12);
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 4;
-    text-align: center;
-}
-
-.blog-showcase-footer__tagline {
-    font-size: var(--text-lg);
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: var(--space-4);
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
-
-.blog-showcase-footer__content .btn {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-/* Loading state - show poster until video loads */
-.blog-showcase-footer video {
-    background-color: var(--color-bg-dark, #1a1a1a);
-}
-
-/* Pause videos when not visible (handled by JS) */
-.blog-showcase-footer.is-paused video {
-    /* Visual indicator that video is paused - optional */
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-    .blog-showcase-footer {
-        height: 60vh;
-        min-height: 400px;
+    .reel-card__content {
+        padding: var(--space-3);
     }
 
-    .blog-showcase-footer__content {
-        bottom: var(--space-8);
-        padding: 0 var(--space-4);
-    }
-
-    .blog-showcase-footer__tagline {
+    .reel-card__title {
         font-size: var(--text-base);
     }
 }
 
-/* Reduced motion: show static poster, hide videos */
+/* Reduced motion: show grid instead of wheel */
 @media (prefers-reduced-motion: reduce) {
-    .blog-showcase-footer video {
+    .reel-navigator__video {
         display: none;
     }
 
-    .blog-showcase-footer {
+    .reel-navigator {
         background: linear-gradient(
             135deg,
             var(--color-bg-dark, #1a1a1a) 0%,
             var(--color-accent-dark, #c77418) 100%
         );
+        min-height: auto;
+        padding: var(--space-16) 0;
     }
 
-    .blog-showcase-footer__overlay {
-        background: rgba(0, 0, 0, 0.4);
+    .reel-navigator__wheel {
+        height: auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: var(--space-6);
+        padding: 0 var(--space-6);
+        max-width: 1200px;
+    }
+
+    .reel-card {
+        position: relative;
+        width: 100%;
+        height: auto;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .reel-card__link {
+        height: auto;
+    }
+
+    .reel-navigator__hint {
+        display: none;
+    }
+}
+
+/* ==========================================================================
+   17e2. Social Footer
+   ========================================================================== */
+
+.social-footer {
+    background: var(--color-bg-dark, #1a1a1a);
+    padding: var(--space-8) var(--space-6);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.social-footer__nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-6);
+    flex-wrap: wrap;
+}
+
+.social-footer__link {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: color 0.2s ease;
+    padding: var(--space-2) var(--space-3);
+}
+
+.social-footer__link:hover,
+.social-footer__link:focus {
+    color: var(--color-accent);
+}
+
+.social-footer__link:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+@media (max-width: 480px) {
+    .social-footer__nav {
+        gap: var(--space-4);
+    }
+
+    .social-footer__link {
+        font-size: var(--text-xs);
+        padding: var(--space-2);
     }
 }
 
@@ -5223,7 +5181,40 @@ img.project-card__thumbnail {
 }
 
 /* ==========================================================================
-   19. Print Styles
+   19. Scroll Parallax Support
+   ========================================================================== */
+
+/*
+ * Scroll parallax images need overflow: visible to show movement,
+ * but we use clip-path to maintain rounded corners.
+ * The image is scaled up to prevent gaps during parallax movement.
+ */
+
+/* Containers that hold parallax images - allow overflow but clip with rounded corners */
+.speaker__photo:has([data-scroll-parallax]),
+.consultant__image:has([data-scroll-parallax]),
+.project-card__media:has([data-scroll-parallax]),
+.article-card__image:has([data-scroll-parallax]),
+.post-feature-image:has([data-scroll-parallax]) {
+    overflow: visible;
+    clip-path: inset(0 round var(--radius-lg));
+}
+
+/* Scale parallax images larger so they can move without showing gaps */
+[data-scroll-parallax] {
+    scale: 1.15;
+    will-change: transform;
+}
+
+/* Disable hover scale on parallax images (conflicts with parallax transform) */
+.speaker__photo:has([data-scroll-parallax]):hover img,
+.article-card:hover .article-card__image:has([data-scroll-parallax]) img,
+.consultant__visual:hover .consultant__image:has([data-scroll-parallax]) img {
+    transform: none !important;
+}
+
+/* ==========================================================================
+   20. Print Styles
    ========================================================================== */
 
 @media print {
