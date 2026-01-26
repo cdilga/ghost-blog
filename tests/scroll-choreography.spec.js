@@ -75,7 +75,7 @@ test('particle mask has organic scatter, not solid line', async ({ page }) => {
   await scrollGradually(page, 0, 5100, 8);
 
   const particleSpread = await page.evaluate(() => {
-    const circles = document.querySelectorAll('#windswept-mask g circle');
+    const circles = document.querySelectorAll('#windswept-mask circle');
     if (circles.length === 0) return { exists: false };
 
     const xPositions = Array.from(circles).map(c => parseFloat(c.getAttribute('cx') || '0'));

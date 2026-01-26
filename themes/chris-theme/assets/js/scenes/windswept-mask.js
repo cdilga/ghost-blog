@@ -21,14 +21,17 @@
     // Configuration
     const CONFIG = {
         // Number of particles along the mask edge
-        particleCount: 300,
+        particleCount: 400,
         // Particle size range (px)
-        particleSizeMin: 3,
-        particleSizeMax: 12,
+        particleSizeMin: 2,
+        particleSizeMax: 25,
         // How far particles scatter from the baseline (px)
-        scatterWidth: 60,
+        // Needs to be wide enough to be visually obvious
+        scatterWidth: 250,
+        // Bias toward leading edge (0.5 = symmetric, 0.8 = 80% on leading side)
+        leadingBias: 0.75,
         // Vertical clustering zones (creates organic distribution)
-        clusterCount: 20
+        clusterCount: 25
     };
 
     // Store viewport dimensions and particle data
@@ -87,11 +90,11 @@
         particleData = generateParticleData();
 
         // Create the SVG mask with pixel coordinates
-        const { svg, clipPath, maskRect, maskGroup } = createMaskSVG();
+        const { svg, clipPath, maskRect, circles } = createMaskSVG();
         document.body.appendChild(svg);
 
         // Initial particle positions
-        updateParticlePositions(maskGroup, 0);
+        updateParticlePositions(circles, 0);
 
         // Apply clipPath to the Hero+Coder canvas
         heroCoderCanvas.style.clipPath = 'url(#windswept-mask)';
@@ -109,7 +112,7 @@
                 maskRect.setAttribute('height', String(viewportHeight));
                 // Update current state
                 const currentProgress = window.ChrisTheme?.windsweptMask?.trigger?.progress || 0;
-                updateMaskPosition(currentProgress, maskRect, maskGroup);
+                updateMaskPosition(currentProgress, maskRect, circles);
             }, 100);
         });
 
@@ -120,7 +123,7 @@
             end: () => `+=${window.innerHeight * 0.8}`,
             scrub: 1,
             onUpdate: (self) => {
-                updateMaskPosition(self.progress, maskRect, maskGroup);
+                updateMaskPosition(self.progress, maskRect, circles);
             },
             onEnter: () => {
                 positionForTransition(heroCoderCanvas, claudeCodesCanvas, true);
@@ -140,7 +143,7 @@
                 // Hide claude canvas FIRST to prevent flash
                 claudeCodesCanvas.style.opacity = '0';
                 // Reset mask position (hero fully visible through mask)
-                resetMask(maskRect, maskGroup);
+                resetMask(maskRect, circles);
                 // Keep hero in front - no z-index change needed
             }
         });
@@ -150,9 +153,9 @@
             trigger: transitionTrigger,
             svg,
             maskRect,
-            maskGroup,
-            reset: () => resetMask(maskRect, maskGroup),
-            setProgress: (p) => updateMaskPosition(p, maskRect, maskGroup)
+            circles,
+            reset: () => resetMask(maskRect, circles),
+            setProgress: (p) => updateMaskPosition(p, maskRect, circles)
         };
 
         console.log('[windswept-mask] Initialized with', CONFIG.particleCount, 'particles');
@@ -179,34 +182,35 @@
         maskRect.setAttribute('width', String(viewportWidth));
         maskRect.setAttribute('height', String(viewportHeight));
 
-        // Group for particles along the revealing edge
-        const maskGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        clipPath.appendChild(maskRect);
 
-        // Create circle elements (positions set in updateParticlePositions)
+        // Create circle elements DIRECTLY in clipPath (not in a <g> - groups don't work in clipPath)
+        // Store references for later updates
+        const circles = [];
         for (let i = 0; i < CONFIG.particleCount; i++) {
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', '0');
             circle.setAttribute('cy', '0');
             circle.setAttribute('r', '0');
-            maskGroup.appendChild(circle);
+            clipPath.appendChild(circle);
+            circles.push(circle);
         }
-
-        clipPath.appendChild(maskRect);
-        clipPath.appendChild(maskGroup);
         defs.appendChild(clipPath);
         svg.appendChild(defs);
 
-        return { svg, clipPath, maskRect, maskGroup };
+        return { svg, clipPath, maskRect, circles };
     }
 
     /**
      * Generate particle data with organic clustering (relative positions 0-1)
+     * Particles are biased toward the "leading" edge (left side, into hidden area)
+     * to create visible organic scatter as the mask reveals
      */
     function generateParticleData() {
         const particles = [];
-        const { particleCount, particleSizeMin, particleSizeMax, clusterCount } = CONFIG;
+        const { particleCount, particleSizeMin, particleSizeMax, clusterCount, leadingBias } = CONFIG;
 
-        // Create cluster centers
+        // Create cluster centers spread across viewport height
         const clusters = [];
         for (let i = 0; i < clusterCount; i++) {
             clusters.push({
@@ -224,13 +228,23 @@
             let y = cluster.y + yScatter;
             y = Math.max(0, Math.min(1, y));
 
-            // X offset from edge (normalized, will be multiplied by scatterWidth)
-            // Centered around 0, range roughly -1 to 1
-            const offsetX = (Math.random() - 0.5) * 2;
+            // X offset from edge - BIASED toward leading edge (negative = left of rect edge)
+            // Leading particles extend the visible area into the "hidden" zone
+            // This creates the organic sand-grain effect
+            let offsetX;
+            if (Math.random() < leadingBias) {
+                // Leading particle: extends LEFT of the edge (negative offset)
+                // Use exponential distribution for natural falloff
+                offsetX = -Math.random() * Math.random(); // Range: -1 to 0, clustered near 0
+            } else {
+                // Trailing particle: RIGHT of the edge (inside visible area)
+                offsetX = Math.random() * 0.3; // Range: 0 to 0.3, shallow trailing
+            }
 
-            // Size
+            // Size - larger particles further from edge for depth
             const sizeRange = particleSizeMax - particleSizeMin;
-            const r = particleSizeMin + Math.random() * sizeRange;
+            const distanceFactor = Math.abs(offsetX);
+            const r = particleSizeMin + (sizeRange * (0.3 + 0.7 * distanceFactor * Math.random()));
 
             particles.push({ y, offsetX, r });
         }
@@ -241,8 +255,7 @@
     /**
      * Update particle positions based on progress
      */
-    function updateParticlePositions(maskGroup, progress) {
-        const circles = maskGroup.querySelectorAll('circle');
+    function updateParticlePositions(circles, progress) {
         const edgeX = progress * viewportWidth; // The revealing edge position
 
         circles.forEach((circle, i) => {
@@ -265,7 +278,7 @@
      *
      * Wind blows right-to-left: mask rect moves to the right, revealing from left
      */
-    function updateMaskPosition(progress, maskRect, maskGroup) {
+    function updateMaskPosition(progress, maskRect, circles) {
         // Move rect to the right as progress increases
         // At progress 0: x=0 (covers full viewport)
         // At progress 1: x=viewportWidth (moved off right, nothing visible)
@@ -273,15 +286,15 @@
         maskRect.setAttribute('x', String(rectX));
 
         // Update particle positions along the left edge of the rect
-        updateParticlePositions(maskGroup, progress);
+        updateParticlePositions(circles, progress);
     }
 
     /**
      * Reset mask to initial state (fully visible)
      */
-    function resetMask(maskRect, maskGroup) {
+    function resetMask(maskRect, circles) {
         maskRect.setAttribute('x', '0');
-        updateParticlePositions(maskGroup, 0);
+        updateParticlePositions(circles, 0);
     }
 
     /**
