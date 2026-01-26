@@ -989,97 +989,105 @@
         return num.toString();
     }
 
-    // Initialize infinite blog carousel with scroll-hijack
-    function initBlogCarousel() {
-        const section = document.querySelector('.carousel-section');
-        const container = document.querySelector('.carousel-container');
-        const track = document.querySelector('.carousel-track');
-        const cards = document.querySelectorAll('.carousel-card');
+    // Initialize reel navigator - circular article wheel
+    function initReelNavigator() {
+        const section = document.querySelector('.reel-navigator');
+        const wheel = document.querySelector('.reel-navigator__wheel');
+        const cards = document.querySelectorAll('.reel-card');
+        const video = document.querySelector('.reel-navigator__video');
 
-        if (!section || !track || cards.length === 0) return;
+        if (!section || !wheel || cards.length === 0) return;
 
-        // Skip carousel for reduced motion - CSS handles visibility
+        // Skip animation for reduced motion - CSS handles grid fallback
         if (prefersReducedMotion) {
-            console.log('Chris Theme: Blog carousel disabled (reduced motion)');
+            console.log('Chris Theme: Reel navigator disabled (reduced motion)');
             return;
         }
 
-        // Carousel configuration
+        // Configuration for top-down wheel view
         const config = {
-            radius: isMobile ? 350 : 500,           // Cylinder radius
-            visibleCards: isMobile ? 5 : 7,         // Cards visible at once
+            radius: isMobile ? 280 : 380,           // Distance from center
             anglePerCard: 360 / cards.length,       // Angle between cards
-            scrollMultiplier: isMobile ? 0.15 : 0.1 // Scroll speed
+            scrollMultiplier: isMobile ? 0.12 : 0.08, // Scroll sensitivity
+            perspectiveCompression: 0.35            // Y-axis compression for top-down look
         };
 
         let currentRotation = 0;
         let targetRotation = 0;
         let velocity = 0;
         let isActive = false;
+        let animationId = null;
 
-        // Position cards on cylinder
+        // Position cards around the wheel (top-down view)
         function positionCards() {
             cards.forEach((card, index) => {
                 const angle = (config.anglePerCard * index) + currentRotation;
                 const radian = (angle * Math.PI) / 180;
 
-                // 3D position on cylinder
+                // Polar to Cartesian for top-down view
                 const x = Math.sin(radian) * config.radius;
-                const z = Math.cos(radian) * config.radius - config.radius;
-                const rotateY = -angle;
+                const y = Math.cos(radian) * config.radius;
 
-                // Apply transform
+                // Y position compressed for perspective (top-down look)
+                const yCompressed = -y * config.perspectiveCompression;
+
+                // Scale: larger at front (y > 0), smaller at back (y < 0)
+                const normalizedY = (y + config.radius) / (config.radius * 2); // 0 to 1
+                const scale = 0.5 + normalizedY * 0.5; // 0.5 to 1.0
+
+                // Opacity: brighter at front, dimmer at back
+                const opacity = 0.3 + normalizedY * 0.7; // 0.3 to 1.0
+
+                // Z-index: front cards on top
+                const zIndex = Math.round(normalizedY * 100);
+
+                // Apply transforms
                 card.style.transform = `
                     translateX(${x}px)
-                    translateZ(${z}px)
-                    rotateY(${rotateY}deg)
+                    translateY(${yCompressed}px)
+                    scale(${scale})
                 `;
-
-                // Fade cards at back of cylinder
-                const normalizedZ = (z + config.radius) / (config.radius * 2);
-                const opacity = Math.max(0.3, normalizedZ);
                 card.style.opacity = opacity;
+                card.style.zIndex = zIndex;
             });
         }
 
-        // Animation loop for smooth rotation
-        function animateCarousel() {
+        // Animation loop with smooth easing
+        function animate() {
             // Ease toward target
             const diff = targetRotation - currentRotation;
             currentRotation += diff * 0.1;
 
-            // Apply velocity decay
-            if (Math.abs(velocity) > 0.1) {
+            // Apply velocity with friction/decay
+            if (Math.abs(velocity) > 0.05) {
                 targetRotation += velocity;
-                velocity *= 0.95; // Friction
+                velocity *= 0.94; // Friction - smooth mechanical feel
             }
 
             positionCards();
-            requestAnimationFrame(animateCarousel);
+            animationId = requestAnimationFrame(animate);
         }
 
-        // Scroll event handler (non-hijack version - horizontal scroll on track)
-        function handleScroll(e) {
+        // Scroll handler - rotate wheel
+        function handleWheel(e) {
             if (!isActive) return;
 
             const delta = e.deltaY || e.deltaX || 0;
             velocity += delta * config.scrollMultiplier;
-
-            // Prevent default only when actively scrolling carousel
-            // Comment out to disable scroll-hijack (use native scroll instead)
-            // e.preventDefault();
         }
 
-        // Touch handling for mobile swipe
+        // Touch handling for mobile
         let touchStartX = 0;
+        let touchStartY = 0;
         let touchStartTime = 0;
         let lastTouchX = 0;
 
         function handleTouchStart(e) {
             touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
             lastTouchX = touchStartX;
             touchStartTime = Date.now();
-            velocity = 0; // Stop any existing momentum
+            velocity = 0; // Stop momentum
         }
 
         function handleTouchMove(e) {
@@ -1089,18 +1097,18 @@
             const deltaX = lastTouchX - touchX;
             lastTouchX = touchX;
 
-            targetRotation += deltaX * config.scrollMultiplier * 3;
+            // Rotate based on horizontal swipe
+            targetRotation += deltaX * config.scrollMultiplier * 2.5;
         }
 
         function handleTouchEnd(e) {
-            // Calculate swipe velocity for momentum
             const touchEndX = e.changedTouches[0].clientX;
             const elapsed = Date.now() - touchStartTime;
             const distance = touchStartX - touchEndX;
 
-            if (elapsed < 300 && Math.abs(distance) > 50) {
-                // Fast swipe - add momentum
-                velocity = (distance / elapsed) * 10;
+            // Fast swipe = add momentum
+            if (elapsed < 300 && Math.abs(distance) > 40) {
+                velocity = (distance / elapsed) * 8;
             }
         }
 
@@ -1108,75 +1116,52 @@
         function handleKeyboard(e) {
             if (!isActive) return;
 
-            if (e.key === 'ArrowLeft') {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
                 targetRotation += config.anglePerCard;
                 e.preventDefault();
-            } else if (e.key === 'ArrowRight') {
+            } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
                 targetRotation -= config.anglePerCard;
                 e.preventDefault();
             }
         }
 
-        // Use Intersection Observer to activate/deactivate
+        // Intersection Observer for activation
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                isActive = entry.isIntersecting && entry.intersectionRatio > 0.3;
+                isActive = entry.isIntersecting && entry.intersectionRatio > 0.2;
+
+                // Manage video playback
+                if (video) {
+                    if (entry.isIntersecting) {
+                        video.play().catch(() => {});
+                    } else {
+                        video.pause();
+                    }
+                }
             });
         }, {
-            threshold: [0, 0.3, 0.5, 0.7, 1]
+            threshold: [0, 0.2, 0.5, 0.8, 1]
         });
 
         observer.observe(section);
 
+        // Set video playback rate for cinematic effect
+        if (video) {
+            video.playbackRate = 0.5;
+        }
+
         // Event listeners
-        container.addEventListener('wheel', handleScroll, { passive: true });
-        container.addEventListener('touchstart', handleTouchStart, { passive: true });
-        container.addEventListener('touchmove', handleTouchMove, { passive: true });
-        container.addEventListener('touchend', handleTouchEnd, { passive: true });
+        section.addEventListener('wheel', handleWheel, { passive: true });
+        section.addEventListener('touchstart', handleTouchStart, { passive: true });
+        section.addEventListener('touchmove', handleTouchMove, { passive: true });
+        section.addEventListener('touchend', handleTouchEnd, { passive: true });
         document.addEventListener('keydown', handleKeyboard);
 
         // Initial position and start animation
         positionCards();
-        animateCarousel();
+        animate();
 
-        console.log('Chris Theme: Blog carousel initialized with', cards.length, 'cards');
-    }
-
-    // Initialize blog showcase footer video behavior
-    function initShowcaseFooterVideos() {
-        const footer = document.querySelector('.blog-showcase-footer');
-        if (!footer) return;
-
-        const windsweptVideo = footer.querySelector('.windswept-bg');
-
-        if (!windsweptVideo) return;
-
-        // Set slow-mo playback for windswept (cinematic effect)
-        if (windsweptVideo) {
-            windsweptVideo.playbackRate = 0.5;
-        }
-
-        // Lazy load and play/pause based on visibility
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    // Video is visible - play
-                    footer.classList.remove('is-paused');
-                    windsweptVideo.play().catch(() => {});
-                } else {
-                    // Video is not visible - pause to save resources
-                    footer.classList.add('is-paused');
-                    windsweptVideo.pause();
-                }
-            });
-        }, {
-            rootMargin: '100px', // Start loading slightly before visible
-            threshold: 0.1
-        });
-
-        observer.observe(footer);
-
-        console.log('Chris Theme: Showcase footer videos initialized');
+        console.log('Chris Theme: Reel navigator initialized with', cards.length, 'cards');
     }
 
     // Main initialization
@@ -1215,11 +1200,8 @@
         // Initialize mobile accelerometer tilt
         initAccelerometerTilt();
 
-        // Initialize blog carousel
-        initBlogCarousel();
-
-        // Initialize showcase footer videos
-        initShowcaseFooterVideos();
+        // Initialize reel navigator (circular article wheel)
+        initReelNavigator();
     }
 
     // ========================================
