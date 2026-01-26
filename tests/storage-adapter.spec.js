@@ -102,13 +102,15 @@ test.describe('Storage Adapter', () => {
 
     const savedPath = await adapter.save(file, '2026/02');
 
-    const filename = path.basename(savedPath);
-    const base = path.basename(filename, '.jpg');
+    // save() now returns .webp URL
+    const webpFilename = path.basename(savedPath);
+    const base = path.basename(webpFilename, '.webp');
     const outputDir = path.join(testDir, '2026/02');
 
-    // Verify original and WebP saved
-    expect(fs.existsSync(path.join(outputDir, filename))).toBe(true);
-    expect(fs.existsSync(path.join(outputDir, `${base}.webp`))).toBe(true);
+    // Verify WebP exists (returned by save())
+    expect(fs.existsSync(path.join(outputDir, webpFilename))).toBe(true);
+    // Verify original also saved
+    expect(fs.existsSync(path.join(outputDir, `${base}.jpg`))).toBe(true);
 
     // Verify NO responsive sizes created (300px is smaller than 400, 800, 1200)
     expect(fs.existsSync(path.join(outputDir, 'size/w400', `${base}.webp`))).toBe(false);
