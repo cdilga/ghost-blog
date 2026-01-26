@@ -43,9 +43,12 @@
             octaves: 4
         },
 
-        // Animation - only wave for subtle life, no drift during transition
-        waveAmplitude: 8,
-        waveFrequency: 0.3,
+        // Animation - wave motion for organic life while anchored to edge
+        waveAmplitude: 25,
+        waveFrequency: 0.6,
+        // Horizontal wobble (small, doesn't cause drift)
+        wobbleAmplitude: 15,
+        wobbleFrequency: 0.4,
 
         // Exit animation
         exitDuration: 1500,
@@ -212,7 +215,9 @@
             noiseOffset: Math.random() * 100, // Unique noise sample per blob
             driftPhase: Math.random() * Math.PI * 2,
             waveAmp: CONFIG.waveAmplitude * (0.5 + Math.random()),
-            waveFreq: CONFIG.waveFrequency * (0.8 + Math.random() * 0.4)
+            waveFreq: CONFIG.waveFrequency * (0.8 + Math.random() * 0.4),
+            wobbleAmp: CONFIG.wobbleAmplitude * (0.5 + Math.random()),
+            wobbleFreq: CONFIG.wobbleFrequency * (0.8 + Math.random() * 0.4)
         };
     }
 
@@ -270,7 +275,7 @@
 
     /**
      * Update all blob shapes
-     * Blobs stay anchored to the transition edge - only subtle wave motion for life
+     * Blobs stay anchored to the transition edge with wave + wobble motion
      */
     function updateBlobShapes(time, progress) {
         const edgeX = progress * viewportWidth;
@@ -283,11 +288,13 @@
         }
 
         blobShapes.forEach(blob => {
-            // Subtle wave motion for organic feel (only vertical, very gentle)
+            // Vertical wave motion
             const wave = Math.sin(time * blob.waveFreq + blob.driftPhase) * blob.waveAmp;
+            // Horizontal wobble (offset phase so it's not synchronized with wave)
+            const wobble = Math.sin(time * blob.wobbleFreq + blob.driftPhase + Math.PI * 0.5) * blob.wobbleAmp;
 
-            // Position anchored to transition edge, minus exit drift
-            const cx = edgeX + blob.baseXOffset - exitDrift;
+            // Position anchored to transition edge with wobble, minus exit drift
+            const cx = edgeX + blob.baseXOffset + wobble - exitDrift;
             const cy = blob.baseY + wave;
 
             // Generate noise-distorted path (fixed shape per blob)
