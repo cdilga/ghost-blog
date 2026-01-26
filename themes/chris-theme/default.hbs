@@ -17,24 +17,9 @@
     <link rel="stylesheet" href="{{asset "css/style.css"}}">
 </head>
 <body class="{{body_class}}">
-    <header class="site-header">
-        <div class="container">
-            <a href="{{@site.url}}" class="site-title">{{@site.title}}</a>
-            <nav class="site-nav">
-                {{navigation}}
-            </nav>
-        </div>
-    </header>
-
     <main class="site-main">
         {{{body}}}
     </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; {{date format="YYYY"}} {{@site.title}}</p>
-        </div>
-    </footer>
 
     {{ghost_foot}}
 
