@@ -440,8 +440,6 @@ pre code {
 
 .site-main {
     min-height: 70vh;
-    padding-top: var(--space-12);
-    padding-bottom: 0;
 }
 
 /* ==========================================================================
