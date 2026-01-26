@@ -1,20 +1,16 @@
 /**
- * Windswept Wisp Mask Transition
+ * Windswept Mask Transition - Noise-Distorted Shapes
  *
- * Creates an SVG mask with flowing bezier curve "wisps" that feel like
- * windblown smoke/sand. Uses variable-thickness paths rendered as filled
- * polygons for organic, flowing transitions.
+ * Creates organic, irregular shapes using noise-displaced polygons.
+ * Achieves the "hand-drawn/ink-splatter" look without SVG filters
+ * (which don't work with clipPath on canvas elements).
  *
- * Uses:
- * - SVG clipPath with path elements (binary mask, works with canvas)
- * - Cubic bezier curves for smooth flowing shapes
- * - Variable thickness via filled polygons (tapered ends)
- * - Exit animation when scroll completes
+ * Key technique: Generate blob shapes by displacing polygon vertices
+ * with multi-octave noise, creating organic, flame-like edges.
  */
 (function() {
     'use strict';
 
-    // Prevent multiple initializations
     if (window.__windsweptMaskInitialized) {
         return;
     }
@@ -22,55 +18,60 @@
 
     // Configuration
     const CONFIG = {
-        // Wisp distribution - fewer but MUCH bigger wisps
-        wisps: {
-            // Big flowing fingers that extend far
-            long: { count: 6, lengthMin: 350, lengthMax: 600, thicknessMin: 50, thicknessMax: 90 },
-            // Medium wisps for variety
-            medium: { count: 10, lengthMin: 180, lengthMax: 350, thicknessMin: 35, thicknessMax: 65 },
-            // Edge coverage - MANY thick wisps overlapping to completely hide the line
-            edge: { count: 50, lengthMin: 120, lengthMax: 250, thicknessMin: 60, thicknessMax: 100 }
+        // Transition zone: 20% of viewport width for seam coverage
+        transitionWidth: 0.22,
+
+        // Blob shape settings
+        blobs: {
+            // Large background blobs - wide coverage
+            large: { count: 5, radiusMin: 0.18, radiusMax: 0.30, vertexCount: 24 },
+            // Medium blobs - fill gaps
+            medium: { count: 8, radiusMin: 0.10, radiusMax: 0.18, vertexCount: 18 },
+            // Small accent blobs - detail
+            small: { count: 12, radiusMin: 0.05, radiusMax: 0.10, vertexCount: 14 },
+            // Edge blobs - tight seam coverage
+            edge: { count: 18, radiusMin: 0.06, radiusMax: 0.12, vertexCount: 16 }
         },
 
-        // Scatter width from mask edge (px)
-        scatterWidth: 400,
+        // Noise settings for shape distortion
+        noise: {
+            // How much to displace vertices (0-1, multiplied by radius)
+            displacement: 0.5,
+            // Noise frequency (smaller = larger features)
+            frequency: 3,
+            // Multiple octaves for fractal detail
+            octaves: 4,
+            // Time-based animation speed
+            animationSpeed: 0.3
+        },
 
-        // Animation parameters - slower for bigger wisps
-        driftSpeed: { min: 15, max: 40 },      // px/s (slower)
-        waveAmplitude: { min: 20, max: 50 },   // px
-        waveFrequency: { min: 0.2, max: 0.5 }, // Hz (slower)
-
-        // Bezier curve segments (polygon vertices)
-        segmentCount: 12, // More segments for smoother curves
+        // Animation
+        driftSpeed: 0.015,
+        waveAmplitude: 15,
+        waveFrequency: 0.4,
 
         // Exit animation
-        exitAcceleration: 3.0,
-        exitDuration: 1.5, // seconds
-
-        // Noise field for organic movement
-        noise: {
-            scale: 0.002,
-            speed: 0.3,
-            strength: 30
-        }
+        exitDuration: 1500,
+        exitAcceleration: 3
     };
 
     // State
     let viewportWidth = window.innerWidth;
     let viewportHeight = window.innerHeight;
-    let wisps = [];
-    let wispElements = [];
+    let svgElement = null;
+    let clipPathElement = null;
+    let maskRect = null;
+    let blobShapes = [];
     let animationId = null;
     let isAnimating = false;
     let isExiting = false;
     let exitStartTime = 0;
     let animationStartTime = 0;
     let currentProgress = 0;
-    let lastTime = 0;
     let maskInitialized = false;
 
-    // Simple 2D noise implementation (value noise with smoothing)
-    const NoiseGenerator = {
+    // Noise generator
+    const Noise = {
         perm: null,
 
         init() {
@@ -97,282 +98,74 @@
 
         noise2D(x, y) {
             if (!this.perm) this.init();
-
             const X = Math.floor(x) & 255;
             const Y = Math.floor(y) & 255;
-
             x -= Math.floor(x);
             y -= Math.floor(y);
-
             const u = this.fade(x);
             const v = this.fade(y);
-
             const A = this.perm[X] + Y;
             const B = this.perm[X + 1] + Y;
-
             return this.lerp(
                 this.lerp(this.grad(this.perm[A], x, y), this.grad(this.perm[B], x - 1, y), u),
                 this.lerp(this.grad(this.perm[A + 1], x, y - 1), this.grad(this.perm[B + 1], x - 1, y - 1), u),
                 v
-            ) * 0.5 + 0.5;
+            );
         },
 
-        fbm(x, y, octaves = 3) {
+        // Fractal brownian motion - layered noise
+        fbm(x, y, octaves = 4) {
             let value = 0;
             let amplitude = 1;
             let frequency = 1;
             let maxValue = 0;
-
             for (let i = 0; i < octaves; i++) {
                 value += amplitude * this.noise2D(x * frequency, y * frequency);
                 maxValue += amplitude;
                 amplitude *= 0.5;
                 frequency *= 2;
             }
-
             return value / maxValue;
         }
     };
 
-    // Bezier math helpers
-    function cubicBezierPoint(p0, p1, p2, p3, t) {
-        const mt = 1 - t;
-        const mt2 = mt * mt;
-        const mt3 = mt2 * mt;
-        const t2 = t * t;
-        const t3 = t2 * t;
-
-        return {
-            x: mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x,
-            y: mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
-        };
-    }
-
-    function cubicBezierTangent(p0, p1, p2, p3, t) {
-        const mt = 1 - t;
-        const mt2 = mt * mt;
-        const t2 = t * t;
-
-        // Derivative of cubic bezier
-        const dx = 3 * mt2 * (p1.x - p0.x) + 6 * mt * t * (p2.x - p1.x) + 3 * t2 * (p3.x - p2.x);
-        const dy = 3 * mt2 * (p1.y - p0.y) + 6 * mt * t * (p2.y - p1.y) + 3 * t2 * (p3.y - p2.y);
-
-        // Normalize
-        const len = Math.sqrt(dx * dx + dy * dy) || 1;
-        return { x: dx / len, y: dy / len };
-    }
-
-    function randRange(range) {
-        return range.min + Math.random() * (range.max - range.min);
-    }
-
     /**
-     * Create a wisp with bezier control points
+     * Generate a noise-distorted blob path
      */
-    function createWisp(type, config, index, total) {
-        const length = config.lengthMin + Math.random() * (config.lengthMax - config.lengthMin);
-        const thickness = config.thicknessMin + Math.random() * (config.thicknessMax - config.thicknessMin);
+    function generateBlobPath(cx, cy, baseRadius, vertexCount, noiseOffset, time) {
+        const points = [];
+        const { displacement, frequency, octaves, animationSpeed } = CONFIG.noise;
 
-        // Starting position (y is 0-1 relative to viewport)
-        let yPosition;
-        if (type === 'edge') {
-            // Edge wisps are evenly distributed vertically with heavy overlap for FULL coverage
-            // Multiple passes ensure no gaps
-            yPosition = (index / total) * 1.4 - 0.2; // Generous overflow top/bottom
-        } else {
-            yPosition = Math.random();
-        }
+        for (let i = 0; i < vertexCount; i++) {
+            const angle = (i / vertexCount) * Math.PI * 2;
 
-        // X offset from mask edge
-        let xOffset;
-        if (type === 'edge') {
-            // Edge wisps: heads positioned INTO the visible area (positive offset)
-            // so their bodies extend back and COVER the edge line
-            // Since wisps extend leftward, head at +0.15 to +0.4 means body covers edge
-            xOffset = 0.1 + Math.random() * 0.35;
-        } else if (type === 'medium') {
-            xOffset = (Math.random() - 0.5) * 1.0;
-        } else {
-            // Long wisps extend further out
-            xOffset = (Math.random() - 0.5) * 1.5;
-        }
+            // Sample noise at this angle
+            const nx = Math.cos(angle) * frequency + noiseOffset;
+            const ny = Math.sin(angle) * frequency + time * animationSpeed;
+            const noiseVal = Noise.fbm(nx, ny, octaves);
 
-        return {
-            type,
-            baseLength: length,
-            maxThickness: thickness,
+            // Displace radius by noise (-0.5 to 0.5 range, scaled by displacement)
+            const radiusOffset = (noiseVal - 0.5) * displacement * baseRadius;
+            const r = baseRadius + radiusOffset;
 
-            // Animation parameters - edge wisps move VERY slowly to maintain coverage
-            driftSpeed: type === 'edge'
-                ? randRange({ min: 3, max: 10 })
-                : randRange(CONFIG.driftSpeed),
-            waveAmplitude: type === 'edge'
-                ? randRange({ min: 8, max: 15 })  // Less wave for edge
-                : randRange(CONFIG.waveAmplitude),
-            waveFrequency: randRange(CONFIG.waveFrequency),
-            wavePhase: Math.random() * Math.PI * 2,
-            noiseOffset: Math.random() * 1000,
-
-            // Position
-            yPosition,
-            xOffset,
-
-            // Bezier curve angle/curvature - edge wisps are flatter
-            curvature: type === 'edge'
-                ? (Math.random() - 0.5) * 0.3
-                : (Math.random() - 0.5) * 0.6,
-            angle: type === 'edge'
-                ? (Math.random() - 0.5) * 0.15  // More horizontal
-                : (Math.random() - 0.5) * 0.4,
-
-            // Exit animation state
-            isExiting: false,
-            exitThicknessMultiplier: 1
-        };
-    }
-
-    /**
-     * Initialize all wisps
-     */
-    function initWisps() {
-        wisps = [];
-
-        // Create wisps of each type
-        for (let i = 0; i < CONFIG.wisps.long.count; i++) {
-            wisps.push(createWisp('long', CONFIG.wisps.long, i, CONFIG.wisps.long.count));
-        }
-        for (let i = 0; i < CONFIG.wisps.medium.count; i++) {
-            wisps.push(createWisp('medium', CONFIG.wisps.medium, i, CONFIG.wisps.medium.count));
-        }
-        // Edge wisps - evenly distributed for full coverage
-        for (let i = 0; i < CONFIG.wisps.edge.count; i++) {
-            wisps.push(createWisp('edge', CONFIG.wisps.edge, i, CONFIG.wisps.edge.count));
-        }
-    }
-
-    /**
-     * Calculate wisp's 4 bezier control points at given time
-     */
-    function getWispControlPoints(wisp, time, edgeX) {
-        // Calculate drift with wrapping (wisps cycle back when they drift too far)
-        // Cycle period is based on scatter width - wisps wrap around every ~scatterWidth pixels
-        const cycleWidth = CONFIG.scatterWidth * 2;
-        let driftOffset = time * wisp.driftSpeed * (wisp.isExiting ? CONFIG.exitAcceleration : 1);
-
-        // When not exiting, wrap the drift to keep wisps near the edge
-        if (!wisp.isExiting) {
-            driftOffset = driftOffset % cycleWidth;
-        }
-
-        // Base position with xOffset distributed across the scatter zone
-        const baseX = edgeX + (wisp.xOffset * CONFIG.scatterWidth) - driftOffset;
-        const baseY = wisp.yPosition * viewportHeight;
-
-        // Wave motion
-        const waveOffset = Math.sin(time * wisp.waveFrequency * Math.PI * 2 + wisp.wavePhase) * wisp.waveAmplitude;
-
-        // Noise displacement for organic movement
-        const noiseX = (NoiseGenerator.fbm(
-            (baseX + wisp.noiseOffset) * CONFIG.noise.scale,
-            baseY * CONFIG.noise.scale + time * CONFIG.noise.speed
-        ) - 0.5) * CONFIG.noise.strength * 2;
-
-        const noiseY = (NoiseGenerator.fbm(
-            (baseX + wisp.noiseOffset + 100) * CONFIG.noise.scale,
-            baseY * CONFIG.noise.scale + time * CONFIG.noise.speed
-        ) - 0.5) * CONFIG.noise.strength * 2;
-
-        // Head position (P0)
-        const p0 = {
-            x: baseX + noiseX,
-            y: baseY + waveOffset + noiseY
-        };
-
-        // Calculate curve direction (angled, flowing left)
-        const angle = wisp.angle + Math.sin(time * 0.3 + wisp.wavePhase) * 0.1;
-        const dirX = -Math.cos(angle);
-        const dirY = Math.sin(angle);
-
-        // Control points along the curve
-        const len = wisp.baseLength;
-        const curve = wisp.curvature * len;
-
-        // P1: First control point (influences head curvature)
-        const p1 = {
-            x: p0.x + dirX * len * 0.33 + curve * dirY * 0.5,
-            y: p0.y + dirY * len * 0.33 - curve * dirX * 0.5
-        };
-
-        // P2: Second control point (influences tail curvature)
-        const p2 = {
-            x: p0.x + dirX * len * 0.66 - curve * dirY * 0.5,
-            y: p0.y + dirY * len * 0.66 + curve * dirX * 0.5
-        };
-
-        // P3: Tail position
-        const p3 = {
-            x: p0.x + dirX * len,
-            y: p0.y + dirY * len
-        };
-
-        return [p0, p1, p2, p3];
-    }
-
-    /**
-     * Generate SVG path data for a wisp as a filled polygon
-     * (Variable thickness by offsetting points along normals)
-     */
-    function wispToPolygonPath(wisp, time, edgeX) {
-        const [p0, p1, p2, p3] = getWispControlPoints(wisp, time, edgeX);
-        const segments = CONFIG.segmentCount;
-
-        // Calculate thickness multiplier for exit animation
-        const thicknessMult = wisp.isExiting ? wisp.exitThicknessMultiplier : 1;
-        if (thicknessMult <= 0) return '';
-
-        // Sample points along the curve
-        const topPoints = [];
-        const bottomPoints = [];
-
-        for (let i = 0; i <= segments; i++) {
-            const t = i / segments;
-
-            // Point on curve
-            const point = cubicBezierPoint(p0, p1, p2, p3, t);
-
-            // Tangent at this point
-            const tangent = cubicBezierTangent(p0, p1, p2, p3, t);
-
-            // Normal (perpendicular to tangent)
-            const normal = { x: -tangent.y, y: tangent.x };
-
-            // Thickness at this point (tapers at ends)
-            // sin(π * t) gives 0 at ends, 1 at middle
-            const thickness = wisp.maxThickness * Math.sin(Math.PI * t) * thicknessMult;
-            const halfThickness = thickness / 2;
-
-            // Offset points
-            topPoints.push({
-                x: point.x + normal.x * halfThickness,
-                y: point.y + normal.y * halfThickness
-            });
-            bottomPoints.push({
-                x: point.x - normal.x * halfThickness,
-                y: point.y - normal.y * halfThickness
+            points.push({
+                x: cx + Math.cos(angle) * r,
+                y: cy + Math.sin(angle) * r
             });
         }
 
-        // Build path: top edge forward, bottom edge backward (closed polygon)
-        let d = `M ${topPoints[0].x.toFixed(1)},${topPoints[0].y.toFixed(1)}`;
+        // Create smooth path using quadratic bezier curves
+        let d = `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
 
-        // Top edge
-        for (let i = 1; i < topPoints.length; i++) {
-            d += ` L ${topPoints[i].x.toFixed(1)},${topPoints[i].y.toFixed(1)}`;
-        }
+        for (let i = 0; i < points.length; i++) {
+            const p0 = points[i];
+            const p1 = points[(i + 1) % points.length];
 
-        // Bottom edge (reversed)
-        for (let i = bottomPoints.length - 1; i >= 0; i--) {
-            d += ` L ${bottomPoints[i].x.toFixed(1)},${bottomPoints[i].y.toFixed(1)}`;
+            // Control point at midpoint
+            const midX = (p0.x + p1.x) / 2;
+            const midY = (p0.y + p1.y) / 2;
+
+            d += ` Q ${p0.x.toFixed(1)},${p0.y.toFixed(1)} ${midX.toFixed(1)},${midY.toFixed(1)}`;
         }
 
         d += ' Z';
@@ -380,7 +173,53 @@
     }
 
     /**
-     * Create the SVG clipPath element
+     * Create blob shape data
+     */
+    function createBlob(type, config, index, total) {
+        const radius = (config.radiusMin + Math.random() * (config.radiusMax - config.radiusMin)) *
+                      Math.min(viewportWidth, viewportHeight);
+
+        // Position based on type
+        let xOffset, yPos;
+        const transitionZone = viewportWidth * CONFIG.transitionWidth;
+
+        if (type === 'edge') {
+            // Edge blobs - evenly distributed vertically, centered on edge
+            yPos = (index / total) * viewportHeight * 1.3 - viewportHeight * 0.15;
+            xOffset = (Math.random() - 0.3) * transitionZone * 0.4;
+        } else if (type === 'large') {
+            // Large blobs - spread wide, extend into both images
+            yPos = Math.random() * viewportHeight;
+            xOffset = (Math.random() - 0.5) * transitionZone * 2;
+        } else if (type === 'medium') {
+            yPos = Math.random() * viewportHeight;
+            xOffset = (Math.random() - 0.4) * transitionZone * 1.2;
+        } else {
+            // Small blobs - scattered
+            yPos = Math.random() * viewportHeight;
+            xOffset = (Math.random() - 0.5) * transitionZone;
+        }
+
+        // Create SVG path element
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('fill', 'white'); // Not used in clipPath but good practice
+
+        return {
+            element: path,
+            type,
+            radius,
+            vertexCount: config.vertexCount,
+            baseXOffset: xOffset,
+            baseY: yPos,
+            noiseOffset: Math.random() * 100, // Unique noise sample per blob
+            driftPhase: Math.random() * Math.PI * 2,
+            waveAmp: CONFIG.waveAmplitude * (0.5 + Math.random()),
+            waveFreq: CONFIG.waveFrequency * (0.8 + Math.random() * 0.4)
+        };
+    }
+
+    /**
+     * Create SVG with clipPath
      */
     function createMaskSVG() {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -395,122 +234,99 @@
         clipPath.setAttribute('id', 'windswept-mask');
         clipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
 
-        // Main rect covering visible area
-        const maskRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        maskRect.setAttribute('x', '0');
-        maskRect.setAttribute('y', '0');
-        maskRect.setAttribute('width', String(viewportWidth));
-        maskRect.setAttribute('height', String(viewportHeight));
-        clipPath.appendChild(maskRect);
+        // Main rect
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', '0');
+        rect.setAttribute('y', '0');
+        rect.setAttribute('width', String(viewportWidth));
+        rect.setAttribute('height', String(viewportHeight));
+        clipPath.appendChild(rect);
+        maskRect = rect;
 
-        // Create path elements for wisps
-        const paths = [];
-        const totalWisps = CONFIG.wisps.long.count + CONFIG.wisps.medium.count + CONFIG.wisps.edge.count;
-
-        for (let i = 0; i < totalWisps; i++) {
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', '');
-            clipPath.appendChild(path);
-            paths.push(path);
+        // Create blobs
+        const blobs = [];
+        for (let i = 0; i < CONFIG.blobs.large.count; i++) {
+            blobs.push(createBlob('large', CONFIG.blobs.large, i, CONFIG.blobs.large.count));
         }
+        for (let i = 0; i < CONFIG.blobs.medium.count; i++) {
+            blobs.push(createBlob('medium', CONFIG.blobs.medium, i, CONFIG.blobs.medium.count));
+        }
+        for (let i = 0; i < CONFIG.blobs.small.count; i++) {
+            blobs.push(createBlob('small', CONFIG.blobs.small, i, CONFIG.blobs.small.count));
+        }
+        for (let i = 0; i < CONFIG.blobs.edge.count; i++) {
+            blobs.push(createBlob('edge', CONFIG.blobs.edge, i, CONFIG.blobs.edge.count));
+        }
+
+        blobs.forEach(blob => {
+            clipPath.appendChild(blob.element);
+            blobShapes.push(blob);
+        });
 
         defs.appendChild(clipPath);
         svg.appendChild(defs);
+        clipPathElement = clipPath;
 
-        return { svg, clipPath, maskRect, paths };
+        return svg;
     }
 
     /**
-     * Update all wisp positions
+     * Update all blob shapes
      */
-    function updateWispPositions(time) {
-        const edgeX = currentProgress * viewportWidth;
+    function updateBlobShapes(time, progress) {
+        const edgeX = progress * viewportWidth;
+        const exitMult = isExiting ?
+            Math.min(CONFIG.exitAcceleration, 1 + (time - exitStartTime) * 2) : 1;
 
-        wisps.forEach((wisp, i) => {
-            if (wispElements[i]) {
-                const pathData = wispToPolygonPath(wisp, time, edgeX);
-                wispElements[i].setAttribute('d', pathData);
-            }
+        blobShapes.forEach(blob => {
+            // Calculate position with drift and wave
+            const drift = time * CONFIG.driftSpeed * viewportWidth * exitMult;
+            const wave = Math.sin(time * blob.waveFreq + blob.driftPhase) * blob.waveAmp;
+
+            const cx = edgeX + blob.baseXOffset - (drift % (viewportWidth * 0.4));
+            const cy = blob.baseY + wave;
+
+            // Generate noise-distorted path
+            const pathData = generateBlobPath(
+                cx, cy,
+                blob.radius,
+                blob.vertexCount,
+                blob.noiseOffset,
+                time
+            );
+
+            blob.element.setAttribute('d', pathData);
         });
     }
 
     /**
-     * Check if all wisps have exited the viewport
+     * Update mask rect position
      */
-    function allWispsExited(time) {
-        const edgeX = currentProgress * viewportWidth;
-
-        return wisps.every(wisp => {
-            const [p0] = getWispControlPoints(wisp, time, edgeX);
-            // Wisp is exited if its head is off the left edge
-            return p0.x < -wisp.baseLength - 100;
-        });
+    function updateMaskRect(progress) {
+        const rectX = progress * viewportWidth;
+        maskRect.setAttribute('x', String(rectX));
     }
 
-    /**
-     * Start exit animation
-     */
-    function startExitAnimation() {
-        if (isExiting) return;
-
-        isExiting = true;
-        // Use relative time from animation start
-        exitStartTime = (performance.now() - animationStartTime) / 1000;
-
-        // Mark all wisps as exiting
-        wisps.forEach(wisp => {
-            wisp.isExiting = true;
-        });
-    }
-
-    /**
-     * Update exit animation state
-     */
-    function updateExitAnimation(time) {
+    function isExitComplete(time) {
         if (!isExiting) return false;
-
-        const elapsed = time - exitStartTime;
-        const progress = Math.min(1, elapsed / CONFIG.exitDuration);
-
-        // Fade thickness during exit
-        wisps.forEach(wisp => {
-            wisp.exitThicknessMultiplier = 1 - progress * 0.7; // Don't fully fade, just thin out
-        });
-
-        // Check if exit is complete
-        if (allWispsExited(time)) {
-            return true; // Exit complete
-        }
-
-        return false; // Still exiting
+        return (time - exitStartTime) * 1000 > CONFIG.exitDuration;
     }
 
     function animationLoop(timestamp) {
         if (!isAnimating) return;
 
-        // Use relative time from animation start (not absolute page time)
         const time = (timestamp - animationStartTime) / 1000;
-        lastTime = time;
 
-        const maskRect = window.ChrisTheme?.windsweptMask?.maskRect;
-        if (maskRect) {
-            const rectX = currentProgress * viewportWidth;
-            maskRect.setAttribute('x', String(rectX));
-            updateWispPositions(time);
+        updateMaskRect(currentProgress);
+        updateBlobShapes(time, currentProgress);
 
-            // Handle exit animation
-            if (isExiting) {
-                const exitComplete = updateExitAnimation(time);
-                if (exitComplete) {
-                    // Exit animation done - hide canvas and stop
-                    const heroCoderCanvas = document.getElementById('depth-canvas-hero-coder');
-                    if (heroCoderCanvas) {
-                        heroCoderCanvas.style.opacity = '0';
-                    }
-                    stopAnimation();
-                    return;
-                }
+        if (isExiting && isExitComplete(time)) {
+            const heroCoderCanvas = document.getElementById('depth-canvas-hero-coder');
+            if (heroCoderCanvas) {
+                heroCoderCanvas.style.opacity = '0';
             }
+            stopAnimation();
+            return;
         }
 
         animationId = requestAnimationFrame(animationLoop);
@@ -520,15 +336,7 @@
         if (isAnimating) return;
         isAnimating = true;
         isExiting = false;
-        lastTime = 0;
         animationStartTime = performance.now();
-
-        // Reset exit state
-        wisps.forEach(wisp => {
-            wisp.isExiting = false;
-            wisp.exitThicknessMultiplier = 1;
-        });
-
         animationId = requestAnimationFrame(animationLoop);
     }
 
@@ -541,24 +349,25 @@
         }
     }
 
-    function updateMaskPosition(progress, maskRect) {
+    function startExitAnimation() {
+        if (isExiting) return;
+        isExiting = true;
+        exitStartTime = (performance.now() - animationStartTime) / 1000;
+    }
+
+    function updateMaskPosition(progress) {
         currentProgress = progress;
         if (!isAnimating) {
-            const rectX = progress * viewportWidth;
-            maskRect.setAttribute('x', String(rectX));
-            updateWispPositions(0);
+            updateMaskRect(progress);
+            updateBlobShapes(0, progress);
         }
     }
 
-    function resetMask(maskRect) {
-        maskRect.setAttribute('x', '0');
+    function resetMask() {
         currentProgress = 0;
         isExiting = false;
-        wisps.forEach(wisp => {
-            wisp.isExiting = false;
-            wisp.exitThicknessMultiplier = 1;
-        });
-        updateWispPositions(0);
+        updateMaskRect(0);
+        updateBlobShapes(0, 0);
     }
 
     function positionForTransition(heroCoderCanvas, claudeCodesCanvas, forTransition) {
@@ -586,14 +395,13 @@
         const heroCoderCanvas = document.getElementById('depth-canvas-hero-coder');
         const claudeCodesCanvas = document.getElementById('depth-canvas-claude-codes');
         const coderSection = document.querySelector('.scene--coder');
-        const claudeCodesSection = document.querySelector('.scene--claude-codes');
 
-        if (!heroCoderCanvas || !claudeCodesCanvas || !coderSection || !claudeCodesSection) {
+        if (!heroCoderCanvas || !claudeCodesCanvas || !coderSection) {
             console.warn('[windswept-mask] Missing required elements');
             return;
         }
 
-        // Check for reduced motion preference
+        // Reduced motion
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             console.log('[windswept-mask] Reduced motion - using instant transition');
             ScrollTrigger.create({
@@ -612,21 +420,17 @@
         }
 
         // Initialize noise
-        NoiseGenerator.init();
+        Noise.init();
 
-        // Initialize wisps
-        initWisps();
+        // Create SVG
+        svgElement = createMaskSVG();
+        document.body.appendChild(svgElement);
 
-        // Create the SVG mask
-        const { svg, maskRect, paths } = createMaskSVG();
-        document.body.appendChild(svg);
-        wispElements = paths;
-
-        // Apply clipPath to the Hero+Coder canvas
+        // Apply clipPath
         heroCoderCanvas.style.clipPath = 'url(#windswept-mask)';
         heroCoderCanvas.style.webkitClipPath = 'url(#windswept-mask)';
 
-        // Handle window resize
+        // Resize handler
         let resizeTimeout;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
@@ -638,21 +442,20 @@
             }, 100);
         });
 
-        // Create the transition zone
+        // Scroll trigger
         const transitionTrigger = ScrollTrigger.create({
             trigger: coderSection,
             start: 'bottom 80%',
             end: () => `+=${window.innerHeight * 0.8}`,
             scrub: 1,
             onUpdate: (self) => {
-                updateMaskPosition(self.progress, maskRect);
+                updateMaskPosition(self.progress);
             },
             onEnter: () => {
                 positionForTransition(heroCoderCanvas, claudeCodesCanvas, true);
                 startAnimation();
             },
             onLeave: () => {
-                // Don't hide immediately - start exit animation
                 startExitAnimation();
             },
             onEnterBack: () => {
@@ -663,29 +466,31 @@
             },
             onLeaveBack: () => {
                 claudeCodesCanvas.style.opacity = '0';
-                resetMask(maskRect);
+                resetMask();
                 stopAnimation();
             }
         });
 
-        // Expose for debugging
+        // Debug API
         window.ChrisTheme.windsweptMask = {
             trigger: transitionTrigger,
-            svg,
+            svg: svgElement,
             maskRect,
-            wisps,
-            reset: () => resetMask(maskRect),
-            setProgress: (p) => updateMaskPosition(p, maskRect),
+            blobs: blobShapes,
+            reset: resetMask,
+            setProgress: updateMaskPosition,
             startAnimation,
             stopAnimation,
             startExitAnimation,
             isAnimating: () => isAnimating,
             isExiting: () => isExiting,
-            noise: NoiseGenerator
+            config: CONFIG,
+            noise: Noise
         };
 
-        const totalWisps = CONFIG.wisps.long.count + CONFIG.wisps.medium.count + CONFIG.wisps.edge.count;
-        console.log('[windswept-mask] Initialized with', totalWisps, 'wisps (bezier curves)');
+        const total = CONFIG.blobs.large.count + CONFIG.blobs.medium.count +
+                     CONFIG.blobs.small.count + CONFIG.blobs.edge.count;
+        console.log('[windswept-mask] Initialized with', total, 'noise-distorted blobs');
     }
 
     function waitForChrisTheme(callback, maxAttempts = 30) {
@@ -701,8 +506,6 @@
             }
             if (attempts++ < maxAttempts) {
                 requestAnimationFrame(check);
-            } else {
-                console.warn('[windswept-mask] Dependencies not available after', maxAttempts, 'attempts');
             }
         };
         check();

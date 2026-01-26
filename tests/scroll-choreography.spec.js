@@ -67,43 +67,48 @@ test('scroll up reverses coder section animation', async ({ page }) => {
   expect(headerHiddenUp.hidden).toBe(true);
 });
 
-test('wisp mask has organic bezier paths, not solid line', async ({ page }) => {
+test('wisp mask has organic noise-distorted blob shapes', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
 
   // Scroll gradually to transition zone
   await scrollGradually(page, 0, 5100, 8);
 
-  const wispSpread = await page.evaluate(() => {
-    // Check for path elements (bezier wisps) instead of circles
+  const maskState = await page.evaluate(() => {
+    // Check for clipPath with noise-distorted blob paths
+    const clipPath = document.querySelector('#windswept-mask');
     const paths = document.querySelectorAll('#windswept-mask path');
-    if (paths.length === 0) return { exists: false };
+    const rect = document.querySelector('#windswept-mask rect');
 
-    // Extract bounding boxes of paths to check spread
-    const pathData = Array.from(paths).map(p => p.getAttribute('d') || '');
-    const nonEmptyPaths = pathData.filter(d => d.length > 0);
+    if (!clipPath) return { exists: false };
 
-    // Parse first coordinates from each path to check spread
-    const xCoords = nonEmptyPaths.map(d => {
-      const match = d.match(/M\s+([\d.-]+)/);
-      return match ? parseFloat(match[1]) : 0;
-    }).filter(x => x !== 0);
+    // Check that paths have data (noise-distorted blobs)
+    const pathsWithData = Array.from(paths).filter(p => {
+      const d = p.getAttribute('d');
+      return d && d.length > 50; // Should have substantial path data
+    });
 
-    const range = xCoords.length > 0 ? Math.max(...xCoords) - Math.min(...xCoords) : 0;
+    // Check path data contains curves (Q command for quadratic bezier)
+    const hasCurves = pathsWithData.some(p => {
+      const d = p.getAttribute('d') || '';
+      return d.includes('Q '); // Quadratic bezier curves
+    });
 
     return {
       exists: true,
-      count: paths.length,
-      nonEmptyCount: nonEmptyPaths.length,
-      xRange: Math.round(range),
-      isOrganic: range > 50 // Wisps should be spread organically
+      shapeCount: paths.length,
+      pathsWithData: pathsWithData.length,
+      hasCurves,
+      hasRect: !!rect,
+      isOrganic: pathsWithData.length >= 30 && hasCurves
     };
   });
 
-  console.log('Wisp spread:', JSON.stringify(wispSpread));
-  expect(wispSpread.exists).toBe(true);
-  expect(wispSpread.nonEmptyCount).toBeGreaterThan(0);
-  expect(wispSpread.isOrganic).toBe(true);
+  console.log('Mask state:', JSON.stringify(maskState));
+  expect(maskState.exists).toBe(true);
+  expect(maskState.shapeCount).toBeGreaterThan(0);
+  expect(maskState.pathsWithData).toBeGreaterThan(0);
+  expect(maskState.hasCurves).toBe(true);
 });
 
 test('canvas transition: hero visible at top, claude visible after transition', async ({ page }) => {

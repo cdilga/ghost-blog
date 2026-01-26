@@ -2,146 +2,101 @@
 
 **Tracking:** `bd show ghost-blog-zpv`
 
-## Visual Reference
+## Direction
 
-User-provided sketch shows the desired effect:
-- **Flowing curved lines** (NOT circles/dots)
-- **Elongated S-curves and waves** - organic bezier-like strokes
-- **Varying thickness** - some lines thicker than others
-- **Different lengths** - short and long trailing wisps
-- **Tapered ends** - lines thin out at tips
-- **Directional flow** - all wisps moving in wind direction
-- **Clustered but distinct** - wisps group together but each is separate
+Stylised organic wisps with a **graphic novel aesthetic**, not realistic VFX. Hard edges are acceptable but must be irregular and natural-feeling. SVG filters do the heavy lifting.
 
-**Key insight:** Current implementation uses circles/dots which feel "glitchy".
-The desired effect requires **bezier curves/paths** that flow smoothly.
+**References:** Lando Norris website transitions, comic book panel bleeds, ink wash illustrations.
 
-## Current State
+## Critical Requirement
 
-The windswept mask transition (`themes/chris-theme/assets/js/scenes/windswept-mask.js`) currently:
-- Uses SVG clipPath with particles to mask between two depth-map canvases
-- Has a "finger" system for elongated dust streams
-- Edge particles obscure the hard rect line (acceptable)
-- Particles are animated with noise and drift
+The **vertical seam must be completely hidden**. The transition zone needs to be wide enough (~20% of viewport) and chaotic enough that no straight line is perceptible.
 
-## Problems to Solve
+## Technical Approach
 
-### 1. Too Glitchy, Not Smooth/Wispy
-**Current:** Particles feel scattered and "scraggly" - more like random dots than cohesive wisps
-**Desired:** Dense, flowing wisps that feel like smoke/sand being blown by wind
+### SVG Filter Pipeline
 
-**Potential approaches:**
-- Use bezier curves or paths instead of individual circles
-- Create "ribbons" of particles that flow together
-- Add motion blur effect (SVG filter or canvas)
-- Increase density significantly within each wisp
-- Make wisps longer and more connected (trails)
-- Consider using canvas 2D instead of SVG for smoother rendering
-
-### 2. Abrupt Disappearance at End
-**Current:** When scroll reaches end of transition zone, particles just blink out
-**Desired:** Particles should animate off-screen smoothly after scroll completes
-
-**Implementation:**
-- Detect `onLeave` from ScrollTrigger
-- Continue animation loop after scroll completes
-- Accelerate particles off-screen (drift them left)
-- Fade out particle sizes/opacity over ~1-2 seconds
-- Only stop animation after all particles have exited
-
-### 3. Visual Quality of Wisps
-**Current:** Individual circles are visible, feels like confetti
-**Desired:** Cohesive, flowing wisps like desert sand or smoke
-
-**Ideas to explore:**
-- **Ribbon approach:** Draw elongated shapes (ellipses, paths) instead of circles
-- **Trail effect:** Each particle leaves a fading trail
-- **Density clusters:** Many more small particles per wisp (50-100 vs current 35)
-- **Blur/glow:** Apply gaussian blur for softer edges
-- **Canvas rendering:** Consider rendering to canvas for better performance and effects
-
-## Recommended Approach: Bezier Curve Wisps
-
-Based on the visual reference, the implementation should use **flowing paths** not circles:
-
-### Wisp Structure
-Each wisp should be:
-1. A **bezier curve** (quadratic or cubic) with 3-5 control points
-2. **Variable thickness** - thicker in middle, tapered at ends
-3. **Animated control points** - points drift/wave over time
-4. Length varies from 50-300px
-
-### SVG Path Approach
 ```svg
-<path d="M x1,y1 Q cx,cy x2,y2" stroke-width="varies" stroke-linecap="round"/>
+<filter id="wisp-distort">
+  <feTurbulence
+    type="fractalNoise"
+    baseFrequency="0.015 0.004"  <!-- Asymmetric: lower vertical = upward flow -->
+    numOctaves="5"
+    seed="1"
+    result="noise"/>
+  <feDisplacementMap
+    in="SourceGraphic"
+    in2="noise"
+    scale="50"                   <!-- 30-60 range -->
+    xChannelSelector="R"
+    yChannelSelector="G"/>
+</filter>
 ```
-- Use `stroke-width` that varies along the path (may need multiple segments)
-- `stroke-linecap="round"` for smooth ends
-- Animate the `d` attribute control points
 
-### Canvas Approach (preferred for performance)
-```javascript
-ctx.beginPath();
-ctx.moveTo(x1, y1);
-ctx.quadraticCurveTo(cpX, cpY, x2, y2);
-ctx.lineWidth = varies;
-ctx.lineCap = 'round';
-ctx.stroke();
+**Key parameters:**
+- `fractalNoise` over `turbulence` for smoother, smokier results
+- Asymmetric `baseFrequency` (0.015, 0.004) creates upward-flowing, flame-like distortion
+- `numOctaves` 4-5 for layered detail
+- `scale` 30-60 depending on mask size
+
+### Mask Structure
+
+Uses `<mask>` (not `<clipPath>`) to support filters:
+
+```svg
+<mask id="windswept-mask" maskUnits="userSpaceOnUse">
+  <!-- Main visible area rect -->
+  <rect fill="white" x="edgeX" y="0" width="100%" height="100%"/>
+
+  <!-- Wisp shapes with filter applied -->
+  <g filter="url(#wisp-distort)">
+    <ellipse fill="white" cx="..." cy="..." rx="..." ry="..."/>
+    <!-- Multiple layered ellipses -->
+  </g>
+</mask>
 ```
-- Easier to vary line width along path
-- Better performance with many wisps
-- Can add blur/glow effects
 
-### Animation
-- Control points drift with noise-based displacement
-- Wisps spawn at mask edge, flow leftward
-- Each wisp has slight wave/undulation
-- Fade out by reducing stroke width to 0
+### Layered Wisp Shapes
 
-## Technical Considerations
+| Type | Count | Width | Height | Purpose |
+|------|-------|-------|--------|---------|
+| Large | 4 | 25-40% vw | 35-55% vh | Wide coverage, extend into both images |
+| Medium | 6 | 15-25% vw | 20-35% vh | Fill gaps |
+| Small | 8 | 8-15% vw | 10-20% vh | Detail and variety |
+| Edge | 12 | 10-18% vw | 8-15% vh | Ensure complete seam coverage |
 
-### SVG Limitations
-- clipPath doesn't support opacity/blur
-- Groups (`<g>`) don't work in clipPath
-- Limited to binary visible/hidden
-- **Paths work in clipPath** - can use `<path>` elements
+## Animation
 
-### Canvas Alternative
-Could render particles to a canvas and use that as a mask:
-- More flexibility with effects (blur, trails, glow)
-- Better performance for many particles
-- Can composite multiple layers
-- Requires different masking approach
+- **Seed animation**: Turbulence seed cycles through 1-10 over 4 seconds for subtle flicker
+- **Drift**: Slow horizontal movement (0.02 × viewport/s)
+- **Wave**: Gentle vertical oscillation per shape
+- **Exit**: 3× speed acceleration when scroll completes
 
-### Hybrid Approach
-- Use SVG clipPath for the main mask rect
-- Render wisps to an overlay canvas
-- Blend the canvas with the transition
+## Requirements Checklist
+
+- [x] No straight edges anywhere - all boundaries pass through turbulence
+- [x] Transition zone minimum 20% of frame width
+- [x] Layer multiple wisp shapes (30 total) at varying depths
+- [x] Vary positions per shape to prevent repetition
+- [x] Subtle seed animation for living, flickering edges
+- [x] Extend wisps beyond the seam into both images
+- [ ] Works at multiple aspect ratios without exposing seam (needs testing)
 
 ## Acceptance Criteria
 
-1. [ ] Wisps feel dense and flowing, not scattered/glitchy
-2. [ ] No visible hard edge from the mask rect
-3. [ ] Wisps animate smoothly off-screen when scroll completes
-4. [ ] Animation feels like windblown sand/smoke
-5. [ ] Performance remains acceptable (60fps target)
-6. [ ] Reduced motion preference still respected
+1. Vertical transition line is undetectable at first glance
+2. Edges feel hand-drawn or ink-splattered, not computed
+3. Works at multiple aspect ratios without exposing seam
+4. Aesthetic suits the bold, energetic landscape imagery
+5. Reduced motion preference still respected
 
-## Files Involved
+## Files
 
 - `themes/chris-theme/assets/js/scenes/windswept-mask.js` - Main implementation
-- `tests/scroll-choreography.spec.js` - Tests for scroll behavior
+- `tests/scroll-choreography.spec.js` - Test for mask and turbulence filter
 
-## Reference
+## Optional Enhancements (Future)
 
-Current particle counts:
-- 1025 total particles
-- 15 fingers x 35 particles = 525 finger particles
-- 100 loose particles
-- 400 edge particles
-
-Current animation:
-- Noise-based displacement
-- Drift speed 15-40px/s for fingers
-- Wave motion on fingers
-- Finger lifespan 4-10 seconds
+- Scattered particle sprites (small dots/embers) along transition zone
+- Gradient opacity on wisp tips for depth
+- Multiple filter layers with varying parameters
