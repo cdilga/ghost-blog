@@ -22,23 +22,26 @@
 
     // Configuration
     const CONFIG = {
-        // Wisp distribution
+        // Wisp distribution - fewer but MUCH bigger wisps
         wisps: {
-            long: { count: 22, lengthMin: 150, lengthMax: 300, thicknessMin: 10, thicknessMax: 20 },
-            medium: { count: 28, lengthMin: 80, lengthMax: 150, thicknessMin: 6, thicknessMax: 12 },
-            short: { count: 20, lengthMin: 40, lengthMax: 80, thicknessMin: 4, thicknessMax: 8 }
+            // Big flowing fingers that extend far
+            long: { count: 6, lengthMin: 350, lengthMax: 600, thicknessMin: 50, thicknessMax: 90 },
+            // Medium wisps for variety
+            medium: { count: 10, lengthMin: 180, lengthMax: 350, thicknessMin: 35, thicknessMax: 65 },
+            // Edge coverage - MANY thick wisps overlapping to completely hide the line
+            edge: { count: 50, lengthMin: 120, lengthMax: 250, thicknessMin: 60, thicknessMax: 100 }
         },
 
         // Scatter width from mask edge (px)
-        scatterWidth: 350,
+        scatterWidth: 400,
 
-        // Animation parameters
-        driftSpeed: { min: 30, max: 80 },      // px/s
-        waveAmplitude: { min: 15, max: 40 },   // px
-        waveFrequency: { min: 0.3, max: 0.8 }, // Hz
+        // Animation parameters - slower for bigger wisps
+        driftSpeed: { min: 15, max: 40 },      // px/s (slower)
+        waveAmplitude: { min: 20, max: 50 },   // px
+        waveFrequency: { min: 0.2, max: 0.5 }, // Hz (slower)
 
         // Bezier curve segments (polygon vertices)
-        segmentCount: 8,
+        segmentCount: 12, // More segments for smoother curves
 
         // Exit animation
         exitAcceleration: 3.0,
@@ -46,9 +49,9 @@
 
         // Noise field for organic movement
         noise: {
-            scale: 0.003,
-            speed: 0.5,
-            strength: 25
+            scale: 0.002,
+            speed: 0.3,
+            strength: 30
         }
     };
 
@@ -166,23 +169,32 @@
     /**
      * Create a wisp with bezier control points
      */
-    function createWisp(type, config) {
+    function createWisp(type, config, index, total) {
         const length = config.lengthMin + Math.random() * (config.lengthMax - config.lengthMin);
         const thickness = config.thicknessMin + Math.random() * (config.thicknessMax - config.thicknessMin);
 
         // Starting position (y is 0-1 relative to viewport)
-        const yPosition = Math.random();
-
-        // X offset from mask edge (-1 to 1, with short wisps more clustered at edge)
-        let xOffset;
-        if (type === 'short') {
-            // Short wisps cluster near the edge
-            xOffset = (Math.random() - 0.5) * 0.5;
-        } else if (type === 'medium') {
-            xOffset = (Math.random() - 0.5) * 1.2;
+        let yPosition;
+        if (type === 'edge') {
+            // Edge wisps are evenly distributed vertically with heavy overlap for FULL coverage
+            // Multiple passes ensure no gaps
+            yPosition = (index / total) * 1.4 - 0.2; // Generous overflow top/bottom
         } else {
-            // Long wisps can extend further
-            xOffset = (Math.random() - 0.5) * 1.8;
+            yPosition = Math.random();
+        }
+
+        // X offset from mask edge
+        let xOffset;
+        if (type === 'edge') {
+            // Edge wisps: heads positioned INTO the visible area (positive offset)
+            // so their bodies extend back and COVER the edge line
+            // Since wisps extend leftward, head at +0.15 to +0.4 means body covers edge
+            xOffset = 0.1 + Math.random() * 0.35;
+        } else if (type === 'medium') {
+            xOffset = (Math.random() - 0.5) * 1.0;
+        } else {
+            // Long wisps extend further out
+            xOffset = (Math.random() - 0.5) * 1.5;
         }
 
         return {
@@ -190,9 +202,13 @@
             baseLength: length,
             maxThickness: thickness,
 
-            // Animation parameters
-            driftSpeed: randRange(CONFIG.driftSpeed),
-            waveAmplitude: randRange(CONFIG.waveAmplitude),
+            // Animation parameters - edge wisps move VERY slowly to maintain coverage
+            driftSpeed: type === 'edge'
+                ? randRange({ min: 3, max: 10 })
+                : randRange(CONFIG.driftSpeed),
+            waveAmplitude: type === 'edge'
+                ? randRange({ min: 8, max: 15 })  // Less wave for edge
+                : randRange(CONFIG.waveAmplitude),
             waveFrequency: randRange(CONFIG.waveFrequency),
             wavePhase: Math.random() * Math.PI * 2,
             noiseOffset: Math.random() * 1000,
@@ -201,9 +217,13 @@
             yPosition,
             xOffset,
 
-            // Bezier curve angle/curvature
-            curvature: (Math.random() - 0.5) * 0.6,
-            angle: (Math.random() - 0.5) * 0.4,
+            // Bezier curve angle/curvature - edge wisps are flatter
+            curvature: type === 'edge'
+                ? (Math.random() - 0.5) * 0.3
+                : (Math.random() - 0.5) * 0.6,
+            angle: type === 'edge'
+                ? (Math.random() - 0.5) * 0.15  // More horizontal
+                : (Math.random() - 0.5) * 0.4,
 
             // Exit animation state
             isExiting: false,
@@ -219,13 +239,14 @@
 
         // Create wisps of each type
         for (let i = 0; i < CONFIG.wisps.long.count; i++) {
-            wisps.push(createWisp('long', CONFIG.wisps.long));
+            wisps.push(createWisp('long', CONFIG.wisps.long, i, CONFIG.wisps.long.count));
         }
         for (let i = 0; i < CONFIG.wisps.medium.count; i++) {
-            wisps.push(createWisp('medium', CONFIG.wisps.medium));
+            wisps.push(createWisp('medium', CONFIG.wisps.medium, i, CONFIG.wisps.medium.count));
         }
-        for (let i = 0; i < CONFIG.wisps.short.count; i++) {
-            wisps.push(createWisp('short', CONFIG.wisps.short));
+        // Edge wisps - evenly distributed for full coverage
+        for (let i = 0; i < CONFIG.wisps.edge.count; i++) {
+            wisps.push(createWisp('edge', CONFIG.wisps.edge, i, CONFIG.wisps.edge.count));
         }
     }
 
@@ -384,7 +405,7 @@
 
         // Create path elements for wisps
         const paths = [];
-        const totalWisps = CONFIG.wisps.long.count + CONFIG.wisps.medium.count + CONFIG.wisps.short.count;
+        const totalWisps = CONFIG.wisps.long.count + CONFIG.wisps.medium.count + CONFIG.wisps.edge.count;
 
         for (let i = 0; i < totalWisps; i++) {
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -663,7 +684,7 @@
             noise: NoiseGenerator
         };
 
-        const totalWisps = CONFIG.wisps.long.count + CONFIG.wisps.medium.count + CONFIG.wisps.short.count;
+        const totalWisps = CONFIG.wisps.long.count + CONFIG.wisps.medium.count + CONFIG.wisps.edge.count;
         console.log('[windswept-mask] Initialized with', totalWisps, 'wisps (bezier curves)');
     }
 
