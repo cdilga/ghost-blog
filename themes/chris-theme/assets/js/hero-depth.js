@@ -178,10 +178,16 @@
     function animate() {
         if (!displacementFilter) return;
 
-        // STATIC MODE: No displacement, just show the depth-mapped image
-        // The depth effect is baked into the image itself
-        displacementFilter.scale.x = 0;
-        displacementFilter.scale.y = 0;
+        // Combine motion/mouse input with scroll offset
+        // Both sources contribute to the final displacement
+        targetX = motionX + scrollOffsetX;
+        targetY = motionY + scrollOffsetY;
+
+        currentX += (targetX - currentX) * CONFIG.smoothing;
+        currentY += (targetY - currentY) * CONFIG.smoothing;
+
+        displacementFilter.scale.x = currentX * maxDisplacement;
+        displacementFilter.scale.y = currentY * maxDisplacement;
     }
 
     // =========================================================================

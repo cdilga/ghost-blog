@@ -28,9 +28,9 @@ No "Software Engineer". No explanation. They scroll to find out.
 
 ---
 
-## 8 Claude Codes
+## Agentic Cowboy
 
-**Label:** 8 Claude Codes
+**Label:** Agentic Cowboy
 **Title:** What I'm Building Right Now
 **Description:** One agent writes specs. Three implement. Two research. One reviews. One deploys. It mostly works. I'm figuring out the rest as we go.
 
@@ -58,7 +58,7 @@ No "Software Engineer". No explanation. They scroll to find out.
 
 **Label:** The Builder
 **Title:** Enterprise-Scale, Startup-Speed
-**Description:** Banks, hospitals, schools, government. Big migrations, bigger architectures. Built systems that onboard millions. Moved on to weirder things.
+**Description:** Banks, hospitals, schools, government. Big migrations, bigger architectures. Built systems that onboard millions. Moved on to more energetic things.
 
 ---
 
@@ -66,7 +66,7 @@ No "Software Engineer". No explanation. They scroll to find out.
 
 **Label:** The Teacher
 **Title:** Grows Engineers
-**Description:** Instructor at Data Engineer Camp. The modern data stack: dbt, Snowflake, Airflow. Turns beginners into people who ship pipelines.
+**Description:** Experience as an Instructor at an online school. The modern data stack: dbt, Snowflake, Airflow. Turns beginners into people who ship pipelines.
 
 ---
 

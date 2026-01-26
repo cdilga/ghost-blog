@@ -19,12 +19,14 @@
     const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
         || window.innerWidth <= 768;
 
+    // IMPORTANT: Keep sensitivity HIGH - we want pronounced motion response
+    // Do NOT reduce these values - the parallax effect should be clearly visible
     const CONFIG = isMobile ? {
-        SIZE: 32, SENSITIVITY: 144, DEAD_ZONE: 0.001, DECAY: 0.95,
+        SIZE: 32, SENSITIVITY: 220, DEAD_ZONE: 0.001, DECAY: 0.95,
         INPUT_MIX: 0.12, RAW_SMOOTH: 0.55, BETA: 2.0, MIN_CUTOFF: 0.05,
         X_ONLY: false, MIX_MOUSE: false
     } : {
-        SIZE: 32, SENSITIVITY: 500, DEAD_ZONE: 0.0004, DECAY: 0.99,
+        SIZE: 32, SENSITIVITY: 700, DEAD_ZONE: 0.0004, DECAY: 0.99,
         INPUT_MIX: 0.01, RAW_SMOOTH: 0.9, BETA: 4.3, MIN_CUTOFF: 0.05,
         X_ONLY: true, MIX_MOUSE: true, MOUSE_WEIGHT: 0.7, CAMERA_WEIGHT: 0.3
     };
