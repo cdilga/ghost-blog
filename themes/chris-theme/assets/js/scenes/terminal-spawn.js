@@ -1,24 +1,37 @@
 /**
- * Terminal Dock-Spawn Animation
+ * Terminal Dock-Spawn Animation with CRT Exit
  *
- * Animates terminals to "spawn" from navbar center like macOS dock window launches.
- * Scroll-TRIGGERED (not scrubbed): individual animations run to completion once triggered.
+ * Bi-directional animation:
+ * - Entry: Terminals spawn from navbar center (macOS dock style)
+ * - Exit: Terminals fly back to navbar, then CRT shutdown effect on desert
+ *
+ * Pre-calculates offsets at initialization for reliable animation.
  */
 (function() {
     'use strict';
 
+    // Prevent multiple initializations (use window for truly global state)
+    if (window.__terminalSpawnInitialized) {
+        console.log('[terminal-spawn] Already initialized, skipping duplicate');
+        return;
+    }
+    window.__terminalSpawnInitialized = true;
+
     function initTerminalSpawn() {
+
         const { gsap, ScrollTrigger } = window.ChrisTheme || {};
         if (!gsap || !ScrollTrigger) {
             console.warn('[terminal-spawn] GSAP or ScrollTrigger not available');
             return;
         }
 
-        const terminalGrid = document.querySelector('.terminal-grid');
+        const scene = document.querySelector('.scene--claude-codes');
+        const terminalGrid = scene?.querySelector('.terminal-grid');
         const terminals = terminalGrid?.querySelectorAll('.terminal');
         const header = document.querySelector('.site-header');
+        const depthCanvas = document.getElementById('depth-canvas-claude-codes');
 
-        if (!terminals || terminals.length === 0 || !header) {
+        if (!terminals || terminals.length === 0 || !header || !scene) {
             console.warn('[terminal-spawn] Missing required elements');
             return;
         }
@@ -26,153 +39,159 @@
         // Check for reduced motion preference
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        // Track which terminals have spawned (prevents re-triggering)
-        const spawnedTerminals = new Set();
-
-        // Store terminal final positions BEFORE any transforms are applied
-        // This is critical - getBoundingClientRect returns wrong values after transform
-        const terminalFinalPositions = [];
-
-        // Calculate and store all final positions immediately (before transforms)
-        function cacheTerminalPositions() {
-            terminals.forEach((terminal, index) => {
-                const rect = terminal.getBoundingClientRect();
-                terminalFinalPositions[index] = {
-                    centerX: rect.left + rect.width / 2,
-                    centerY: rect.top + rect.height / 2,
-                    width: rect.width,
-                    height: rect.height
-                };
+        if (prefersReducedMotion) {
+            // Reduced motion: show everything immediately
+            terminals.forEach(terminal => {
+                gsap.set(terminal, { opacity: 1, scale: 1, x: 0, y: 0 });
             });
-        }
-
-        // Calculate navbar center position
-        function getNavbarCenter() {
-            const headerRect = header.getBoundingClientRect();
-            return {
-                x: window.innerWidth / 2,
-                y: headerRect.bottom
-            };
-        }
-
-        // Spawn a single terminal with elastic animation
-        function spawnTerminal(terminal, index) {
-            if (spawnedTerminals.has(index)) return;
-            spawnedTerminals.add(index);
-
-            // Reduced motion: just show immediately
-            if (prefersReducedMotion) {
-                gsap.set(terminal, {
-                    opacity: 1,
-                    scale: 1,
-                    x: 0,
-                    y: 0
-                });
-                return;
+            if (depthCanvas) {
+                depthCanvas.style.opacity = '1';
             }
+            console.log('[terminal-spawn] Reduced motion - showing terminals immediately');
+            return;
+        }
 
-            // Animate to final position (x:0, y:0 means "no transform offset")
-            gsap.to(terminal, {
+        // Create CRT shutdown overlay element
+        const crtOverlay = document.createElement('div');
+        crtOverlay.className = 'crt-shutdown-overlay';
+        crtOverlay.innerHTML = '<div class="crt-line"></div>';
+        scene.appendChild(crtOverlay);
+
+        // Set initial CRT overlay state
+        gsap.set(crtOverlay, { opacity: 0 });
+
+        // ========================================
+        // PRE-CALCULATE SPAWN OFFSETS
+        // Must be done at initialization when terminals are at grid positions
+        // ========================================
+
+        // Scroll to scene briefly to ensure correct measurements, then restore
+        const originalScroll = window.scrollY;
+        const sceneRect = scene.getBoundingClientRect();
+        const sceneTop = sceneRect.top + originalScroll;
+
+        // Calculate offsets using document-relative positions (scroll-independent)
+        const headerHeight = header.offsetHeight;
+        const navbarCenterX = window.innerWidth / 2;
+        const navbarY = headerHeight; // Bottom of header in document coordinates
+
+        // Store pre-calculated offsets for each terminal
+        const terminalOffsets = Array.from(terminals).map(terminal => {
+            const rect = terminal.getBoundingClientRect();
+            // Get terminal position relative to document (not viewport)
+            const terminalDocTop = rect.top + originalScroll;
+            const terminalDocLeft = rect.left;
+            const terminalCenterX = terminalDocLeft + rect.width / 2;
+            const terminalCenterY = terminalDocTop + rect.height / 2;
+
+            // Offset to move terminal from its grid position to navbar center
+            // Y offset: negative to move UP from grid to navbar
+            return {
+                x: navbarCenterX - terminalCenterX,
+                y: navbarY - (terminalCenterY - sceneTop) // Relative to scene top
+            };
+        });
+
+        console.log('[terminal-spawn] Pre-calculated offsets:', terminalOffsets);
+
+        // ========================================
+        // ENTRY ANIMATION: Terminals spawn from top
+        // ========================================
+
+        // Set initial state: terminals START at navbar (hidden)
+        // They will animate TO their grid positions (x:0, y:0)
+        terminals.forEach((terminal, i) => {
+            gsap.set(terminal, {
+                opacity: 0,
+                scale: 0.1,
+                x: terminalOffsets[i].x,
+                y: terminalOffsets[i].y
+            });
+        });
+
+        // Create the entry timeline (scrubbed with scroll)
+        const entryTL = gsap.timeline({
+            scrollTrigger: {
+                trigger: scene,
+                start: 'top 90%',
+                end: 'top 30%',
+                scrub: 0.3
+            }
+        });
+
+        // Stagger terminals spawning in - animate FROM navbar TO grid position
+        terminals.forEach((terminal, index) => {
+            entryTL.to(terminal, {
                 scale: 1,
                 opacity: 1,
                 x: 0,
                 y: 0,
-                duration: 0.5,
-                ease: 'elastic.out(1, 0.5)',
-                onComplete: () => {
-                    // Clear transforms after animation completes
-                    gsap.set(terminal, { clearProps: 'x,y,scale' });
-                }
-            });
-        }
+                ease: 'back.out(1.4)',
+                duration: 0.15
+            }, index * 0.05);
+        });
 
-        // Initialize: hide all terminals at navbar center position
-        function initializeTerminals() {
-            if (prefersReducedMotion) {
-                // Reduced motion: start visible
-                terminals.forEach(terminal => {
-                    gsap.set(terminal, { opacity: 1, scale: 1 });
-                });
-                return;
-            }
+        // ========================================
+        // EXIT ANIMATION: Terminals fly back + CRT shutdown
+        // ========================================
 
-            const navbarCenter = getNavbarCenter();
-
-            terminals.forEach((terminal, index) => {
-                const finalPos = terminalFinalPositions[index];
-                // Calculate offset FROM final position TO navbar center
-                const offsetX = navbarCenter.x - finalPos.centerX;
-                const offsetY = navbarCenter.y - finalPos.centerY;
-
-                gsap.set(terminal, {
-                    scale: 0.1,
-                    opacity: 0,
-                    x: offsetX,
-                    y: offsetY
-                });
-            });
-        }
-
-        // Create ScrollTrigger for spawn choreography
-        function createSpawnTrigger() {
-            if (prefersReducedMotion) return;
-
-            const scene = terminalGrid.closest('.scene--claude-codes');
-            if (!scene) return;
-
-            // Track progress and spawn terminals accordingly
-            let lastProgress = 0;
-
-            ScrollTrigger.create({
+        const exitTL = gsap.timeline({
+            scrollTrigger: {
                 trigger: scene,
-                start: 'top 60%',  // Start when section enters lower portion
-                end: 'top 10%',    // End when section header is near top
-                onUpdate: (self) => {
-                    const progress = self.progress;
+                start: 'bottom 70%',
+                end: 'bottom 10%',
+                scrub: 0.3
+            }
+        });
 
-                    // Calculate which terminal should trigger at this progress
-                    // 8 terminals spread across the progress range
-                    const terminalToTrigger = Math.floor(progress * 8);
+        // Terminals fly back to navbar (reverse order)
+        const terminalArray = Array.from(terminals);
+        terminalArray.reverse().forEach((terminal, index) => {
+            const origIndex = terminals.length - 1 - index;
+            exitTL.to(terminal, {
+                scale: 0.1,
+                opacity: 0,
+                x: terminalOffsets[origIndex].x,
+                y: terminalOffsets[origIndex].y,
+                ease: 'back.in(1.2)',
+                duration: 0.12
+            }, index * 0.04);
+        });
 
-                    // Only spawn terminals as we scroll forward
-                    if (progress > lastProgress) {
-                        for (let i = 0; i <= terminalToTrigger && i < terminals.length; i++) {
-                            if (!spawnedTerminals.has(i)) {
-                                // Slight delay for natural cascade
-                                const delay = (i - (lastProgress * 8)) * 0.05;
-                                setTimeout(() => spawnTerminal(terminals[i], i), Math.max(0, delay * 1000));
-                            }
-                        }
-                    }
+        // CRT shutdown effect
+        const crtStart = terminalArray.length * 0.04;
 
-                    lastProgress = progress;
-                },
-                onEnter: () => {
-                    // Ensure first terminal spawns immediately on enter
-                    if (!spawnedTerminals.has(0)) {
-                        spawnTerminal(terminals[0], 0);
-                    }
-                }
-            });
+        exitTL.to(crtOverlay, {
+            opacity: 1,
+            duration: 0.1
+        }, crtStart);
+
+        exitTL.to(crtOverlay.querySelector('.crt-line'), {
+            scaleY: 0,
+            duration: 0.3,
+            ease: 'power2.in'
+        }, crtStart);
+
+        // Fade depth canvas
+        if (depthCanvas) {
+            exitTL.to(depthCanvas, {
+                opacity: 0,
+                duration: 0.2
+            }, crtStart + 0.15);
         }
 
-        // Initialize in correct order:
-        // 1. Cache positions BEFORE any transforms
-        // 2. Apply initial hidden state
-        // 3. Set up scroll trigger
-        cacheTerminalPositions();
-        initializeTerminals();
-        createSpawnTrigger();
+        exitTL.to(crtOverlay, {
+            opacity: 0,
+            duration: 0.15
+        }, crtStart + 0.3);
 
         // Expose for debugging
         window.ChrisTheme.terminalSpawn = {
-            spawnedTerminals,
-            terminalFinalPositions,
-            spawnTerminal,
+            entryTL,
+            exitTL,
+            terminalOffsets,
             reset: () => {
-                spawnedTerminals.clear();
-                cacheTerminalPositions();
-                initializeTerminals();
+                terminals.forEach(t => gsap.set(t, { opacity: 1, scale: 1, x: 0, y: 0 }));
             }
         };
 

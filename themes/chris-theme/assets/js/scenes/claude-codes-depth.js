@@ -149,11 +149,10 @@
     function animate() {
         if (!displacementFilter) return;
 
-        currentX += (targetX - currentX) * CONFIG.smoothing;
-        currentY += (targetY - currentY) * CONFIG.smoothing;
-
-        displacementFilter.scale.x = currentX * maxDisplacement;
-        displacementFilter.scale.y = currentY * maxDisplacement;
+        // STATIC MODE: No displacement, just show the depth-mapped image
+        // The depth effect is baked into the image itself
+        displacementFilter.scale.x = 0;
+        displacementFilter.scale.y = 0;
     }
 
     // =========================================================================
@@ -217,6 +216,8 @@
 
     // =========================================================================
     // Visibility handling (battery saving)
+    // NOTE: Only controls ticker, not opacity. Opacity is controlled by
+    // terminal-spawn.js for the CRT exit animation.
     // =========================================================================
 
     const observer = new IntersectionObserver((entries) => {
@@ -224,10 +225,12 @@
             if (app) {
                 if (entry.isIntersecting) {
                     app.ticker.start();
+                    // Show canvas when section enters - opacity controlled here on entry
+                    // but exit opacity is handled by terminal-spawn.js CRT animation
                     container.style.opacity = '1';
                 } else {
                     app.ticker.stop();
-                    container.style.opacity = '0';
+                    // Don't set opacity to 0 here - let terminal-spawn.js CRT animation handle it
                 }
             }
         });

@@ -3296,6 +3296,56 @@ pre code {
     }
 }
 
+/* ----------------------------------------
+   CRT Shutdown Effect Overlay
+   Classic Mac-style horizontal line collapse
+   ---------------------------------------- */
+
+.crt-shutdown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    opacity: 0;
+}
+
+.crt-line {
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.3) 10%,
+        rgba(255, 255, 255, 0.9) 50%,
+        rgba(255, 255, 255, 0.3) 90%,
+        transparent 100%
+    );
+    box-shadow:
+        0 0 20px 8px rgba(255, 255, 255, 0.5),
+        0 0 40px 16px rgba(200, 200, 255, 0.3),
+        0 0 60px 24px rgba(150, 150, 255, 0.2);
+    transform-origin: center center;
+}
+
+/* Subtle CRT glow on the section during shutdown */
+.scene--claude-codes.crt-active {
+    filter: brightness(1.1) contrast(1.05);
+}
+
+/* Reduced motion: skip CRT effect entirely */
+@media (prefers-reduced-motion: reduce) {
+    .crt-shutdown-overlay {
+        display: none;
+    }
+}
+
 /* ==========================================================================
    17c3. Scene: The Consultant
    ========================================================================== */

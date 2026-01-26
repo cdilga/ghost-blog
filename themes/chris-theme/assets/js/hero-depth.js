@@ -1,7 +1,7 @@
 // Hero + Coder Unified Depth Map Parallax Effect
 // Uses PixiJS DisplacementFilter for depth-based parallax
 // Covers both Hero AND Coder sections as one continuous background
-// Input: MotionInput system (optical flow camera + mouse)
+// Input: MotionInput system (optical flow camera + mouse) + SCROLL
 
 (function() {
     'use strict';
@@ -24,7 +24,14 @@
             desktop: 55,
             mobile: 50
         },
-        smoothing: 0.08
+        smoothing: 0.08,
+        // Scroll-based parallax intensity (adds to motion/mouse input)
+        // IMPORTANT: Keep these values HIGH for visible scroll parallax
+        // These values create pronounced parallax as user scrolls past
+        scrollIntensity: {
+            x: 0.5,  // Horizontal shift based on scroll
+            y: 1.5   // Vertical shift - primary scroll effect (MORE PRONOUNCED)
+        }
     };
 
     const isMobile = window.innerWidth <= 768;
@@ -35,6 +42,14 @@
     let currentY = 0;
     let targetX = 0;
     let targetY = 0;
+
+    // Scroll-based offset (added to motion/mouse input)
+    let scrollOffsetX = 0;
+    let scrollOffsetY = 0;
+
+    // Motion/mouse input (separate from scroll)
+    let motionX = 0;
+    let motionY = 0;
 
     // DOM elements - Hero and Coder sections
     const heroSection = document.querySelector('.hero');
@@ -150,6 +165,9 @@
             // Subscribe to MotionInput
             initMotionInput();
 
+            // Initialize scroll-based parallax
+            initScrollParallax();
+
         } catch (error) {
             console.error('Hero Depth: Failed to initialize', error);
             heroImage.style.visibility = 'visible';
@@ -160,11 +178,10 @@
     function animate() {
         if (!displacementFilter) return;
 
-        currentX += (targetX - currentX) * CONFIG.smoothing;
-        currentY += (targetY - currentY) * CONFIG.smoothing;
-
-        displacementFilter.scale.x = currentX * maxDisplacement;
-        displacementFilter.scale.y = currentY * maxDisplacement;
+        // STATIC MODE: No displacement, just show the depth-mapped image
+        // The depth effect is baked into the image itself
+        displacementFilter.scale.x = 0;
+        displacementFilter.scale.y = 0;
     }
 
     // =========================================================================
@@ -175,8 +192,8 @@
         // Check if MotionInput is available
         if (typeof MotionInput !== 'undefined') {
             MotionInput.subscribe((x, y) => {
-                targetX = x;
-                targetY = y;
+                motionX = x;
+                motionY = y;
             });
         } else {
             // Fallback to mouse-only if MotionInput not loaded
@@ -191,15 +208,52 @@
         sections.forEach(section => {
             section.addEventListener('mousemove', (e) => {
                 // Use viewport-relative coordinates for consistent effect
-                targetX = (e.clientX / window.innerWidth - 0.5) * 2;
-                targetY = (e.clientY / window.innerHeight - 0.5) * 2;
+                motionX = (e.clientX / window.innerWidth - 0.5) * 2;
+                motionY = (e.clientY / window.innerHeight - 0.5) * 2;
             });
 
             section.addEventListener('mouseleave', () => {
-                targetX = 0;
-                targetY = 0;
+                motionX = 0;
+                motionY = 0;
             });
         });
+    }
+
+    // =========================================================================
+    // Scroll-Based Parallax
+    // This ensures parallax effect even when quickly scrolling past
+    // =========================================================================
+
+    function initScrollParallax() {
+        // Calculate scroll-based displacement offset
+        // Uses the scroll position relative to the hero/coder sections
+        function updateScrollOffset() {
+            const scrollY = window.scrollY || window.pageYOffset;
+            const viewportHeight = window.innerHeight;
+
+            // Normalize scroll position: 0 at top, increases as we scroll down
+            // Effect is strongest in first ~2 viewport heights
+            const scrollProgress = Math.min(scrollY / (viewportHeight * 2), 1);
+
+            // Apply scroll intensity to create displacement offset
+            // Positive Y = image shifts down relative to depth, creating parallax
+            scrollOffsetX = (scrollProgress - 0.5) * CONFIG.scrollIntensity.x * 2;
+            scrollOffsetY = scrollProgress * CONFIG.scrollIntensity.y;
+        }
+
+        // Check for Lenis in window.ChrisTheme (how main.js exposes it)
+        const lenisInstance = window.ChrisTheme && window.ChrisTheme.lenis;
+
+        if (lenisInstance && typeof lenisInstance.on === 'function') {
+            // Sync with Lenis smooth scroll for best results
+            lenisInstance.on('scroll', updateScrollOffset);
+        } else {
+            // Fallback to native scroll with passive listener for performance
+            window.addEventListener('scroll', updateScrollOffset, { passive: true });
+        }
+
+        // Initial calculation
+        updateScrollOffset();
     }
 
     // =========================================================================
