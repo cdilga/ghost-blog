@@ -4389,6 +4389,7 @@ img.project-card__thumbnail {
     font-size: var(--text-sm);
     letter-spacing: 0.05em;
     padding: var(--space-2) var(--space-3);
+    margin-left: auto;
 }
 
 @media (max-width: 480px) {
@@ -4405,7 +4406,8 @@ img.project-card__thumbnail {
         font-size: var(--text-xs);
         width: 100%;
         text-align: center;
-        order: 1;
+        order: 99;
+        margin-left: 0;
     }
 }
 
