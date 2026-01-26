@@ -1,0 +1,183 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'themes/**'
+      - 'ghost/adapters/**'
+  workflow_dispatch:
+
+env:
+  THEME_NAME: chris-theme
+  GHOST_PATH: /var/www/ghost
+  SITE_URL: https://chris.dilger.me
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate theme
+        run: npm run test:validate
+
+      - name: Test storage adapter
+        run: npx playwright test tests/storage-adapter.spec.js
+
+  deploy-theme:
+    needs: test
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'themes/') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Backup current theme
+        run: |
+          ssh -i ~/.ssh/deploy_key root@${{ secrets.VPS_HOST }} "
+            THEME_PATH=${{ env.GHOST_PATH }}/content/themes/${{ env.THEME_NAME }}
+            BACKUP_PATH=${{ env.GHOST_PATH }}/content/themes/${{ env.THEME_NAME }}.backup
+            rm -rf \$BACKUP_PATH
+            if [ -d \$THEME_PATH ]; then
+              cp -r \$THEME_PATH \$BACKUP_PATH
+            fi
+          "
+
+      - name: Deploy theme
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            themes/${{ env.THEME_NAME }}/ \
+            root@${{ secrets.VPS_HOST }}:${{ env.GHOST_PATH }}/content/themes/${{ env.THEME_NAME }}/
+
+      - name: Fix ownership
+        run: |
+          ssh -i ~/.ssh/deploy_key root@${{ secrets.VPS_HOST }} "
+            chown -R ghost:ghost ${{ env.GHOST_PATH }}/content/themes/${{ env.THEME_NAME }}
+          "
+
+  deploy-storage-adapter:
+    needs: test
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'ghost/adapters/') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy storage adapter
+        run: |
+          ADAPTER_PATH=${{ env.GHOST_PATH }}/content/adapters/storage/optimized-local
+
+          # Ensure adapter directory exists
+          ssh -i ~/.ssh/deploy_key root@${{ secrets.VPS_HOST }} "
+            mkdir -p ${{ env.GHOST_PATH }}/content/adapters/storage
+          "
+
+          # Sync adapter files
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            ghost/adapters/storage/optimized-local/ \
+            root@${{ secrets.VPS_HOST }}:${ADAPTER_PATH}/
+
+      - name: Install adapter dependencies
+        run: |
+          ssh -i ~/.ssh/deploy_key root@${{ secrets.VPS_HOST }} "
+            cd ${{ env.GHOST_PATH }}/content/adapters/storage/optimized-local
+            npm install --production
+            chown -R ghost:ghost ${{ env.GHOST_PATH }}/content/adapters
+          "
+
+      - name: Configure Ghost storage
+        run: |
+          ssh -i ~/.ssh/deploy_key root@${{ secrets.VPS_HOST }} '
+            CONFIG_FILE="${{ env.GHOST_PATH }}/config.production.json"
+            STORAGE_PATH="${{ env.GHOST_PATH }}/content/images"
+
+            # Backup current config
+            cp "$CONFIG_FILE" "$CONFIG_FILE.backup"
+
+            # Add storage adapter config using Python
+            python3 << EOF
+import json
+
+config_file = "'"$CONFIG_FILE"'"
+storage_path = "'"$STORAGE_PATH"'"
+
+with open(config_file, "r") as f:
+    config = json.load(f)
+
+config["storage"] = {
+    "active": "optimized-local",
+    "optimized-local": {
+        "storagePath": storage_path,
+        "sizes": [600, 1000, 1600, 2000],
+        "quality": 82,
+        "keepOriginal": True
+    }
+}
+
+with open(config_file, "w") as f:
+    json.dump(config, f, indent=2)
+
+print("Storage adapter configured successfully")
+EOF
+
+            # Fix ownership (config must be owned by chris for Ghost CLI)
+            chown chris:chris "$CONFIG_FILE"
+          '
+
+  restart-ghost:
+    needs: [deploy-theme, deploy-storage-adapter]
+    runs-on: ubuntu-latest
+    if: always() && (needs.deploy-theme.result == 'success' || needs.deploy-storage-adapter.result == 'success')
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Restart Ghost
+        run: |
+          ssh -i ~/.ssh/deploy_key root@${{ secrets.VPS_HOST }} "
+            cd ${{ env.GHOST_PATH }}
+            sudo -u chris ghost restart
+          "
+
+      - name: Health check
+        run: |
+          echo 'Waiting for Ghost to restart...'
+          sleep 10
+          for i in 1 2 3 4 5 6; do
+            HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' ${{ env.SITE_URL }} || echo "000")
+            echo "Attempt $i: HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "Site is healthy!"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Site health check failed!"
+          exit 1

@@ -16,6 +16,8 @@ services:
     volumes:
       # Mount your theme for live editing
       - ./themes/chris-theme:/var/lib/ghost/content/themes/chris-theme
+      # Mount storage adapter for image optimization (optional - install deps first)
+      # - ./ghost/adapters/storage/optimized-local:/var/lib/ghost/content/adapters/storage/optimized-local
       # Persist Ghost data (posts, images, etc.)
       - ghost-data:/var/lib/ghost/content
 
