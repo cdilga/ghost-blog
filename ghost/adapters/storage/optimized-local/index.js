@@ -5,6 +5,7 @@ const fs = require('fs').promises;
 const { existsSync, createReadStream, mkdirSync } = require('fs');
 const sharp = require('sharp');
 const crypto = require('crypto');
+const StorageBase = require('ghost-storage-base');
 
 /**
  * Ghost storage adapter with Sharp-based image optimization
@@ -12,8 +13,10 @@ const crypto = require('crypto');
  * Generates optimized WebP versions and responsive sizes on upload.
  * Keeps original for fallback.
  */
-class OptimizedLocalStorage {
+class OptimizedLocalStorage extends StorageBase {
   constructor(config = {}) {
+    super(config);
+
     // Base storage path (typically /var/lib/ghost/content/images in container)
     this.storagePath = config.storagePath || path.join(process.cwd(), 'content', 'images');
 
