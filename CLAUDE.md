@@ -81,3 +81,7 @@ For full workflow details: `bd prime`
 **Frontend work** (label: `frontend`): Use the `/frontend-designer` skill when implementing issues with the `frontend` label. This includes CSS, animations, responsive design, accessibility, and component styling.
 
 Check issue labels with `bd show <id>` before starting work.
+
+## Browser Automation
+
+Prefer **Playwright** (`npm run test:smoke`) over Claude in Chrome for testing and verification.
