@@ -67,7 +67,7 @@ test('scroll up reverses coder section animation', async ({ page }) => {
   expect(headerHiddenUp.hidden).toBe(true);
 });
 
-test('wisp mask has organic noise-distorted blob shapes', async ({ page }) => {
+test('wisp mask has organic noise-distorted edge', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
 
@@ -75,40 +75,33 @@ test('wisp mask has organic noise-distorted blob shapes', async ({ page }) => {
   await scrollGradually(page, 0, 5100, 8);
 
   const maskState = await page.evaluate(() => {
-    // Check for clipPath with noise-distorted blob paths
+    // Check for clipPath with single organic edge path
     const clipPath = document.querySelector('#windswept-mask');
-    const paths = document.querySelectorAll('#windswept-mask path');
-    const rect = document.querySelector('#windswept-mask rect');
+    const path = document.querySelector('#windswept-mask path');
 
-    if (!clipPath) return { exists: false };
+    if (!clipPath || !path) return { exists: false };
 
-    // Check that paths have data (noise-distorted blobs)
-    const pathsWithData = Array.from(paths).filter(p => {
-      const d = p.getAttribute('d');
-      return d && d.length > 50; // Should have substantial path data
-    });
+    const d = path.getAttribute('d') || '';
 
-    // Check path data contains curves (Q command for quadratic bezier)
-    const hasCurves = pathsWithData.some(p => {
-      const d = p.getAttribute('d') || '';
-      return d.includes('Q '); // Quadratic bezier curves
-    });
+    // Check path has substantial data and curves
+    const hasCurves = d.includes('Q '); // Quadratic bezier curves for organic edge
+    const hasClosedPath = d.includes('Z'); // Path should be closed
+    const pathLength = d.length;
 
     return {
       exists: true,
-      shapeCount: paths.length,
-      pathsWithData: pathsWithData.length,
       hasCurves,
-      hasRect: !!rect,
-      isOrganic: pathsWithData.length >= 30 && hasCurves
+      hasClosedPath,
+      pathLength,
+      isOrganic: hasCurves && pathLength > 500 // Should have substantial path data
     };
   });
 
   console.log('Mask state:', JSON.stringify(maskState));
   expect(maskState.exists).toBe(true);
-  expect(maskState.shapeCount).toBeGreaterThan(0);
-  expect(maskState.pathsWithData).toBeGreaterThan(0);
   expect(maskState.hasCurves).toBe(true);
+  expect(maskState.hasClosedPath).toBe(true);
+  expect(maskState.isOrganic).toBe(true);
 });
 
 test('canvas transition: hero visible at top, claude visible after transition', async ({ page }) => {
