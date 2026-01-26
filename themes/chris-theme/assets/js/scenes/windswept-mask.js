@@ -347,6 +347,10 @@
         isAnimating = true;
         isExiting = false;
         animationStartTime = performance.now();
+        // Immediately update positions to current progress before first frame
+        // This prevents flash of wrong positions when scrolling back
+        updateMaskRect(currentProgress);
+        updateBlobShapes(0, currentProgress);
         animationId = requestAnimationFrame(animationLoop);
     }
 
@@ -469,6 +473,14 @@
                 startExitAnimation();
             },
             onEnterBack: () => {
+                // Reset exit state before showing canvas
+                isExiting = false;
+                // Set progress to current scroll position (should be ~1 when entering back)
+                currentProgress = transitionTrigger.progress;
+                // Update positions immediately before showing canvas
+                updateMaskRect(currentProgress);
+                updateBlobShapes(0, currentProgress);
+                // Now show canvases
                 positionForTransition(heroCoderCanvas, claudeCodesCanvas, true);
                 heroCoderCanvas.style.opacity = '1';
                 claudeCodesCanvas.style.opacity = '1';
