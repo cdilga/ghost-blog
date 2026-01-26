@@ -17,7 +17,8 @@
     "images:migrate:dry-run": "node scripts/migrate-existing-images.js --dry-run --verbose",
     "prepackage": "npm run images:optimize",
     "package": "cd themes && zip -r chris-theme.zip chris-theme -x '*.DS_Store' -x '*node_modules*' && echo 'Theme packaged: themes/chris-theme.zip'",
-    "test": "npm run test:validate && npm run test:adapter && npm run test:smoke",
+    "test": "npm run lint:yaml && npm run test:validate && npm run test:adapter && npm run test:smoke",
+    "lint:yaml": "node scripts/lint-yaml.js",
     "test:validate": "npx gscan themes/chris-theme --verbose",
     "test:adapter": "npx playwright test tests/storage-adapter.spec.js",
     "test:smoke": "npx playwright test tests/smoke.spec.js",
@@ -27,6 +28,7 @@
   "devDependencies": {
     "@playwright/test": "^1.40.0",
     "glob": "^11.0.0",
+    "js-yaml": "^4.1.1",
     "minimatch": "^10.0.0",
     "sharp": "^0.33.0"
   },
