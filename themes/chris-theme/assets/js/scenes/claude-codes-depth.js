@@ -1,7 +1,7 @@
-// Hero + Coder Unified Depth Map Parallax Effect
-// Uses PixiJS DisplacementFilter for depth-based parallax
-// Covers both Hero AND Coder sections as one continuous background
-// Input: MotionInput system (optical flow camera + mouse)
+// 8 Claude Codes Depth Map Parallax Effect
+// Second depth-map canvas for the Claude Codes section
+// Uses PixiJS DisplacementFilter with desert_ground_from_top_of_big_red image
+// Shares MotionInput with Hero+Coder canvas for synchronized parallax
 
 (function() {
     'use strict';
@@ -13,18 +13,19 @@
 
     // Wait for PixiJS to load
     if (typeof PIXI === 'undefined') {
-        console.warn('Hero Depth: PixiJS not loaded');
+        console.warn('Claude Codes Depth: PixiJS not loaded');
         return;
     }
 
-    // IMPORTANT: Keep displacement HIGH - we want pronounced depth parallax
-    // Do NOT reduce these values - the effect should be clearly visible
     const CONFIG = {
         displacementScale: {
-            desktop: 55,
-            mobile: 50
+            desktop: 35,
+            mobile: 30
         },
-        smoothing: 0.08
+        smoothing: 0.08,
+        // Asset paths (relative to theme assets)
+        imagePath: '/assets/images/desert_ground_from_top_of_big_red.jpg',
+        depthMapPath: '/assets/images/desert_ground_from_top_of_big_red_depth_anything_2_greyscale.png'
     };
 
     const isMobile = window.innerWidth <= 768;
@@ -36,43 +37,36 @@
     let targetX = 0;
     let targetY = 0;
 
-    // DOM elements - Hero and Coder sections
-    const heroSection = document.querySelector('.hero');
-    const coderSection = document.querySelector('.scene--coder');
-    const heroLayer = document.querySelector('.hero__layer--dunes');
-
-    if (!heroLayer || !heroSection) {
+    // DOM elements
+    const claudeCodesSection = document.querySelector('.scene--claude-codes');
+    if (!claudeCodesSection) {
         return;
     }
 
-    const heroImage = heroLayer.querySelector('img');
-    if (!heroImage) {
-        return;
-    }
+    // Resolve asset paths using Ghost theme assets
+    const themeAssetsBase = document.querySelector('link[href*="screen.css"]')?.href?.replace(/\/css\/screen\.css.*$/, '') || '/assets';
+    const imageSrc = themeAssetsBase + '/images/desert_ground_from_top_of_big_red.jpg';
+    const depthMapSrc = themeAssetsBase + '/images/desert_ground_from_top_of_big_red_depth_anything_2_greyscale.png';
 
-    // Get image sources
-    const imageSrc = heroImage.src;
-    const imageBaseName = imageSrc.replace(/\.[^/.]+$/, '');
-    const depthMapSrc = imageBaseName + '_depth_anything_2_greyscale.png';
-
-    // Create PixiJS canvas container - position fixed to cover viewport during scroll
+    // Create PixiJS canvas container
     const container = document.createElement('div');
-    container.className = 'hero__depth-canvas';
-    container.id = 'depth-canvas-hero-coder';
+    container.className = 'claude-codes__depth-canvas';
+    container.id = 'depth-canvas-claude-codes';
     container.style.cssText = `
-        position: fixed;
+        position: absolute;
         top: 0;
         left: 0;
-        width: 100vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
         pointer-events: none;
         z-index: 0;
-        opacity: 1;
+        opacity: 0;
+        transition: opacity 0.5s ease;
     `;
-    document.body.appendChild(container);
 
-    // Get sky layer reference for later hiding
-    const skyLayer = document.querySelector('.hero__layer--sky');
+    // Insert canvas into section (at the beginning, behind content)
+    claudeCodesSection.style.position = 'relative';
+    claudeCodesSection.insertBefore(container, claudeCodesSection.firstChild);
 
     // PixiJS setup
     let app = null;
@@ -134,24 +128,20 @@
             app.stage.addChild(displacementSprite);
             app.stage.addChild(mainSprite);
 
-            // NOW hide the original images (PixiJS canvas is ready)
-            heroImage.style.visibility = 'hidden';
-            if (skyLayer) {
-                skyLayer.style.visibility = 'hidden';
-            }
-
             // Start animation loop
             app.ticker.add(animate);
 
             // Handle resize
             window.addEventListener('resize', handleResize);
 
-            // Subscribe to MotionInput
+            // Subscribe to MotionInput (shared with Hero+Coder canvas)
             initMotionInput();
 
+            // Initially paused until section is visible
+            app.ticker.stop();
+
         } catch (error) {
-            console.error('Hero Depth: Failed to initialize', error);
-            heroImage.style.visibility = 'visible';
+            console.error('Claude Codes Depth: Failed to initialize', error);
             container.remove();
         }
     }
@@ -167,11 +157,11 @@
     }
 
     // =========================================================================
-    // Motion Input Integration
+    // Motion Input Integration (shared with Hero+Coder canvas)
     // =========================================================================
 
     function initMotionInput() {
-        // Check if MotionInput is available
+        // Check if MotionInput is available - subscribe to same input as Hero canvas
         if (typeof MotionInput !== 'undefined') {
             MotionInput.subscribe((x, y) => {
                 targetX = x;
@@ -184,20 +174,15 @@
     }
 
     function initMouseFallback() {
-        // Mouse tracking works globally when over Hero or Coder sections
-        const sections = [heroSection, coderSection].filter(Boolean);
+        claudeCodesSection.addEventListener('mousemove', (e) => {
+            // Use viewport-relative coordinates for consistent effect
+            targetX = (e.clientX / window.innerWidth - 0.5) * 2;
+            targetY = (e.clientY / window.innerHeight - 0.5) * 2;
+        });
 
-        sections.forEach(section => {
-            section.addEventListener('mousemove', (e) => {
-                // Use viewport-relative coordinates for consistent effect
-                targetX = (e.clientX / window.innerWidth - 0.5) * 2;
-                targetY = (e.clientY / window.innerHeight - 0.5) * 2;
-            });
-
-            section.addEventListener('mouseleave', () => {
-                targetX = 0;
-                targetY = 0;
-            });
+        claudeCodesSection.addEventListener('mouseleave', () => {
+            targetX = 0;
+            targetY = 0;
         });
     }
 
@@ -232,44 +217,23 @@
 
     // =========================================================================
     // Visibility handling (battery saving)
-    // Canvas stays active while EITHER Hero OR Coder section is visible
     // =========================================================================
-
-    let heroVisible = false;
-    let coderVisible = false;
-
-    function updateCanvasVisibility() {
-        if (!app) return;
-
-        const shouldBeActive = heroVisible || coderVisible;
-
-        if (shouldBeActive) {
-            app.ticker.start();
-            container.style.opacity = '1';
-        } else {
-            app.ticker.stop();
-            container.style.opacity = '0';
-        }
-    }
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (entry.target === heroSection) {
-                heroVisible = entry.isIntersecting;
-            } else if (entry.target === coderSection) {
-                coderVisible = entry.isIntersecting;
+            if (app) {
+                if (entry.isIntersecting) {
+                    app.ticker.start();
+                    container.style.opacity = '1';
+                } else {
+                    app.ticker.stop();
+                    container.style.opacity = '0';
+                }
             }
         });
-        updateCanvasVisibility();
     }, { threshold: 0.1 });
 
-    // Observe both Hero and Coder sections
-    if (heroSection) {
-        observer.observe(heroSection);
-    }
-    if (coderSection) {
-        observer.observe(coderSection);
-    }
+    observer.observe(claudeCodesSection);
 
     // =========================================================================
     // Initialize
