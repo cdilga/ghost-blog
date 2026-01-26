@@ -31,13 +31,38 @@
         // Bias toward leading edge (0.5 = symmetric, 0.8 = 80% on leading side)
         leadingBias: 0.75,
         // Vertical clustering zones (creates organic distribution)
-        clusterCount: 25
+        clusterCount: 25,
+
+        // Animation parameters
+        animation: {
+            // Wobble amplitude range (px) - how far particles drift from base position
+            wobbleAmplitudeX: { min: 5, max: 25 },
+            wobbleAmplitudeY: { min: 3, max: 15 },
+            // Wobble frequency range (cycles per second)
+            wobbleFrequencyX: { min: 0.2, max: 0.8 },
+            wobbleFrequencyY: { min: 0.3, max: 1.0 },
+            // Size pulsing (multiplier range around base size)
+            sizePulseAmount: 0.15, // ±15% size variation
+            sizePulseFrequency: { min: 0.5, max: 1.5 },
+            // Wind drift - constant slow movement in wind direction
+            windDriftSpeed: 8, // px per second
+            windDriftVariation: 0.4, // ±40% variation per particle
+            // Gust effect - occasional stronger bursts
+            gustFrequency: 0.1, // cycles per second
+            gustStrength: 20 // additional px displacement during gusts
+        }
     };
 
     // Store viewport dimensions and particle data
     let viewportWidth = window.innerWidth;
     let viewportHeight = window.innerHeight;
     let particleData = [];
+
+    // Animation state
+    let animationId = null;
+    let isAnimating = false;
+    let currentProgress = 0;
+    let animationStartTime = 0;
 
     let maskInitialized = false;
 
@@ -127,24 +152,26 @@
             },
             onEnter: () => {
                 positionForTransition(heroCoderCanvas, claudeCodesCanvas, true);
+                startAnimation();
             },
             onLeave: () => {
                 // Hide hero canvas - claude stays visible behind
                 heroCoderCanvas.style.opacity = '0';
-                // Keep z-indices as-is (hero in front but hidden, claude behind visible)
+                stopAnimation();
             },
             onEnterBack: () => {
                 positionForTransition(heroCoderCanvas, claudeCodesCanvas, true);
                 heroCoderCanvas.style.opacity = '1';
                 // Ensure claude codes canvas is visible during reverse transition
                 claudeCodesCanvas.style.opacity = '1';
+                startAnimation();
             },
             onLeaveBack: () => {
                 // Hide claude canvas FIRST to prevent flash
                 claudeCodesCanvas.style.opacity = '0';
                 // Reset mask position (hero fully visible through mask)
                 resetMask(maskRect, circles);
-                // Keep hero in front - no z-index change needed
+                stopAnimation();
             }
         });
 
@@ -155,7 +182,10 @@
             maskRect,
             circles,
             reset: () => resetMask(maskRect, circles),
-            setProgress: (p) => updateMaskPosition(p, maskRect, circles)
+            setProgress: (p) => updateMaskPosition(p, maskRect, circles),
+            startAnimation,
+            stopAnimation,
+            isAnimating: () => isAnimating
         };
 
         console.log('[windswept-mask] Initialized with', CONFIG.particleCount, 'particles');
@@ -205,10 +235,14 @@
      * Generate particle data with organic clustering (relative positions 0-1)
      * Particles are biased toward the "leading" edge (left side, into hidden area)
      * to create visible organic scatter as the mask reveals
+     * Each particle also gets unique animation parameters for organic movement
      */
     function generateParticleData() {
         const particles = [];
-        const { particleCount, particleSizeMin, particleSizeMax, clusterCount, leadingBias } = CONFIG;
+        const { particleCount, particleSizeMin, particleSizeMax, clusterCount, leadingBias, animation } = CONFIG;
+
+        // Helper to get random value in range
+        const randRange = (range) => range.min + Math.random() * (range.max - range.min);
 
         // Create cluster centers spread across viewport height
         const clusters = [];
@@ -246,30 +280,119 @@
             const distanceFactor = Math.abs(offsetX);
             const r = particleSizeMin + (sizeRange * (0.3 + 0.7 * distanceFactor * Math.random()));
 
-            particles.push({ y, offsetX, r });
+            // Animation parameters - unique per particle for organic feel
+            const anim = {
+                // Random phase offsets (0 to 2π) so particles don't move in sync
+                phaseX: Math.random() * Math.PI * 2,
+                phaseY: Math.random() * Math.PI * 2,
+                phaseSize: Math.random() * Math.PI * 2,
+                // Wobble parameters
+                wobbleAmpX: randRange(animation.wobbleAmplitudeX),
+                wobbleAmpY: randRange(animation.wobbleAmplitudeY),
+                wobbleFreqX: randRange(animation.wobbleFrequencyX),
+                wobbleFreqY: randRange(animation.wobbleFrequencyY),
+                // Size pulse
+                sizeFreq: randRange(animation.sizePulseFrequency),
+                // Wind drift multiplier (some particles drift faster/slower)
+                driftMultiplier: 1 + (Math.random() - 0.5) * 2 * animation.windDriftVariation
+            };
+
+            particles.push({ y, offsetX, r, anim });
         }
 
         return particles;
     }
 
     /**
-     * Update particle positions based on progress
+     * Update particle positions based on progress and time (for animation)
+     * @param {Array} circles - SVG circle elements
+     * @param {number} progress - Scroll progress 0-1
+     * @param {number} time - Current time in seconds (for animation)
      */
-    function updateParticlePositions(circles, progress) {
+    function updateParticlePositions(circles, progress, time = 0) {
         const edgeX = progress * viewportWidth; // The revealing edge position
+        const { animation } = CONFIG;
+
+        // Global gust effect - affects all particles
+        const gustPhase = time * animation.gustFrequency * Math.PI * 2;
+        const gustOffset = Math.sin(gustPhase) * Math.max(0, Math.sin(gustPhase)) * animation.gustStrength;
 
         circles.forEach((circle, i) => {
             const p = particleData[i];
             if (!p) return;
 
-            // Position particles along the edge
-            const cx = edgeX + (p.offsetX * CONFIG.scatterWidth);
-            const cy = p.y * viewportHeight;
+            const { anim } = p;
+
+            // Base position
+            let cx = edgeX + (p.offsetX * CONFIG.scatterWidth);
+            let cy = p.y * viewportHeight;
+
+            // Animated wobble offsets (sine waves with unique phase/frequency)
+            const wobbleX = Math.sin(time * anim.wobbleFreqX * Math.PI * 2 + anim.phaseX) * anim.wobbleAmpX;
+            const wobbleY = Math.sin(time * anim.wobbleFreqY * Math.PI * 2 + anim.phaseY) * anim.wobbleAmpY;
+
+            // Wind drift - constant movement in wind direction (leftward, negative X)
+            // Wraps around based on scatter width to create continuous flow
+            const driftOffset = (time * animation.windDriftSpeed * anim.driftMultiplier) % (CONFIG.scatterWidth * 0.5);
+
+            // Apply animated offsets
+            cx += wobbleX - driftOffset + gustOffset * anim.driftMultiplier;
+            cy += wobbleY;
+
+            // Animated size pulsing
+            const sizePulse = 1 + Math.sin(time * anim.sizeFreq * Math.PI * 2 + anim.phaseSize) * animation.sizePulseAmount;
+            const r = p.r * sizePulse;
 
             circle.setAttribute('cx', String(cx));
             circle.setAttribute('cy', String(cy));
-            circle.setAttribute('r', String(p.r));
+            circle.setAttribute('r', String(Math.max(1, r)));
         });
+    }
+
+    /**
+     * Animation loop - runs continuously when in transition zone
+     */
+    function animationLoop(timestamp) {
+        if (!isAnimating) return;
+
+        // Convert to seconds since animation start
+        const time = (timestamp - animationStartTime) / 1000;
+
+        // Get current circles reference
+        const circles = window.ChrisTheme?.windsweptMask?.circles;
+        const maskRect = window.ChrisTheme?.windsweptMask?.maskRect;
+
+        if (circles && maskRect) {
+            // Update rect position based on progress
+            const rectX = currentProgress * viewportWidth;
+            maskRect.setAttribute('x', String(rectX));
+
+            // Update particles with animation
+            updateParticlePositions(circles, currentProgress, time);
+        }
+
+        animationId = requestAnimationFrame(animationLoop);
+    }
+
+    /**
+     * Start the animation loop
+     */
+    function startAnimation() {
+        if (isAnimating) return;
+        isAnimating = true;
+        animationStartTime = performance.now();
+        animationId = requestAnimationFrame(animationLoop);
+    }
+
+    /**
+     * Stop the animation loop
+     */
+    function stopAnimation() {
+        isAnimating = false;
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
     }
 
     /**
@@ -277,16 +400,19 @@
      * progress: 0 = Hero+Coder fully visible, 1 = fully hidden (Claude Codes visible)
      *
      * Wind blows right-to-left: mask rect moves to the right, revealing from left
+     * Note: When animation is running, this just updates currentProgress
+     * and the animation loop handles the actual updates
      */
     function updateMaskPosition(progress, maskRect, circles) {
-        // Move rect to the right as progress increases
-        // At progress 0: x=0 (covers full viewport)
-        // At progress 1: x=viewportWidth (moved off right, nothing visible)
-        const rectX = progress * viewportWidth;
-        maskRect.setAttribute('x', String(rectX));
+        currentProgress = progress;
 
-        // Update particle positions along the left edge of the rect
-        updateParticlePositions(circles, progress);
+        // If animation is running, it will handle updates
+        // Otherwise, update immediately (for non-animated states)
+        if (!isAnimating) {
+            const rectX = progress * viewportWidth;
+            maskRect.setAttribute('x', String(rectX));
+            updateParticlePositions(circles, progress, 0);
+        }
     }
 
     /**
