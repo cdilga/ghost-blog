@@ -36,10 +36,19 @@
     let viewportHeight = window.innerHeight;
     let particleData = [];
 
+    let maskInitialized = false;
+
     function initWindsweptMask() {
+        // Prevent multiple initializations (inner guard)
+        if (maskInitialized) {
+            return;
+        }
+        maskInitialized = true;
+
         const { gsap, ScrollTrigger } = window.ChrisTheme || {};
         if (!gsap || !ScrollTrigger) {
             console.warn('[windswept-mask] GSAP or ScrollTrigger not available');
+            maskInitialized = false;
             return;
         }
 
@@ -117,16 +126,22 @@
                 positionForTransition(heroCoderCanvas, claudeCodesCanvas, true);
             },
             onLeave: () => {
-                positionForTransition(heroCoderCanvas, claudeCodesCanvas, false);
+                // Hide hero canvas - claude stays visible behind
                 heroCoderCanvas.style.opacity = '0';
+                // Keep z-indices as-is (hero in front but hidden, claude behind visible)
             },
             onEnterBack: () => {
                 positionForTransition(heroCoderCanvas, claudeCodesCanvas, true);
                 heroCoderCanvas.style.opacity = '1';
+                // Ensure claude codes canvas is visible during reverse transition
+                claudeCodesCanvas.style.opacity = '1';
             },
             onLeaveBack: () => {
-                positionForTransition(heroCoderCanvas, claudeCodesCanvas, false);
+                // Hide claude canvas FIRST to prevent flash
+                claudeCodesCanvas.style.opacity = '0';
+                // Reset mask position (hero fully visible through mask)
                 resetMask(maskRect, maskGroup);
+                // Keep hero in front - no z-index change needed
             }
         });
 
@@ -271,48 +286,27 @@
 
     /**
      * Position both canvases for transition
-     * During transition: use positive z-indices so canvases appear above section backgrounds
-     * - Claude Codes canvas at z-index 1 (background layer)
-     * - Hero+Coder canvas at z-index 2 (foreground with mask)
-     * - Section background made transparent to reveal canvas
+     * Both canvases are now fixed-positioned full viewport backgrounds.
+     * During transition:
+     * - Claude Codes canvas at z-index -1 (revealed as background)
+     * - Hero+Coder canvas at z-index 0 (foreground with clip-path mask)
+     * After transition:
+     * - Hero+Coder canvas hidden (opacity 0)
+     * - Claude Codes canvas becomes the visible background
      */
     function positionForTransition(heroCoderCanvas, claudeCodesCanvas, forTransition) {
-        const claudeCodesSection = document.querySelector('.scene--claude-codes');
-
         if (forTransition) {
-            // Claude Codes: fixed, behind hero-coder but above page content
-            claudeCodesCanvas.style.position = 'fixed';
-            claudeCodesCanvas.style.top = '0';
-            claudeCodesCanvas.style.left = '0';
-            claudeCodesCanvas.style.width = '100vw';
-            claudeCodesCanvas.style.height = '100vh';
-            claudeCodesCanvas.style.zIndex = '1';
+            // Both canvases are already fixed-positioned at z-index: -1
+            // During transition, show Claude Codes behind, Hero+Coder in front with mask
+            claudeCodesCanvas.style.zIndex = '-1';
             claudeCodesCanvas.style.opacity = '1';
 
-            // Hero+Coder: fixed, in front with clip-path mask
-            heroCoderCanvas.style.zIndex = '2';
-
-            // Make section background transparent so canvas shows through
-            if (claudeCodesSection) {
-                claudeCodesSection.dataset.originalBg = claudeCodesSection.style.backgroundColor || '';
-                claudeCodesSection.style.backgroundColor = 'transparent';
-            }
+            // Hero+Coder in front with clip-path mask applied
+            heroCoderCanvas.style.zIndex = '0';
         } else {
-            // Reset Claude Codes to its original position in section
-            claudeCodesCanvas.style.position = 'absolute';
-            claudeCodesCanvas.style.top = '0';
-            claudeCodesCanvas.style.left = '0';
-            claudeCodesCanvas.style.width = '100%';
-            claudeCodesCanvas.style.height = '100%';
-            claudeCodesCanvas.style.zIndex = '0';
-
-            // Reset Hero+Coder to original z-index
+            // Reset z-indices to default
             heroCoderCanvas.style.zIndex = '-1';
-
-            // Restore section background
-            if (claudeCodesSection) {
-                claudeCodesSection.style.backgroundColor = claudeCodesSection.dataset.originalBg || '';
-            }
+            claudeCodesCanvas.style.zIndex = '-1';
         }
     }
 
