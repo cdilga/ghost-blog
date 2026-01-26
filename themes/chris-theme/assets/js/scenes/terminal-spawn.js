@@ -29,21 +29,29 @@
         // Track which terminals have spawned (prevents re-triggering)
         const spawnedTerminals = new Set();
 
+        // Store terminal final positions BEFORE any transforms are applied
+        // This is critical - getBoundingClientRect returns wrong values after transform
+        const terminalFinalPositions = [];
+
+        // Calculate and store all final positions immediately (before transforms)
+        function cacheTerminalPositions() {
+            terminals.forEach((terminal, index) => {
+                const rect = terminal.getBoundingClientRect();
+                terminalFinalPositions[index] = {
+                    centerX: rect.left + rect.width / 2,
+                    centerY: rect.top + rect.height / 2,
+                    width: rect.width,
+                    height: rect.height
+                };
+            });
+        }
+
         // Calculate navbar center position
         function getNavbarCenter() {
             const headerRect = header.getBoundingClientRect();
             return {
                 x: window.innerWidth / 2,
                 y: headerRect.bottom
-            };
-        }
-
-        // Get terminal's final position (its natural grid position)
-        function getTerminalFinalPosition(terminal) {
-            const rect = terminal.getBoundingClientRect();
-            return {
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2
             };
         }
 
@@ -63,34 +71,19 @@
                 return;
             }
 
-            const navbarCenter = getNavbarCenter();
-            const finalPos = getTerminalFinalPosition(terminal);
-
-            // Calculate offset from final position to navbar center
-            const offsetX = navbarCenter.x - finalPos.x;
-            const offsetY = navbarCenter.y - finalPos.y;
-
-            // Animate from navbar center to final position
-            gsap.fromTo(terminal,
-                {
-                    scale: 0.1,
-                    opacity: 0,
-                    x: offsetX,
-                    y: offsetY
-                },
-                {
-                    scale: 1,
-                    opacity: 1,
-                    x: 0,
-                    y: 0,
-                    duration: 0.5,
-                    ease: 'elastic.out(1, 0.5)',
-                    onComplete: () => {
-                        // Clear transforms after animation completes
-                        gsap.set(terminal, { clearProps: 'x,y' });
-                    }
+            // Animate to final position (x:0, y:0 means "no transform offset")
+            gsap.to(terminal, {
+                scale: 1,
+                opacity: 1,
+                x: 0,
+                y: 0,
+                duration: 0.5,
+                ease: 'elastic.out(1, 0.5)',
+                onComplete: () => {
+                    // Clear transforms after animation completes
+                    gsap.set(terminal, { clearProps: 'x,y,scale' });
                 }
-            );
+            });
         }
 
         // Initialize: hide all terminals at navbar center position
@@ -106,9 +99,10 @@
             const navbarCenter = getNavbarCenter();
 
             terminals.forEach((terminal, index) => {
-                const finalPos = getTerminalFinalPosition(terminal);
-                const offsetX = navbarCenter.x - finalPos.x;
-                const offsetY = navbarCenter.y - finalPos.y;
+                const finalPos = terminalFinalPositions[index];
+                // Calculate offset FROM final position TO navbar center
+                const offsetX = navbarCenter.x - finalPos.centerX;
+                const offsetY = navbarCenter.y - finalPos.centerY;
 
                 gsap.set(terminal, {
                     scale: 0.1,
@@ -132,7 +126,7 @@
             ScrollTrigger.create({
                 trigger: scene,
                 start: 'top 60%',  // Start when section enters lower portion
-                end: 'top 10%',   // End when section header is near top
+                end: 'top 10%',    // End when section header is near top
                 onUpdate: (self) => {
                     const progress = self.progress;
 
@@ -162,16 +156,22 @@
             });
         }
 
-        // Initialize
+        // Initialize in correct order:
+        // 1. Cache positions BEFORE any transforms
+        // 2. Apply initial hidden state
+        // 3. Set up scroll trigger
+        cacheTerminalPositions();
         initializeTerminals();
         createSpawnTrigger();
 
         // Expose for debugging
         window.ChrisTheme.terminalSpawn = {
             spawnedTerminals,
+            terminalFinalPositions,
             spawnTerminal,
             reset: () => {
                 spawnedTerminals.clear();
+                cacheTerminalPositions();
                 initializeTerminals();
             }
         };

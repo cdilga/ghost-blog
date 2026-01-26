@@ -22,6 +22,9 @@
         document.documentElement.classList.add('reduced-motion');
         // Still show hero content
         showHeroContent();
+        // Still provide scroll parallax at full intensity
+        // IMPORTANT: Do NOT reduce intensity - parallax should be consistent everywhere
+        document.addEventListener('DOMContentLoaded', () => initScrollParallax());
         return;
     }
 
@@ -82,6 +85,90 @@
             el.style.opacity = '1';
             el.style.transform = 'none';
         });
+    }
+
+    // ========================================
+    // UNIVERSAL SCROLL PARALLAX
+    // ========================================
+    // Subtle X/Y movement on scroll for images
+    // Works on ALL devices and fallback modes - this is the baseline experience
+    // that users always get, even when fancier effects fail
+    //
+    // IMPORTANT: Do NOT reduce intensity for mobile or reduced motion.
+    // This effect should be consistent across all devices and modes.
+    // The parallax values are already tuned per-element via data attributes.
+    function initScrollParallax() {
+        const parallaxElements = document.querySelectorAll('[data-scroll-parallax]');
+        if (parallaxElements.length === 0) return;
+
+        // Try GSAP ScrollTrigger first (best integration with Lenis)
+        if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+            gsap.registerPlugin(ScrollTrigger);
+
+            parallaxElements.forEach(el => {
+                // Get custom values from data attributes or use defaults
+                const xAmount = parseFloat(el.dataset.scrollParallaxX) || 8;
+                const yAmount = parseFloat(el.dataset.scrollParallaxY) || 15;
+
+                // Create the scroll-driven parallax animation
+                gsap.to(el, {
+                    x: xAmount,
+                    y: -yAmount, // Negative = moves up as you scroll down
+                    ease: 'none',
+                    scrollTrigger: {
+                        trigger: el,
+                        start: 'top bottom',
+                        end: 'bottom top',
+                        scrub: 0.5, // Smooth but responsive
+                    }
+                });
+            });
+
+            console.log('Chris Theme: Scroll parallax initialized (GSAP)', parallaxElements.length, 'elements');
+        } else {
+            // Vanilla JS fallback - works without any libraries
+            initScrollParallaxFallback(parallaxElements);
+        }
+    }
+
+    // Vanilla JS scroll parallax fallback
+    // IMPORTANT: Do NOT add intensity multipliers here - keep full effect
+    function initScrollParallaxFallback(elements) {
+        let ticking = false;
+
+        function updateParallax() {
+            const viewportHeight = window.innerHeight;
+
+            elements.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                const elementCenter = rect.top + rect.height / 2;
+
+                // Progress: -1 when element at bottom of viewport, 1 when at top
+                const progress = (1 - (elementCenter / viewportHeight)) * 2 - 1;
+
+                const xAmount = parseFloat(el.dataset.scrollParallaxX) || 8;
+                const yAmount = parseFloat(el.dataset.scrollParallaxY) || 15;
+
+                // Full intensity - progress maps to half the configured amount at extremes
+                const x = progress * xAmount * 0.5;
+                const y = progress * -yAmount * 0.5;
+
+                el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+            });
+
+            ticking = false;
+        }
+
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                requestAnimationFrame(updateParallax);
+                ticking = true;
+            }
+        }, { passive: true });
+
+        // Initial update
+        updateParallax();
+        console.log('Chris Theme: Scroll parallax initialized (fallback)', elements.length, 'elements');
     }
 
     // ========================================
@@ -1125,6 +1212,10 @@
         // Initialize hero parallax (works with or without Lenis)
         initHeroParallax();
 
+        // Initialize universal scroll parallax for marked images
+        // This provides baseline depth even when camera/depth effects fail
+        initScrollParallax();
+
         // Initialize scene scroll animations
         initSceneAnimations();
 
@@ -1439,37 +1530,24 @@
             });
         }
 
-        // Initial reveal animation then start chaos
+        // Initialize DOM and start typing chaos
+        // NOTE: Visual spawn animation is handled by terminal-spawn.js
         function startAnimation() {
             if (isAnimating) return;
             isAnimating = true;
 
-            // First, fade in all terminals with stagger
-            gsap.fromTo(terminals,
-                { opacity: 0, y: 30, scale: 0.95 },
-                {
-                    opacity: 1,
-                    y: 0,
-                    scale: 1,
-                    duration: 0.6,
-                    ease: 'power2.out',
-                    stagger: 0.08,
-                    onComplete: () => {
-                        // Initialize DOM and start chaos loop
-                        initTerminalDOM();
+            // Initialize DOM (terminal-spawn.js handles visual animation)
+            initTerminalDOM();
 
-                        // Start all terminals with staggered delays for initial chaos
-                        terminals.forEach((_, i) => {
-                            setTimeout(() => {
-                                if (!animationPaused) typeTerminal(i);
-                            }, i * 400 + Math.random() * 500);
-                        });
+            // Start all terminals with staggered delays for initial chaos
+            terminals.forEach((_, i) => {
+                setTimeout(() => {
+                    if (!animationPaused) typeTerminal(i);
+                }, i * 400 + Math.random() * 500);
+            });
 
-                        // Start focus rotation after initial typing settles
-                        setTimeout(chaosLoop, 3000);
-                    }
-                }
-            );
+            // Start focus rotation after initial typing settles
+            setTimeout(chaosLoop, 3000);
         }
 
         // ScrollTrigger to start/pause animation based on visibility
