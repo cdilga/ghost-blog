@@ -56,8 +56,8 @@ test.describe('Storage Adapter', () => {
     // Upload via adapter
     const savedPath = await adapter.save(file, '2026/01');
 
-    // Verify the returned path format
-    expect(savedPath).toMatch(/^\/2026\/01\/test-image-\d+-[a-f0-9]+\.jpg$/);
+    // Verify the returned path format (includes /content/images/ for Ghost)
+    expect(savedPath).toMatch(/^\/content\/images\/2026\/01\/test-image-\d+-[a-f0-9]+\.jpg$/);
 
     // Extract the actual filename from the path
     const filename = path.basename(savedPath);

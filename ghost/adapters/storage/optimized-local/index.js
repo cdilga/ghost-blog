@@ -155,9 +155,9 @@ class OptimizedLocalStorage extends StorageBase {
 
   /**
    * Get a readable stream for serving files
+   * Automatically serves WebP when browser supports it
    */
   serve() {
-    // Return express middleware for serving files
     return (req, res, next) => {
       // URL-decode and remove leading slash
       let filePath = decodeURIComponent(req.path);
@@ -165,11 +165,28 @@ class OptimizedLocalStorage extends StorageBase {
         filePath = filePath.slice(1);
       }
 
+      const ext = path.extname(filePath).toLowerCase();
+      const base = path.basename(filePath, ext);
+      const dir = path.dirname(filePath);
+
+      // Check if browser supports WebP
+      const acceptsWebP = req.headers.accept && req.headers.accept.includes('image/webp');
+
+      // For images that can be optimized, try to serve WebP if browser supports it
+      if (acceptsWebP && this.optimizableExtensions.includes(ext) && ext !== '.webp') {
+        const webpPath = path.join(this.storagePath, dir, `${base}.webp`);
+        if (existsSync(webpPath)) {
+          res.setHeader('Content-Type', 'image/webp');
+          res.setHeader('Vary', 'Accept'); // Important for caching
+          const stream = createReadStream(webpPath);
+          return stream.pipe(res);
+        }
+      }
+
+      // Serve original file
       const fullPath = path.join(this.storagePath, filePath);
 
       if (existsSync(fullPath)) {
-        // Set appropriate Content-Type
-        const ext = path.extname(fullPath).toLowerCase();
         const mimeTypes = {
           '.jpg': 'image/jpeg',
           '.jpeg': 'image/jpeg',
