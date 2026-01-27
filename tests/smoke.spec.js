@@ -57,21 +57,88 @@ test.describe('Theme Smoke Tests', () => {
     }
   });
 
-  test('core page elements render', async ({ page }) => {
+  test('hero section elements render', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Header exists
-    await expect(page.locator('.site-header')).toBeVisible();
+    // Hero section exists
+    await expect(page.locator('.hero')).toBeVisible();
 
-    // Main content area exists
-    await expect(page.locator('.site-main')).toBeVisible();
+    // Hero title exists
+    await expect(page.locator('.hero__title')).toBeVisible();
 
-    // Footer exists
-    await expect(page.locator('.site-footer')).toBeVisible();
+    // Hero subtitle exists
+    await expect(page.locator('.hero__subtitle')).toBeVisible();
 
-    // Site title link exists
-    await expect(page.locator('.site-title')).toBeVisible();
+    // Hero CTA buttons exist
+    await expect(page.locator('.hero__cta')).toBeVisible();
+  });
+
+  test('hero content visible after scroll back to top', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(500);
+
+    // Helper to scroll with Lenis and update ScrollTrigger
+    const scrollTo = async (y) => {
+      await page.evaluate((scrollY) => {
+        if (window.ChrisTheme?.lenis) {
+          window.ChrisTheme.lenis.scrollTo(scrollY, { immediate: true });
+        }
+        window.ChrisTheme?.ScrollTrigger?.update();
+        window.ChrisTheme?.gsap?.ticker.tick();
+      }, y);
+      await page.waitForTimeout(200);
+    };
+
+    // Verify hero title visible at start
+    const titleAtStart = await page.evaluate(() => {
+      const title = document.querySelector('.hero__title');
+      if (!title) return { found: false };
+      const style = getComputedStyle(title);
+      return {
+        found: true,
+        visible: style.visibility !== 'hidden' && parseFloat(style.opacity) > 0
+      };
+    });
+    expect(titleAtStart.found).toBe(true);
+    expect(titleAtStart.visible).toBe(true);
+
+    // Scroll past the hero section (hero ends at ~2000)
+    await scrollTo(2500);
+
+    // Scroll back to top gradually
+    for (let y = 2500; y >= 0; y -= 500) {
+      await scrollTo(y);
+    }
+
+    // Verify hero content is visible again via clip-path
+    const heroAfterReturn = await page.evaluate(() => {
+      const hero = document.querySelector('.hero');
+      const title = document.querySelector('.hero__title');
+      if (!hero || !title) return { found: false };
+
+      const heroStyle = getComputedStyle(hero);
+      const titleStyle = getComputedStyle(title);
+      const clipPath = heroStyle.clipPath;
+
+      // Check clip-path is reset (should be 'inset(0 0 0% 0)' or 'none')
+      const clipPathReset = clipPath === 'none' ||
+        clipPath.includes('inset(0') ||
+        clipPath.includes('0%)');
+
+      return {
+        found: true,
+        clipPath,
+        clipPathReset,
+        titleVisible: titleStyle.visibility !== 'hidden' && parseFloat(titleStyle.opacity) > 0
+      };
+    });
+
+    console.log('Hero after scroll back:', JSON.stringify(heroAfterReturn));
+    expect(heroAfterReturn.found).toBe(true);
+    expect(heroAfterReturn.clipPathReset).toBe(true);
+    expect(heroAfterReturn.titleVisible).toBe(true);
   });
 
   test('page is scrollable', async ({ page }) => {
