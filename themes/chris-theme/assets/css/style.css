@@ -2756,56 +2756,52 @@ pre code {
     z-index: 1;
 }
 
-/* Header backdrop for readability against desert background */
-/* Using a soft radial gradient that feels organic, like heat shimmer or distant haze */
-.scene--claude-codes .scene__header {
-    position: relative;
-    padding: var(--space-8);
-    /* No hard-edged box - use pseudo-element for organic shape */
+/* Full-section dark overlay - fades in just before text, out on exit */
+.claude-codes__overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 30, 0.55);
+    pointer-events: none;
+    z-index: 1; /* Below terminals (z-index: 2) but above background */
+    opacity: 0;
+    /* Smooth transitions handled by GSAP, but CSS fallback */
+    transition: opacity 0.4s ease;
 }
 
-.scene--claude-codes .scene__header::before {
-    content: '';
-    position: absolute;
-    inset: -20px -40px;
-    background: radial-gradient(
-        ellipse 100% 100% at 50% 40%,
-        rgba(30, 30, 40, 0.65) 0%,
-        rgba(30, 30, 40, 0.4) 40%,
-        rgba(30, 30, 40, 0.15) 70%,
-        transparent 100%
-    );
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: -1;
-    border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+/* Header text styling - space optimized */
+.scene--claude-codes .scene__header {
+    position: relative;
+    padding: var(--space-4) var(--space-4) var(--space-2);
+    z-index: 3; /* Above overlay */
 }
 
 .scene--claude-codes .scene__label {
     color: var(--color-accent);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .scene--claude-codes .scene__title {
     color: var(--color-text-on-dark);
     text-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.6),
-        0 4px 16px rgba(0, 0, 0, 0.3);
+        0 2px 6px rgba(0, 0, 0, 0.5),
+        0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .scene--claude-codes .scene__description {
     color: rgba(255, 255, 255, 0.9);
     text-shadow:
-        0 1px 4px rgba(0, 0, 0, 0.6),
-        0 2px 8px rgba(0, 0, 0, 0.3);
+        0 1px 3px rgba(0, 0, 0, 0.5),
+        0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 /* Terminal Grid */
 .terminal-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-4);
-    margin-bottom: var(--space-12);
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    position: relative;
+    z-index: 2; /* Above overlay */
 }
 
 /* Individual Terminal */
@@ -2854,10 +2850,10 @@ pre code {
     letter-spacing: 0.05em;
 }
 
-/* Terminal Body */
+/* Terminal Body - compact height to fit CTA below */
 .terminal__body {
-    padding: var(--space-3);
-    height: 160px;
+    padding: var(--space-2);
+    height: 130px;
     overflow: hidden;
     position: relative;
 }
@@ -2938,15 +2934,19 @@ pre code {
     color: #ff5f56;
 }
 
-/* Claude Codes CTA */
+/* Claude Codes CTA - space optimized for visibility */
 .claude-codes__cta {
     text-align: center;
+    position: relative;
+    z-index: 3; /* Above overlay */
+    padding: var(--space-2) 0 var(--space-4);
 }
 
 .claude-codes__cta-text {
-    font-size: var(--text-lg);
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: var(--space-6);
+    font-size: var(--text-base);
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: var(--space-3);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* Initial animation states for terminals */

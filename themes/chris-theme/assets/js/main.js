@@ -388,10 +388,16 @@
     // ========================================
     // Like Hero and Coder, this section is PINNED.
     // Timeline:
-    //   0-10%:  Header fades in
-    //   10-40%: Terminals spawn in with stagger
-    //   40-80%: Hold - terminals run chaos animation
-    //   80-100%: Content fades out for next section
+    //   0-5%:   Dark overlay fades in (for readability)
+    //   0-8%:   Header fades in
+    //   8-30%:  Terminals spawn in with stagger
+    //   28-35%: CTA appears
+    //   35-45%: Hold - view full section
+    //   45-60%: Terminals scroll UP behind header, CTA stays prominent
+    //   60-70%: Hold - CTA prominently visible
+    //   70-80%: Exit - content fades out, terminals fly back
+    //   80-95%: CRT shutdown effect
+    //   95-100%: Transition to Speaker
     function initClaudeCodesChoreography() {
         const claudeCodesSection = document.querySelector('.scene--claude-codes');
         if (!claudeCodesSection || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
@@ -402,13 +408,34 @@
         const terminalGrid = claudeCodesSection.querySelector('.terminal-grid');
         const terminals = claudeCodesSection.querySelectorAll('.terminal');
         const cta = claudeCodesSection.querySelector('.claude-codes__cta');
+        const speakerSection = document.getElementById('speaker');
 
         if (!header || !terminalGrid) {
             return;
         }
 
+        // Create dark overlay for readability
+        let darkOverlay = claudeCodesSection.querySelector('.claude-codes__overlay');
+        if (!darkOverlay) {
+            darkOverlay = document.createElement('div');
+            darkOverlay.className = 'claude-codes__overlay';
+            claudeCodesSection.appendChild(darkOverlay);
+        }
+
+        // Create CRT shutdown overlay
+        let crtOverlay = claudeCodesSection.querySelector('.crt-shutdown-overlay');
+        if (!crtOverlay) {
+            crtOverlay = document.createElement('div');
+            crtOverlay.className = 'crt-shutdown-overlay';
+            crtOverlay.innerHTML = '<div class="crt-line"></div>';
+            claudeCodesSection.appendChild(crtOverlay);
+        }
+
         // Set initial states (hidden)
+        gsap.set(darkOverlay, { opacity: 0 });
+        gsap.set(crtOverlay, { opacity: 0 });
         gsap.set(header, { opacity: 0, y: 30 });
+        gsap.set(terminalGrid, { y: 0 }); // Track grid position for scroll-up
         gsap.set(terminals, { opacity: 0, scale: 0.8, y: 50 });
         if (cta) gsap.set(cta, { opacity: 0, y: 20 });
 
@@ -419,52 +446,116 @@
             scrollTrigger: {
                 trigger: claudeCodesSection,
                 start: 'top top',
-                end: '+=2000',  // 2000px of scroll while pinned
+                end: '+=2500',  // Total scroll distance for this section
                 pin: true,      // 🔥 PAGE STAYS FIXED
                 scrub: 1,       // 🔥 SCROLL DRIVES TIMELINE
                 anticipatePin: 1,
+                onLeave: () => {
+                    // After timeline completes, smooth scroll to Speaker
+                    if (speakerSection && window.ChrisTheme?.lenis) {
+                        window.ChrisTheme.lenis.scrollTo(speakerSection, {
+                            duration: 0.3,
+                            easing: (t) => 1 - Math.pow(1 - t, 3)
+                        });
+                    }
+                }
             }
         });
 
-        // Phase 1: Header enters (0% - 10%)
+        // Phase 1a: Dark overlay fades in FIRST (0% - 5%)
+        claudeCodesTimeline.to(darkOverlay, {
+            opacity: 1,
+            duration: 0.05,
+            ease: 'power2.out',
+        }, 0);
+
+        // Phase 1b: Header enters (0% - 8%)
         claudeCodesTimeline.to(header, {
             opacity: 1,
             y: 0,
-            duration: 0.1,
+            duration: 0.08,
             ease: 'power2.out',
-        });
+        }, 0);
 
-        // Phase 2: Terminals spawn with stagger (10% - 40%)
+        // Phase 2: Terminals spawn with stagger (8% - 30%)
         claudeCodesTimeline.to(terminals, {
             opacity: 1,
             scale: 1,
             y: 0,
-            duration: 0.25,
+            duration: 0.20,
             ease: 'back.out(1.4)',
-            stagger: 0.03,
-        }, 0.1);
+            stagger: 0.02,
+        }, 0.08);
 
-        // Phase 3: CTA appears (35% - 45%)
+        // Phase 3: CTA appears (28% - 35%)
         if (cta) {
             claudeCodesTimeline.to(cta, {
                 opacity: 1,
                 y: 0,
-                duration: 0.1,
+                duration: 0.07,
                 ease: 'power2.out',
-            }, 0.35);
+            }, 0.28);
         }
 
-        // Phase 4: Hold for viewing chaos animation (45% - 80%)
-        claudeCodesTimeline.to({}, { duration: 0.35 });
+        // Phase 4: Hold for viewing chaos animation (35% - 45%)
+        claudeCodesTimeline.to({}, { duration: 0.10 });
 
-        // Phase 5: Exit - everything fades out (80% - 100%)
-        claudeCodesTimeline.to([header, terminals, cta].filter(Boolean), {
+        // Phase 5: Terminals scroll UP behind the header (45% - 60%)
+        // This reveals the CTA more prominently below
+        claudeCodesTimeline.to(terminalGrid, {
+            y: -150, // Scroll up by 150px
+            duration: 0.15,
+            ease: 'power2.inOut',
+        }, 0.45);
+
+        // Phase 6: Hold - CTA is now prominently visible (60% - 70%)
+        claudeCodesTimeline.to({}, { duration: 0.10 });
+
+        // Phase 7: Exit - header and CTA fade out (70% - 75%)
+        claudeCodesTimeline.to([header, cta].filter(Boolean), {
             opacity: 0,
-            y: -30,
-            duration: 0.2,
+            y: -20,
+            duration: 0.05,
             ease: 'power2.in',
-            stagger: 0.01,
-        }, 0.8);
+        }, 0.70);
+
+        // Phase 8: Terminals fly back (75% - 82%)
+        claudeCodesTimeline.to(terminals, {
+            opacity: 0,
+            scale: 0.5,
+            y: -200,
+            duration: 0.07,
+            ease: 'back.in(1.2)',
+            stagger: 0.008,
+        }, 0.75);
+
+        // Phase 9: Dark overlay fades out as CRT begins (82% - 85%)
+        claudeCodesTimeline.to(darkOverlay, {
+            opacity: 0,
+            duration: 0.03,
+            ease: 'power2.in',
+        }, 0.82);
+
+        // Phase 10: CRT shutdown effect (82% - 95%)
+        claudeCodesTimeline.to(crtOverlay, {
+            opacity: 1,
+            duration: 0.03,
+        }, 0.82);
+
+        claudeCodesTimeline.to(crtOverlay.querySelector('.crt-line'), {
+            scaleY: 0,
+            duration: 0.10,
+            ease: 'power2.in',
+        }, 0.82);
+
+        // Hold at black (92% - 95%)
+        claudeCodesTimeline.to({}, { duration: 0.03 }, 0.92);
+
+        // CRT overlay fades out (95% - 100%)
+        claudeCodesTimeline.to(crtOverlay, {
+            opacity: 0,
+            duration: 0.05,
+        }, 0.95);
 
         console.log('Chris Theme: Claude Codes section choreography initialized (pin: true, scrub: 1)');
     }
