@@ -238,6 +238,10 @@
             gsap.set(scrollIndicator, { opacity: 1, y: 0 });
         }
 
+        // CRITICAL: Set explicit initial clipPath so GSAP can properly reverse
+        // Without this, scrolling back to top doesn't restore the hero content
+        gsap.set(hero, { clipPath: 'inset(0 0 0% 0)' });
+
         const heroTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: hero,
@@ -246,6 +250,7 @@
                 pin: true,      // 🔥 NON-NEGOTIABLE: Page stays fixed
                 scrub: 1,       // 🔥 NON-NEGOTIABLE: Scroll drives timeline
                 anticipatePin: 1, // Smoother pin initiation
+                invalidateOnRefresh: true, // Recalculate on resize/refresh
             }
         });
 
@@ -264,11 +269,11 @@
 
         // Hero content slides UP and exits (70% - 100% = 1400-2000px)
         // Using clip-path for a "peel away" effect
-        heroTimeline.to(hero, {
-            clipPath: 'inset(0 0 100% 0)',
-            duration: 0.30,
-            ease: 'power2.inOut'
-        });
+        // IMPORTANT: Use fromTo() with explicit start/end values to ensure proper reversal
+        heroTimeline.fromTo(hero,
+            { clipPath: 'inset(0 0 0% 0)' },
+            { clipPath: 'inset(0 0 100% 0)', duration: 0.30, ease: 'power2.inOut' }
+        );
 
         // ========================================
         // PARALLAX LAYERS (runs alongside main timeline)
