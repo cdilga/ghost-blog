@@ -29,15 +29,16 @@ test.describe('Carousel Fixes Verification', () => {
         expect(state).not.toBeNull();
 
         if (state) {
-            // With 120° arc: anglePerCard should be 120 / (numCards - 1)
-            // For 10 cards: 120 / 9 = 13.3°
-            // For 7 cards: 120 / 6 = 20°
-            expect(state.anglePerCard).toBeLessThanOrEqual(20);
-            expect(state.anglePerCard).toBeGreaterThan(5);
-            console.log(`✓ anglePerCard: ${state.anglePerCard.toFixed(1)}° (120° arc)`);
+            // With 200° arc: anglePerCard should be 200 / (numCards - 1)
+            // For 10 cards: 200 / 9 = 22.2°
+            // For 7 cards: 200 / 6 = 33.3°
+            expect(state.anglePerCard).toBeLessThanOrEqual(35);
+            expect(state.anglePerCard).toBeGreaterThan(10);
+            console.log(`✓ anglePerCard: ${state.anglePerCard.toFixed(1)}° (200° arc)`);
 
-            // Verify reduced radius
-            expect(state.radius).toBeLessThanOrEqual(400);
+            // Verify radius is reasonable (user tuned to 470)
+            expect(state.radius).toBeLessThanOrEqual(550);
+            expect(state.radius).toBeGreaterThanOrEqual(250);
             console.log(`✓ radius: ${state.radius}px`);
         }
 
@@ -115,12 +116,12 @@ test.describe('Carousel Fixes Verification', () => {
 
         console.log('Card rotations:', cardRotations);
 
-        // Check that no visible card is rotated more than ~65° (with some tolerance)
+        // Check that no visible card is rotated more than ~85° (user tuned arcSpan=166)
         for (const card of cardRotations) {
-            expect(Math.abs(card.rotation)).toBeLessThanOrEqual(70);
+            expect(Math.abs(card.rotation)).toBeLessThanOrEqual(90);
         }
 
-        console.log('✓ All cards have rotation ≤ 70°');
+        console.log('✓ All cards have rotation ≤ 90°');
     });
 
     test('visual comparison screenshot', async ({ page }) => {

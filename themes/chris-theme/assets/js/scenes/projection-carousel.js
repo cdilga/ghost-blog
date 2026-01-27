@@ -20,20 +20,22 @@
     // CONFIG
     // =========================================================================
     const CONFIG = {
-        radius: 380,                    // Distance from center to cards (reduced for 60% height)
-        radiusMobile: 240,              // Mobile radius (reduced for 60% height)
+        radius: 450,                    // Distance from center to cards
+        radiusMobile: 280,              // Mobile radius
         numVisibleCards: 7,             // How many cards to show in the arc
-        scrollPerCard: 80,              // Scroll pixels per card (faster rotation)
+        scrollPerCard: 200,             // Scroll pixels per card
 
         // Detent (snap) settings
-        detentStrength: 0.85,
-        detentFriction: 0.92,
+        // detentStrength: how hard it snaps (0 = no snap, 1 = instant snap)
+        // smoothness: how smooth the movement (0.9 = quick stop, 0.99 = glide)
+        detentStrength: 0.05,
+        smoothness: 0.96,               // Higher = smoother/longer glide
 
-        // Visual
-        activeScale: 1.0,
-        inactiveScale: 0.55,
+        // Visual - all cards same scale/opacity for uniform look
+        activeScale: 0.65,
+        inactiveScale: 0.65,
         activeOpacity: 1.0,
-        inactiveOpacity: 0.25,
+        inactiveOpacity: 1.0,
 
         // Drag
         dragSensitivity: 0.3,
@@ -85,8 +87,7 @@
 
         // Center below the visible area - positioned so the arc of cards
         // appears in the upper portion of the wheel container
-        // With reduced container height (60%), we need less offset
-        centerY = rect.height + 50;
+        centerY = rect.height + 80;
 
         // Responsive radius
         radius = window.innerWidth <= 768 ? CONFIG.radiusMobile : CONFIG.radius;
@@ -136,40 +137,38 @@
             const x = centerX + radius * Math.cos(rad);
             const y = centerY - radius * Math.sin(rad);
 
-            // Card rotation - cards point outward from center
+            // Card rotation - cards tilt outward from center (like cog teeth)
             // At 90° (top), card should be upright (rotation = 0)
-            // At 0° (right), card should tilt right (rotation = -90)
-            // At 180° (left), card should tilt left (rotation = +90)
-            const cardRotation = angle - 90;
+            // At 30° (lower right), card should tilt right (rotation = +60)
+            // At 150° (lower left), card should tilt left (rotation = -60)
+            const cardRotation = 90 - angle;
 
             // Normalize angle to figure out visibility and styling
             let normAngle = ((angle % 360) + 360) % 360;
             if (normAngle > 270) normAngle -= 360;
 
             // Distance from the active position (90°)
-            // 0 = at active, 1 = at the edges (30° or 150° for 120° arc)
-            const halfArc = 60; // half of 120° arc
+            // 0 = at active, 1 = at the edges
+            // Use arcSpan/2 for proper scaling with any arc size
+            const halfArc = arcSpan / 2;
             const distFromActive = Math.min(1, Math.abs(normAngle - 90) / halfArc);
 
             // Scale and opacity based on distance from active
             const scale = CONFIG.activeScale - distFromActive * (CONFIG.activeScale - CONFIG.inactiveScale);
             const opacity = CONFIG.activeOpacity - distFromActive * (CONFIG.activeOpacity - CONFIG.inactiveOpacity);
 
-            // Z-index: cards closer to active are on top
-            const zIndex = Math.round((1 - distFromActive) * 100);
+            // Z-index: cards closer to active are on top, but capped low so footer stays above
+            const zIndex = Math.round((1 - distFromActive) * 10);
 
-            // Only show cards in the visible arc (roughly 20° to 160°, with some padding)
-            const isVisible = normAngle >= 15 && normAngle <= 165;
+            // Always show cards - they slide under the footer instead of disappearing
+            // Only hide if completely behind (angle < -20° or > 200°)
+            const isVisible = normAngle >= -20 && normAngle <= 200;
 
-            // Apply the transform
-            if (isVisible) {
-                card.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(${cardRotation}deg) scale(${scale})`;
-                card.style.opacity = opacity;
-                card.style.zIndex = zIndex;
-                card.style.visibility = 'visible';
-            } else {
-                card.style.visibility = 'hidden';
-            }
+            // Apply the transform - cards are always positioned, visibility controlled by CSS
+            card.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(${cardRotation}deg) scale(${scale})`;
+            card.style.opacity = isVisible ? opacity : 0;
+            card.style.zIndex = zIndex;
+            card.style.visibility = isVisible ? 'visible' : 'hidden';
 
             // Mark active card
             if (distFromActive < 0.15) {
@@ -188,18 +187,20 @@
     function animate() {
         if (!isAnimating) return;
 
-        // Apply detent snapping when not dragging
+        // Apply detent snapping when not dragging and moving slowly
         if (!isDragging) {
             const nearestDetent = Math.round(wheelAngle / anglePerCard) * anglePerCard;
             const distToDetent = nearestDetent - wheelAngle;
 
-            if (Math.abs(velocity) < 2 && Math.abs(distToDetent) < anglePerCard * 0.4) {
-                velocity += distToDetent * CONFIG.detentStrength * 0.12;
+            // Only snap when velocity is low and we're close to a detent
+            if (Math.abs(velocity) < 3 && Math.abs(distToDetent) < anglePerCard * 0.5) {
+                // Gentle pull toward nearest card position
+                velocity += distToDetent * CONFIG.detentStrength;
             }
         }
 
-        // Apply friction
-        velocity *= CONFIG.detentFriction;
+        // Apply smoothness (higher = smoother/longer glide)
+        velocity *= CONFIG.smoothness;
 
         // Clamp velocity
         velocity = Math.max(-CONFIG.maxVelocity, Math.min(CONFIG.maxVelocity, velocity));
@@ -505,11 +506,243 @@
                 wheelAngle = Math.round(wheelAngle / anglePerCard) * anglePerCard;
                 positionCards();
             },
-            config: CONFIG
+            config: CONFIG,
+            updateConfig: (key, value) => {
+                if (key in CONFIG) {
+                    CONFIG[key] = value;
+                    updateGeometry();
+                    positionCards();
+                }
+            },
+            showDebugPanel: createDebugPanel
         };
+
+        // Show debug panel if URL has ?debug
+        if (window.location.search.includes('debug')) {
+            createDebugPanel();
+        }
 
         console.log('[carousel] Ready with', cards.length, 'cards');
     }
+
+    // =========================================================================
+    // DEBUG PANEL
+    // =========================================================================
+    let arcSpan = 200; // Track arc span separately - >180 allows edges to peek under footer
+
+    function createDebugPanel() {
+        // Remove existing panel if any
+        document.querySelector('.carousel-debug-panel')?.remove();
+
+        const panel = document.createElement('div');
+        panel.className = 'carousel-debug-panel';
+        panel.innerHTML = `
+            <style>
+                .carousel-debug-panel {
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    background: rgba(0, 0, 0, 0.9);
+                    color: #fff;
+                    padding: 15px;
+                    border-radius: 8px;
+                    font-family: monospace;
+                    font-size: 12px;
+                    z-index: 99999;
+                    min-width: 280px;
+                    max-height: 90vh;
+                    overflow-y: auto;
+                }
+                .carousel-debug-panel h4 {
+                    margin: 0 0 10px;
+                    color: #ff9500;
+                    font-size: 14px;
+                }
+                .carousel-debug-panel .control {
+                    margin: 8px 0;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                .carousel-debug-panel label {
+                    flex: 0 0 100px;
+                    color: #aaa;
+                }
+                .carousel-debug-panel input[type="range"] {
+                    flex: 1;
+                    accent-color: #ff9500;
+                }
+                .carousel-debug-panel .value {
+                    flex: 0 0 50px;
+                    text-align: right;
+                    color: #ff9500;
+                }
+                .carousel-debug-panel hr {
+                    border: none;
+                    border-top: 1px solid #333;
+                    margin: 12px 0;
+                }
+                .carousel-debug-panel button {
+                    background: #ff9500;
+                    color: #000;
+                    border: none;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-family: inherit;
+                    margin-right: 8px;
+                }
+                .carousel-debug-panel button:hover {
+                    background: #ffaa33;
+                }
+                .carousel-debug-panel .close-btn {
+                    position: absolute;
+                    top: 8px;
+                    right: 8px;
+                    background: none;
+                    color: #666;
+                    font-size: 18px;
+                    padding: 0;
+                    width: 24px;
+                    height: 24px;
+                }
+            </style>
+            <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+            <h4>🎡 Carousel Debug</h4>
+
+            <div class="control">
+                <label>Arc Span</label>
+                <input type="range" id="dbg-arcSpan" min="60" max="240" value="${arcSpan}">
+                <span class="value" id="dbg-arcSpan-val">${arcSpan}°</span>
+            </div>
+
+            <div class="control">
+                <label>Radius</label>
+                <input type="range" id="dbg-radius" min="200" max="600" value="${CONFIG.radius}">
+                <span class="value" id="dbg-radius-val">${CONFIG.radius}</span>
+            </div>
+
+            <div class="control">
+                <label>Scroll/Card</label>
+                <input type="range" id="dbg-scrollPerCard" min="50" max="300" value="${CONFIG.scrollPerCard}">
+                <span class="value" id="dbg-scrollPerCard-val">${CONFIG.scrollPerCard}</span>
+            </div>
+
+            <hr>
+            <h4>Detent/Snap</h4>
+
+            <div class="control">
+                <label>Snap Strength</label>
+                <input type="range" id="dbg-detentStrength" min="0" max="50" value="${CONFIG.detentStrength * 100}">
+                <span class="value" id="dbg-detentStrength-val">${CONFIG.detentStrength.toFixed(2)}</span>
+            </div>
+
+            <div class="control">
+                <label>Smoothness</label>
+                <input type="range" id="dbg-smoothness" min="90" max="99" value="${CONFIG.smoothness * 100}">
+                <span class="value" id="dbg-smoothness-val">${CONFIG.smoothness.toFixed(2)}</span>
+            </div>
+
+            <hr>
+            <h4>Scale & Opacity</h4>
+
+            <div class="control">
+                <label>Active Scale</label>
+                <input type="range" id="dbg-activeScale" min="50" max="150" value="${CONFIG.activeScale * 100}">
+                <span class="value" id="dbg-activeScale-val">${CONFIG.activeScale.toFixed(2)}</span>
+            </div>
+
+            <div class="control">
+                <label>Inactive Scale</label>
+                <input type="range" id="dbg-inactiveScale" min="20" max="100" value="${CONFIG.inactiveScale * 100}">
+                <span class="value" id="dbg-inactiveScale-val">${CONFIG.inactiveScale.toFixed(2)}</span>
+            </div>
+
+            <div class="control">
+                <label>Active Opacity</label>
+                <input type="range" id="dbg-activeOpacity" min="50" max="100" value="${CONFIG.activeOpacity * 100}">
+                <span class="value" id="dbg-activeOpacity-val">${CONFIG.activeOpacity.toFixed(2)}</span>
+            </div>
+
+            <div class="control">
+                <label>Inactive Opacity</label>
+                <input type="range" id="dbg-inactiveOpacity" min="5" max="100" value="${CONFIG.inactiveOpacity * 100}">
+                <span class="value" id="dbg-inactiveOpacity-val">${CONFIG.inactiveOpacity.toFixed(2)}</span>
+            </div>
+
+            <hr>
+            <button id="dbg-copy">Copy Config</button>
+            <button id="dbg-reset">Reset</button>
+        `;
+
+        document.body.appendChild(panel);
+
+        // Wire up controls
+        const setupSlider = (id, configKey, transform = v => v, display = v => v) => {
+            const input = document.getElementById(id);
+            const valSpan = document.getElementById(id + '-val');
+            input.addEventListener('input', () => {
+                const rawVal = parseFloat(input.value);
+                const val = transform(rawVal);
+                if (configKey === 'arcSpan') {
+                    arcSpan = val;
+                    updateGeometry();
+                } else {
+                    CONFIG[configKey] = val;
+                }
+                valSpan.textContent = display(val);
+                positionCards();
+            });
+        };
+
+        setupSlider('dbg-arcSpan', 'arcSpan', v => v, v => v + '°');
+        setupSlider('dbg-radius', 'radius', v => v, v => v);
+        setupSlider('dbg-scrollPerCard', 'scrollPerCard', v => v, v => v);
+        setupSlider('dbg-detentStrength', 'detentStrength', v => v / 100, v => v.toFixed(2));
+        setupSlider('dbg-smoothness', 'smoothness', v => v / 100, v => v.toFixed(2));
+        setupSlider('dbg-activeScale', 'activeScale', v => v / 100, v => v.toFixed(2));
+        setupSlider('dbg-inactiveScale', 'inactiveScale', v => v / 100, v => v.toFixed(2));
+        setupSlider('dbg-activeOpacity', 'activeOpacity', v => v / 100, v => v.toFixed(2));
+        setupSlider('dbg-inactiveOpacity', 'inactiveOpacity', v => v / 100, v => v.toFixed(2));
+
+        // Copy config button
+        document.getElementById('dbg-copy').addEventListener('click', () => {
+            const config = {
+                arcSpan,
+                radius: CONFIG.radius,
+                radiusMobile: CONFIG.radiusMobile,
+                scrollPerCard: CONFIG.scrollPerCard,
+                detentStrength: CONFIG.detentStrength,
+                smoothness: CONFIG.smoothness,
+                activeScale: CONFIG.activeScale,
+                inactiveScale: CONFIG.inactiveScale,
+                activeOpacity: CONFIG.activeOpacity,
+                inactiveOpacity: CONFIG.inactiveOpacity
+            };
+            navigator.clipboard.writeText(JSON.stringify(config, null, 2));
+            alert('Config copied to clipboard!');
+        });
+
+        // Reset button
+        document.getElementById('dbg-reset').addEventListener('click', () => {
+            location.reload();
+        });
+    }
+
+    // Override updateGeometry to use arcSpan variable
+    const originalUpdateGeometry = updateGeometry;
+    updateGeometry = function() {
+        if (!wheel) return;
+
+        const rect = wheel.getBoundingClientRect();
+        centerX = rect.width / 2;
+        centerY = rect.height + 80;
+        radius = window.innerWidth <= 768 ? CONFIG.radiusMobile : CONFIG.radius;
+
+        // Use arcSpan variable (can be modified by debug panel)
+        const numCards = Math.max(cards.length, CONFIG.numVisibleCards);
+        anglePerCard = arcSpan / Math.max(1, numCards - 1);
+    };
 
     function waitForTheme(cb, max = 50) {
         let n = 0;

@@ -4002,7 +4002,9 @@ img.project-card__thumbnail {
 
 .reel-navigator {
     position: relative;
-    min-height: 60vh;
+    /* Desktop: fill viewport when pinned */
+    min-height: auto;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -4070,7 +4072,7 @@ img.project-card__thumbnail {
     position: relative;
     z-index: 5;
     width: 100%;
-    height: 42vh;
+    height: 50vh;
     flex: 1;
     overflow: visible;
 }
@@ -4195,27 +4197,29 @@ img.project-card__thumbnail {
     z-index: 15;
     width: 100%;
     margin-top: auto;
-    background: transparent;
+    /* Solid background to prevent bleed-through */
+    background: var(--color-bg-dark, #1a1a1a);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Mobile adjustments */
+/* Mobile adjustments - ensure section fills viewport */
 @media (max-width: 768px) {
     .reel-navigator {
-        min-height: 55vh;
+        min-height: 100vh;
+        min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
     }
 
     .reel-navigator__wheel {
-        height: 35vh;
+        height: 55vh;
     }
 
     .reel-card {
-        width: 200px;
-        height: 260px;
+        width: 180px;
+        height: 240px;
     }
 
     .reel-card__image {
-        height: 130px;
+        height: 120px;
     }
 
     .reel-navigator__title {
@@ -4224,8 +4228,13 @@ img.project-card__thumbnail {
 }
 
 @media (max-width: 480px) {
+    .reel-navigator {
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+
     .reel-navigator__wheel {
-        height: 30vh;
+        height: 50vh;
     }
 
     .reel-card {
@@ -4234,7 +4243,7 @@ img.project-card__thumbnail {
     }
 
     .reel-card__image {
-        height: 100px;
+        height: 90px;
     }
 
     .reel-card__content {
