@@ -293,6 +293,177 @@
         console.log('Chris Theme: Hero scroll-captured choreography initialized (pin: true, scrub: 1)');
     }
 
+    // ========================================
+    // CODER SECTION CHOREOGRAPHY (PINNED)
+    // ========================================
+    // Like Hero, this section is PINNED - page doesn't scroll, scroll drives animation.
+    // Timeline:
+    //   0-20%:  Header slides in from left
+    //   10-40%: Content elements slide in from right (staggered)
+    //   40-70%: Hold - user reads content
+    //   70-100%: Content exits, preparing for windswept transition
+    function initCoderChoreography() {
+        const coderSection = document.querySelector('.scene--coder');
+        if (!coderSection || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+            return;
+        }
+
+        const header = coderSection.querySelector('.scene__header');
+        const content = coderSection.querySelector('.coder__content');
+
+        if (!header || !content) {
+            return;
+        }
+
+        // Get all content elements
+        const keyboard = content.querySelector('.coder__keyboard');
+        const codeWindow = content.querySelector('.coder__code');
+        const github = content.querySelector('.coder__github');
+        const contentElements = [keyboard, codeWindow, github].filter(Boolean);
+
+        // Set initial states (hidden)
+        gsap.set(header, { opacity: 0, x: -80 });
+        gsap.set(contentElements, { opacity: 0, x: 100 });
+
+        // ========================================
+        // PINNED SCROLL-CAPTURED TIMELINE
+        // ========================================
+        const coderTimeline = gsap.timeline({
+            scrollTrigger: {
+                trigger: coderSection,
+                start: 'top top',
+                end: '+=1500',  // 1500px of scroll while pinned
+                pin: true,      // 🔥 PAGE STAYS FIXED
+                scrub: 1,       // 🔥 SCROLL DRIVES TIMELINE
+                anticipatePin: 1,
+            }
+        });
+
+        // Phase 1: Header enters from left (0% - 20%)
+        coderTimeline.to(header, {
+            opacity: 1,
+            x: 0,
+            duration: 0.2,
+            ease: 'power2.out',
+        });
+
+        // Phase 2: Content enters from right with stagger (10% - 40%)
+        coderTimeline.to(contentElements, {
+            opacity: 1,
+            x: 0,
+            duration: 0.25,
+            ease: 'power2.out',
+            stagger: 0.05,
+        }, 0.1); // Start at 10%
+
+        // Phase 3: Hold for reading (40% - 70%)
+        coderTimeline.to({}, { duration: 0.3 });
+
+        // Phase 4: Content exits - header out left, content fades (70% - 100%)
+        coderTimeline.to(header, {
+            opacity: 0,
+            x: -120,
+            duration: 0.15,
+            ease: 'power2.in',
+        }, 0.7);
+
+        coderTimeline.to(contentElements, {
+            opacity: 0,
+            x: 60,
+            duration: 0.15,
+            ease: 'power2.in',
+            stagger: 0.02,
+        }, 0.75);
+
+        console.log('Chris Theme: Coder section choreography initialized (pin: true, scrub: 1)');
+    }
+
+    // ========================================
+    // CLAUDE CODES SECTION CHOREOGRAPHY (PINNED)
+    // ========================================
+    // Like Hero and Coder, this section is PINNED.
+    // Timeline:
+    //   0-10%:  Header fades in
+    //   10-40%: Terminals spawn in with stagger
+    //   40-80%: Hold - terminals run chaos animation
+    //   80-100%: Content fades out for next section
+    function initClaudeCodesChoreography() {
+        const claudeCodesSection = document.querySelector('.scene--claude-codes');
+        if (!claudeCodesSection || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+            return;
+        }
+
+        const header = claudeCodesSection.querySelector('.scene__header');
+        const terminalGrid = claudeCodesSection.querySelector('.terminal-grid');
+        const terminals = claudeCodesSection.querySelectorAll('.terminal');
+        const cta = claudeCodesSection.querySelector('.claude-codes__cta');
+
+        if (!header || !terminalGrid) {
+            return;
+        }
+
+        // Set initial states (hidden)
+        gsap.set(header, { opacity: 0, y: 30 });
+        gsap.set(terminals, { opacity: 0, scale: 0.8, y: 50 });
+        if (cta) gsap.set(cta, { opacity: 0, y: 20 });
+
+        // ========================================
+        // PINNED SCROLL-CAPTURED TIMELINE
+        // ========================================
+        const claudeCodesTimeline = gsap.timeline({
+            scrollTrigger: {
+                trigger: claudeCodesSection,
+                start: 'top top',
+                end: '+=2000',  // 2000px of scroll while pinned
+                pin: true,      // 🔥 PAGE STAYS FIXED
+                scrub: 1,       // 🔥 SCROLL DRIVES TIMELINE
+                anticipatePin: 1,
+            }
+        });
+
+        // Phase 1: Header enters (0% - 10%)
+        claudeCodesTimeline.to(header, {
+            opacity: 1,
+            y: 0,
+            duration: 0.1,
+            ease: 'power2.out',
+        });
+
+        // Phase 2: Terminals spawn with stagger (10% - 40%)
+        claudeCodesTimeline.to(terminals, {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.25,
+            ease: 'back.out(1.4)',
+            stagger: 0.03,
+        }, 0.1);
+
+        // Phase 3: CTA appears (35% - 45%)
+        if (cta) {
+            claudeCodesTimeline.to(cta, {
+                opacity: 1,
+                y: 0,
+                duration: 0.1,
+                ease: 'power2.out',
+            }, 0.35);
+        }
+
+        // Phase 4: Hold for viewing chaos animation (45% - 80%)
+        claudeCodesTimeline.to({}, { duration: 0.35 });
+
+        // Phase 5: Exit - everything fades out (80% - 100%)
+        claudeCodesTimeline.to([header, terminals, cta].filter(Boolean), {
+            opacity: 0,
+            y: -30,
+            duration: 0.2,
+            ease: 'power2.in',
+            stagger: 0.01,
+        }, 0.8);
+
+        console.log('Chris Theme: Claude Codes section choreography initialized (pin: true, scrub: 1)');
+    }
+
     // Initialize scene scroll animations (Speaker, Projects, etc.)
     function initSceneAnimations() {
         if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
@@ -305,7 +476,8 @@
         }
 
         // Generic fade-up animation for elements with data-animate="fade-up"
-        const fadeUpElements = document.querySelectorAll('[data-animate="fade-up"]:not(.hero--parallax [data-animate])');
+        // EXCLUDE elements in pinned sections (Hero, Coder, Claude Codes) - they have their own choreography
+        const fadeUpElements = document.querySelectorAll('[data-animate="fade-up"]:not(.hero--parallax [data-animate]):not(.scene--coder [data-animate]):not(.scene--claude-codes [data-animate])');
 
         fadeUpElements.forEach(el => {
             const delay = parseFloat(el.dataset.animateDelay) || 0;
@@ -387,28 +559,9 @@
             initChaosTerminals(terminalGrid);
         }
 
-        // Code lines staggered animation (The Coder scene)
-        const codeLines = document.querySelectorAll('.code-line');
-        if (codeLines.length > 0) {
-            gsap.fromTo(codeLines,
-                {
-                    opacity: 0,
-                    x: -10,
-                },
-                {
-                    opacity: 1,
-                    x: 0,
-                    duration: 0.4,
-                    ease: 'power2.out',
-                    stagger: 0.1,
-                    scrollTrigger: {
-                        trigger: codeLines[0].closest('.coder__code'),
-                        start: 'top 80%',
-                        toggleActions: 'play none none none',
-                    }
-                }
-            );
-        }
+        // Code lines staggered animation - SKIP for pinned Coder section
+        // The Coder section now has pinned choreography that animates the whole code window
+        // Individual code lines are visible once the window appears
 
         // Content Creator 3D YouTube embed animation
         // WOW FACTOR: TV power-on, particles, chromatic aberration, neon glow
@@ -666,58 +819,6 @@
                         }
                     }
                 });
-            }
-        }
-
-        // Top Articles section staggered animation
-        const topArticlesGrid = document.querySelector('.top-articles__grid');
-        if (topArticlesGrid) {
-            const featuredCard = topArticlesGrid.querySelector('.article-card--featured');
-            const regularCards = topArticlesGrid.querySelectorAll('.article-card:not(.article-card--featured)');
-
-            // Featured card: scale + fade
-            if (featuredCard) {
-                gsap.fromTo(featuredCard,
-                    {
-                        opacity: 0,
-                        scale: 0.98,
-                        y: 20,
-                    },
-                    {
-                        opacity: 1,
-                        scale: 1,
-                        y: 0,
-                        duration: 0.6,
-                        ease: 'power2.out',
-                        scrollTrigger: {
-                            trigger: topArticlesGrid,
-                            start: 'top 80%',
-                            toggleActions: 'play none none none',
-                        }
-                    }
-                );
-            }
-
-            // Regular cards: staggered fade
-            if (regularCards.length > 0) {
-                gsap.fromTo(regularCards,
-                    {
-                        opacity: 0,
-                        y: 30,
-                    },
-                    {
-                        opacity: 1,
-                        y: 0,
-                        duration: 0.5,
-                        ease: 'power2.out',
-                        stagger: 0.15,
-                        scrollTrigger: {
-                            trigger: topArticlesGrid,
-                            start: 'top 75%',
-                            toggleActions: 'play none none none',
-                        }
-                    }
-                );
             }
         }
 
@@ -1180,6 +1281,12 @@
 
         // Initialize hero parallax (works with or without Lenis)
         initHeroParallax();
+
+        // Initialize coder section choreography (pinned scroll-captured)
+        initCoderChoreography();
+
+        // Initialize claude codes section choreography (pinned scroll-captured)
+        initClaudeCodesChoreography();
 
         // Initialize universal scroll parallax for marked images
         // This provides baseline depth even when camera/depth effects fail
