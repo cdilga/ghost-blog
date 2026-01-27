@@ -28,3 +28,7 @@ playwright-report/
 
 # Backup files
 *.backup
+remotion-video/out/
+
+# bv (beads viewer) local config and caches
+.bv/
