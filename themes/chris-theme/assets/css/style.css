@@ -3855,6 +3855,80 @@ img.project-card__thumbnail {
     outline-offset: 2px;
 }
 
+/* Playground tile with GitHub overlay */
+.playground-tile--with-github {
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+}
+
+.playground-tile__card-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-5) var(--space-4);
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
+}
+
+.playground-tile--with-github:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-md);
+}
+
+.playground-tile--with-github:hover .playground-tile__domain {
+    color: var(--color-accent);
+}
+
+.playground-tile__github {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: var(--radius-full);
+    background: var(--color-bg-alt);
+    color: var(--color-text-muted);
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.playground-tile__github:hover {
+    color: var(--color-accent);
+    background: white;
+    transform: scale(1.1);
+}
+
+.playground-tile__github:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+    .playground-tile__card-link {
+        padding: var(--space-4) var(--space-3);
+    }
+
+    .playground-tile__github {
+        width: 24px;
+        height: 24px;
+    }
+
+    .playground-tile__github svg {
+        width: 14px;
+        height: 14px;
+    }
+}
+
 /* ==========================================================================
    17e. Infinite Blog Carousel (Scroll-Hijack)
    ========================================================================== */
