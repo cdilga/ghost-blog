@@ -2453,6 +2453,10 @@ pre code {
     z-index: 3;
 }
 
+.scene--coder .scene__description {
+    color: var(--color-text); /* Darker than default --color-text-soft */
+}
+
 .scene--coder .coder__content {
     position: relative;
     z-index: 3;
