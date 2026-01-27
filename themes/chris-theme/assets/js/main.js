@@ -497,58 +497,75 @@
             }, 0.28);
         }
 
-        // Phase 4: Hold for viewing chaos animation (35% - 45%)
-        claudeCodesTimeline.to({}, { duration: 0.10 });
+        // Phase 4: Hold for viewing chaos animation (35% - 40%)
+        claudeCodesTimeline.to({}, { duration: 0.05 });
 
-        // Phase 5: Terminals scroll UP behind the header (45% - 60%)
-        // This reveals the CTA more prominently below
+        // Phase 5: ALL CONTENT scrolls UP together (40% - 75%)
+        // Header, terminals, and CTA all move up as a unified scroll effect
+        // This continues until the TV close animation
+        const scrollUpDistance = -400; // Total scroll distance
+        const scrollUpDuration = 0.35; // 40% to 75%
+        const scrollUpStart = 0.40;
+
+        // Terminal grid scrolls up
         claudeCodesTimeline.to(terminalGrid, {
-            y: -150, // Scroll up by 150px
-            duration: 0.15,
-            ease: 'power2.inOut',
-        }, 0.45);
+            y: scrollUpDistance,
+            duration: scrollUpDuration,
+            ease: 'power1.inOut',
+        }, scrollUpStart);
 
-        // Phase 6: Hold - CTA is now prominently visible (60% - 70%)
-        claudeCodesTimeline.to({}, { duration: 0.10 });
+        // Header scrolls up at the same time
+        claudeCodesTimeline.to(header, {
+            y: scrollUpDistance,
+            duration: scrollUpDuration,
+            ease: 'power1.inOut',
+        }, scrollUpStart);
 
-        // Phase 7: Exit - header and CTA fade out (70% - 75%)
+        // CTA scrolls up at the same time
+        if (cta) {
+            claudeCodesTimeline.to(cta, {
+                y: scrollUpDistance,
+                duration: scrollUpDuration,
+                ease: 'power1.inOut',
+            }, scrollUpStart);
+        }
+
+        // Phase 6: Content fades out while still scrolled up (75% - 80%)
         claudeCodesTimeline.to([header, cta].filter(Boolean), {
             opacity: 0,
-            y: -20,
             duration: 0.05,
             ease: 'power2.in',
-        }, 0.70);
-
-        // Phase 8: Terminals fly back (75% - 82%)
-        claudeCodesTimeline.to(terminals, {
-            opacity: 0,
-            scale: 0.5,
-            y: -200,
-            duration: 0.07,
-            ease: 'back.in(1.2)',
-            stagger: 0.008,
         }, 0.75);
 
-        // Phase 9: Dark overlay fades out as CRT begins (82% - 85%)
+        // Terminals fade out (75% - 80%)
+        claudeCodesTimeline.to(terminals, {
+            opacity: 0,
+            scale: 0.8,
+            duration: 0.05,
+            ease: 'power2.in',
+            stagger: 0.005,
+        }, 0.75);
+
+        // Phase 7: Dark overlay fades out as CRT begins (80% - 83%)
         claudeCodesTimeline.to(darkOverlay, {
             opacity: 0,
             duration: 0.03,
             ease: 'power2.in',
-        }, 0.82);
+        }, 0.80);
 
-        // Phase 10: CRT shutdown effect (82% - 95%)
+        // Phase 8: CRT shutdown effect (80% - 92%)
         claudeCodesTimeline.to(crtOverlay, {
             opacity: 1,
             duration: 0.03,
-        }, 0.82);
+        }, 0.80);
 
         claudeCodesTimeline.to(crtOverlay.querySelector('.crt-line'), {
             scaleY: 0,
-            duration: 0.10,
+            duration: 0.12,
             ease: 'power2.in',
-        }, 0.82);
+        }, 0.80);
 
-        // Hold at black (92% - 95%)
+        // Hold at black briefly (92% - 95%)
         claudeCodesTimeline.to({}, { duration: 0.03 }, 0.92);
 
         // CRT overlay fades out (95% - 100%)
@@ -1420,7 +1437,7 @@
             { // Terminal 1: Feature
                 title: 'claude-1: spec',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "write spec"' },
+                    { type: 'prompt', text: 'claude -p "write spec"' },
                     { type: 'output', text: 'Reading requirements...' },
                     { type: 'output', text: 'Analyzing codebase' },
                     { type: 'output', text: 'Drafting PRD sections' },
@@ -1430,7 +1447,7 @@
             { // Terminal 2: Implement 1
                 title: 'claude-2: impl',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "auth module"' },
+                    { type: 'prompt', text: 'claude -p "auth module"' },
                     { type: 'output', text: 'Creating middleware...' },
                     { type: 'output', text: 'JWT validation logic' },
                     { type: 'output', text: 'Session management' },
@@ -1440,7 +1457,7 @@
             { // Terminal 3: Implement 2
                 title: 'claude-3: impl',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "api routes"' },
+                    { type: 'prompt', text: 'claude -p "api routes"' },
                     { type: 'output', text: 'Scaffolding endpoints' },
                     { type: 'output', text: 'Adding validation' },
                     { type: 'output', text: 'Rate limiting done' },
@@ -1450,7 +1467,7 @@
             { // Terminal 4: Implement 3
                 title: 'claude-4: impl',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "ui components"' },
+                    { type: 'prompt', text: 'claude -p "ui components"' },
                     { type: 'output', text: 'Building components' },
                     { type: 'output', text: 'Styling dark mode' },
                     { type: 'output', text: 'Adding animations' },
@@ -1460,7 +1477,7 @@
             { // Terminal 5: Research 1
                 title: 'claude-5: research',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "perf analysis"' },
+                    { type: 'prompt', text: 'claude -p "perf analysis"' },
                     { type: 'output', text: 'Profiling hot paths' },
                     { type: 'output', text: 'Memory leak found' },
                     { type: 'output', text: 'Optimization plan' },
@@ -1470,7 +1487,7 @@
             { // Terminal 6: Research 2
                 title: 'claude-6: research',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "security audit"' },
+                    { type: 'prompt', text: 'claude -p "security audit"' },
                     { type: 'output', text: 'Scanning deps...' },
                     { type: 'output', text: 'OWASP checklist' },
                     { type: 'output', text: '2 CVEs patched' },
@@ -1480,7 +1497,7 @@
             { // Terminal 7: Review
                 title: 'claude-7: review',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "code review"' },
+                    { type: 'prompt', text: 'claude -p "code review"' },
                     { type: 'output', text: 'Reading 47 files...' },
                     { type: 'output', text: 'Checking patterns' },
                     { type: 'output', text: '12 suggestions' },
@@ -1490,7 +1507,7 @@
             { // Terminal 8: Deploy
                 title: 'claude-8: deploy',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "deploy prod"' },
+                    { type: 'prompt', text: 'claude -p "deploy prod"' },
                     { type: 'output', text: 'Building bundle...' },
                     { type: 'output', text: 'Running smoke tests' },
                     { type: 'output', text: 'Deploying v2.3.1' },
