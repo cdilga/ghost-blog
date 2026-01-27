@@ -40,8 +40,24 @@ test('scroll up reverses coder section animation', async ({ page }) => {
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(500);
 
-  // Scroll to midway through coder (3500)
-  await scrollAndUpdate(page, 3500);
+  // Scroll incrementally to find where coder header becomes visible
+  // This is more robust than hardcoded scroll values
+  let coderMidScroll = 0;
+  for (let scroll = 500; scroll <= 3000; scroll += 200) {
+    await scrollAndUpdate(page, scroll);
+    const isVisible = await page.evaluate(() => {
+      const header = document.querySelector('.scene--coder .scene__header');
+      if (!header) return false;
+      return parseFloat(getComputedStyle(header).opacity) > 0.5;
+    });
+    if (isVisible) {
+      coderMidScroll = scroll;
+      break;
+    }
+  }
+
+  // Verify we found a position where header is visible
+  expect(coderMidScroll).toBeGreaterThan(0);
 
   const headerVisibleDown = await page.evaluate(() => {
     const header = document.querySelector('.scene--coder .scene__header');
@@ -50,11 +66,11 @@ test('scroll up reverses coder section animation', async ({ page }) => {
     return { found: true, opacity: opacity.toFixed(2), visible: opacity > 0.5 };
   });
 
-  console.log('Coder header at scroll 3500:', JSON.stringify(headerVisibleDown));
+  console.log(`Coder header at scroll ${coderMidScroll}:`, JSON.stringify(headerVisibleDown));
   expect(headerVisibleDown.visible).toBe(true);
 
   // Scroll back gradually
-  await scrollGradually(page, 3500, 0);
+  await scrollGradually(page, coderMidScroll, 0);
 
   const headerHiddenUp = await page.evaluate(() => {
     const header = document.querySelector('.scene--coder .scene__header');

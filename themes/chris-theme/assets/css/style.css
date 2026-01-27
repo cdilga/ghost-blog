@@ -2431,6 +2431,31 @@ pre code {
     background: transparent;
     /* Position above the fixed depth-map canvas (z-index: 0) */
     z-index: 1;
+    /* Needed for absolute positioned overlay */
+    position: relative;
+}
+
+/* White overlay for text readability (similar to Claude Codes dark overlay) */
+.coder__overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.35);
+    pointer-events: none;
+    z-index: 1; /* Below content (z-index: 3) */
+    opacity: 0;
+    /* Smooth transitions handled by GSAP, but CSS fallback */
+    transition: opacity 0.4s ease;
+}
+
+/* Ensure coder content is above the overlay */
+.scene--coder .scene__header {
+    position: relative;
+    z-index: 3;
+}
+
+.scene--coder .coder__content {
+    position: relative;
+    z-index: 3;
 }
 
 .coder__content {

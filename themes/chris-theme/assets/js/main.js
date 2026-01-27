@@ -246,7 +246,7 @@
             scrollTrigger: {
                 trigger: hero,
                 start: 'top top',
-                end: '+=2000',  // 2000px of scroll = full sequence
+                end: '+=800',   // Compressed: 800px of scroll (was 2000)
                 pin: true,      // 🔥 NON-NEGOTIABLE: Page stays fixed
                 scrub: 1,       // 🔥 NON-NEGOTIABLE: Scroll drives timeline
                 anticipatePin: 1, // Smoother pin initiation
@@ -254,9 +254,9 @@
             }
         });
 
-        // Content is already visible - hold for first 65% of scroll (0-1300px)
-        // This gives user time to read the content
-        heroTimeline.to({}, { duration: 0.65 });
+        // Content is already visible - brief hold (40% = 320px)
+        // User can read, then we get moving
+        heroTimeline.to({}, { duration: 0.40 });
 
         // Scroll indicator fades out (65% - 70% = 1300-1400px)
         if (scrollIndicator) {
@@ -289,7 +289,7 @@
                 scrollTrigger: {
                     trigger: hero,
                     start: 'top top',
-                    end: '+=2000',
+                    end: '+=800',  // Match compressed hero timeline
                     scrub: true,
                 }
             });
@@ -330,6 +330,15 @@
         gsap.set(header, { opacity: 0, x: -80 });
         gsap.set(contentElements, { opacity: 0, x: 100 });
 
+        // Create white overlay for readability (like Claude Codes dark overlay)
+        let whiteOverlay = coderSection.querySelector('.coder__overlay');
+        if (!whiteOverlay) {
+            whiteOverlay = document.createElement('div');
+            whiteOverlay.className = 'coder__overlay';
+            coderSection.appendChild(whiteOverlay);
+        }
+        gsap.set(whiteOverlay, { opacity: 0 });
+
         // ========================================
         // PINNED SCROLL-CAPTURED TIMELINE
         // ========================================
@@ -350,7 +359,7 @@
             x: 0,
             duration: 0.2,
             ease: 'power2.out',
-        });
+        }, 0);
 
         // Phase 2: Content enters from right with stagger (10% - 40%)
         coderTimeline.to(contentElements, {
@@ -361,10 +370,25 @@
             stagger: 0.05,
         }, 0.1); // Start at 10%
 
-        // Phase 3: Hold for reading (40% - 70%)
-        coderTimeline.to({}, { duration: 0.3 });
+        // Phase 2b: White overlay fades in AFTER text starts showing (20% - 30%)
+        // Subtle opacity for text depth/readability - behind all content
+        coderTimeline.to(whiteOverlay, {
+            opacity: 0.5,  // Subtle white tint (very light)
+            duration: 0.10,
+            ease: 'power2.out',
+        }, 0.20);
 
-        // Phase 4: Content exits - header out left, content fades (70% - 100%)
+        // Phase 3: Hold for reading (40% - 65%)
+        coderTimeline.to({}, { duration: 0.25 });
+
+        // Phase 3b: White overlay fades out BEFORE content exits (65% - 70%)
+        coderTimeline.to(whiteOverlay, {
+            opacity: 0,
+            duration: 0.05,
+            ease: 'power2.in',
+        }, 0.65);
+
+        // Phase 4: Content exits - header out left, content fades (70% - 95%)
         coderTimeline.to(header, {
             opacity: 0,
             x: -120,
