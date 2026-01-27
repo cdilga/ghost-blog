@@ -136,7 +136,7 @@ export const ClaudeCodesScene: React.FC = () => {
     {
       title: "claude-1: feature",
       lines: [
-        { text: 'claude --task "implement auth"' },
+        { text: 'claude -p "implement auth"' },
         { text: "Creating auth middleware", output: true },
         { text: "✓ Auth module complete", success: true },
       ],
@@ -144,7 +144,7 @@ export const ClaudeCodesScene: React.FC = () => {
     {
       title: "claude-2: tests",
       lines: [
-        { text: 'claude --task "write tests"' },
+        { text: 'claude -p "write tests"' },
         { text: "Coverage: 87% → 94%", output: true },
         { text: "✓ 47 tests added", success: true },
       ],
@@ -152,7 +152,7 @@ export const ClaudeCodesScene: React.FC = () => {
     {
       title: "claude-3: refactor",
       lines: [
-        { text: 'claude --task "refactor api"' },
+        { text: 'claude -p "refactor api"' },
         { text: "Extracting utilities", output: true },
         { text: "✓ -340 lines removed", success: true },
       ],
@@ -160,7 +160,7 @@ export const ClaudeCodesScene: React.FC = () => {
     {
       title: "claude-4: docs",
       lines: [
-        { text: 'claude --task "update docs"' },
+        { text: 'claude -p "update docs"' },
         { text: "Generating OpenAPI spec", output: true },
         { text: "✓ Docs synchronized", success: true },
       ],
@@ -168,7 +168,7 @@ export const ClaudeCodesScene: React.FC = () => {
     {
       title: "claude-5: bugfix",
       lines: [
-        { text: 'claude --task "fix #142"' },
+        { text: 'claude -p "fix #142"' },
         { text: "Root cause: race cond", output: true },
         { text: "✓ Issue resolved", success: true },
       ],
@@ -176,7 +176,7 @@ export const ClaudeCodesScene: React.FC = () => {
     {
       title: "claude-6: perf",
       lines: [
-        { text: 'claude --task "optimize"' },
+        { text: 'claude -p "optimize"' },
         { text: "Adding memoization", output: true },
         { text: "✓ 3x faster response", success: true },
       ],
@@ -184,7 +184,7 @@ export const ClaudeCodesScene: React.FC = () => {
     {
       title: "claude-7: security",
       lines: [
-        { text: 'claude --task "audit"' },
+        { text: 'claude -p "audit"' },
         { text: "Checking OWASP top 10", output: true },
         { text: "✓ 0 vulnerabilities", success: true },
       ],
@@ -192,7 +192,7 @@ export const ClaudeCodesScene: React.FC = () => {
     {
       title: "claude-8: deploy",
       lines: [
-        { text: 'claude --task "deploy"' },
+        { text: 'claude -p "deploy"' },
         { text: "Deploying to prod", output: true },
         { text: "✓ v2.1.0 live", success: true },
       ],
