@@ -1,0 +1,21 @@
+version: '3.8'
+
+# Isolated testing instance for this worktree
+services:
+  ghost:
+    image: ghost:5-alpine
+    container_name: ghost-worker-1
+    restart: unless-stopped
+    ports:
+      - "2369:2368"
+    environment:
+      url: http://localhost:2369
+      database__client: sqlite3
+      database__connection__filename: /var/lib/ghost/content/data/ghost.db
+      NODE_ENV: development
+    volumes:
+      - ./themes/chris-theme:/var/lib/ghost/content/themes/chris-theme
+      - ghost-data-worker-1:/var/lib/ghost/content
+
+volumes:
+  ghost-data-worker-1:
