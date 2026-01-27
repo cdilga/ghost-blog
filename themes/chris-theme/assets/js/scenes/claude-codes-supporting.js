@@ -95,18 +95,10 @@
             onUpdate: (self) => {
                 // Progress the exit animation based on scroll
                 exitTimeline.progress(self.progress);
-            },
-            onLeaveBack: () => {
-                // Reset when scrolling back up
-                exitTimeline.progress(0);
-
-                // Ensure elements are visible again
-                [github, mainWindow, keyboard].forEach(el => {
-                    if (el) {
-                        gsap.set(el, { clearProps: 'opacity,x' });
-                    }
-                });
             }
+            // NOTE: No onLeaveBack handler - the coder choreography (main.js)
+            // manages element visibility during its pinned timeline.
+            // Resetting props here would conflict with the coder's exit state.
         });
 
         // Expose API for debugging

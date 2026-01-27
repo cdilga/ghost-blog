@@ -2431,35 +2431,24 @@ pre code {
     background: transparent;
     /* Position above the fixed depth-map canvas (z-index: 0) */
     z-index: 1;
-    /* Needed for absolute positioned overlay */
+    /* Needed for overlay positioning */
     position: relative;
 }
 
-/* White overlay for text readability (similar to Claude Codes dark overlay) */
+/* White overlay for text readability - fades in/out via GSAP */
 .coder__overlay {
     position: fixed;
     inset: 0;
     background: rgba(255, 255, 255, 0.35);
     pointer-events: none;
-    z-index: 1; /* Below content (z-index: 3) */
+    z-index: 0; /* Behind section content */
     opacity: 0;
-    /* Smooth transitions handled by GSAP, but CSS fallback */
-    transition: opacity 0.4s ease;
 }
 
 /* Ensure coder content is above the overlay */
 .scene--coder .scene__header {
     position: relative;
-    z-index: 3;
-}
-
-.scene--coder .scene__description {
-    color: var(--color-text); /* Darker than default --color-text-soft */
-}
-
-.scene--coder .coder__content {
-    position: relative;
-    z-index: 3;
+    z-index: 2;
 }
 
 .coder__content {
@@ -2467,6 +2456,8 @@ pre code {
     grid-template-columns: 1fr 1fr;
     gap: var(--space-8);
     align-items: start;
+    position: relative;
+    z-index: 2; /* Above the white overlay */
 }
 
 /* Keyboard */
@@ -2785,52 +2776,49 @@ pre code {
     z-index: 1;
 }
 
-/* Full-section dark overlay - fades in just before text, out on exit */
+/* Dark overlay for text readability - fades in/out via GSAP */
 .claude-codes__overlay {
     position: fixed;
     inset: 0;
     background: rgba(20, 20, 30, 0.55);
     pointer-events: none;
-    z-index: 1; /* Below terminals (z-index: 2) but above background */
+    z-index: 0; /* Behind section content */
     opacity: 0;
-    /* Smooth transitions handled by GSAP, but CSS fallback */
-    transition: opacity 0.4s ease;
 }
 
-/* Header text styling - space optimized */
+/* Header backdrop for readability against desert background */
 .scene--claude-codes .scene__header {
     position: relative;
-    padding: var(--space-4) var(--space-4) var(--space-2);
-    z-index: 3; /* Above overlay */
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 2; /* Above the dark overlay */
 }
 
 .scene--claude-codes .scene__label {
     color: var(--color-accent);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .scene--claude-codes .scene__title {
     color: var(--color-text-on-dark);
-    text-shadow:
-        0 2px 6px rgba(0, 0, 0, 0.5),
-        0 4px 12px rgba(0, 0, 0, 0.25);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .scene--claude-codes .scene__description {
-    color: rgba(255, 255, 255, 0.9);
-    text-shadow:
-        0 1px 3px rgba(0, 0, 0, 0.5),
-        0 2px 6px rgba(0, 0, 0, 0.25);
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* Terminal Grid */
 .terminal-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-3);
-    margin-bottom: var(--space-4);
+    gap: var(--space-4);
+    margin-bottom: var(--space-12);
     position: relative;
-    z-index: 2; /* Above overlay */
+    z-index: 2; /* Above the dark overlay */
 }
 
 /* Individual Terminal */
@@ -2879,10 +2867,10 @@ pre code {
     letter-spacing: 0.05em;
 }
 
-/* Terminal Body - compact height to fit CTA below */
+/* Terminal Body */
 .terminal__body {
-    padding: var(--space-2);
-    height: 130px;
+    padding: var(--space-3);
+    height: 160px;
     overflow: hidden;
     position: relative;
 }
@@ -2939,10 +2927,6 @@ pre code {
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.7);
     white-space: nowrap;
-    /* Override default code element styling */
-    background: transparent;
-    padding: 0;
-    border-radius: 0;
 }
 
 .terminal__prompt {
@@ -2963,19 +2947,15 @@ pre code {
     color: #ff5f56;
 }
 
-/* Claude Codes CTA - space optimized for visibility */
+/* Claude Codes CTA */
 .claude-codes__cta {
     text-align: center;
-    position: relative;
-    z-index: 3; /* Above overlay */
-    padding: var(--space-2) 0 var(--space-4);
 }
 
 .claude-codes__cta-text {
-    font-size: var(--text-base);
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: var(--space-3);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    font-size: var(--text-lg);
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: var(--space-6);
 }
 
 /* Initial animation states for terminals */
@@ -4025,12 +4005,12 @@ img.project-card__thumbnail {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     background: var(--color-bg-dark, #1a1a1a);
     color: var(--color-text-on-dark);
     overflow: hidden;
-    padding: var(--space-8) 0 var(--space-24);
+    padding: var(--space-8) 0 0;
 }
 
 /* Background Video */
@@ -4082,24 +4062,32 @@ img.project-card__thumbnail {
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Wheel Container */
+/* Wheel Container - Cog geometry
+   The wheel center is positioned below the visible section (at 70% height).
+   We see the top semicircle of the cog rising up like gear teeth.
+   Cards use absolute positioning from the container origin (0,0). */
 .reel-navigator__wheel {
     position: relative;
     z-index: 5;
     width: 100%;
-    height: 450px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 70vh;
+    flex: 1;
+    overflow: visible;
 }
 
-/* Reel Card */
+/* Reel Card - Cog tooth style
+   Cards are positioned via JS transform: translate(x, y) translate(-50%, -50%)
+   This places the card center at the calculated position on the arc.
+   The rotation makes them point outward like cog teeth. */
 .reel-card {
     position: absolute;
-    width: 280px;
-    height: 340px;
-    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 320px;
+    transition: opacity 0.15s ease-out;
     will-change: transform, opacity;
+    /* No transition on transform - JS handles smooth positioning */
 }
 
 .reel-card__link {
@@ -4175,6 +4163,11 @@ img.project-card__thumbnail {
     overflow: hidden;
 }
 
+/* Active card emphasis */
+.reel-card--active .reel-card__link {
+    box-shadow: 0 15px 60px rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
 /* Scroll Hint */
 .reel-navigator__hint {
     position: relative;
@@ -4203,16 +4196,16 @@ img.project-card__thumbnail {
     }
 
     .reel-navigator__wheel {
-        height: 380px;
+        height: 60vh;
     }
 
     .reel-card {
-        width: 240px;
-        height: 300px;
+        width: 200px;
+        height: 260px;
     }
 
     .reel-card__image {
-        height: 150px;
+        height: 130px;
     }
 
     .reel-navigator__title {
@@ -4221,13 +4214,17 @@ img.project-card__thumbnail {
 }
 
 @media (max-width: 480px) {
+    .reel-navigator__wheel {
+        height: 55vh;
+    }
+
     .reel-card {
-        width: 200px;
-        height: 260px;
+        width: 160px;
+        height: 220px;
     }
 
     .reel-card__image {
-        height: 120px;
+        height: 100px;
     }
 
     .reel-card__content {
@@ -4235,7 +4232,7 @@ img.project-card__thumbnail {
     }
 
     .reel-card__title {
-        font-size: var(--text-base);
+        font-size: var(--text-sm);
     }
 }
 

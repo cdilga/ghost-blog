@@ -3,16 +3,6 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script>
-    // Lighthouse/PageSpeed detection - stop right here mate
-    (function() {
-        var ua = navigator.userAgent;
-        if (ua.includes('Chrome-Lighthouse') || ua.includes('PageSpeed') || ua.includes('PTST')) {
-            document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Oi!</title><style>*{margin:0;padding:0;box-sizing:border-box}body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d0d;color:#fff;font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:2rem}.bin{font-size:min(40vw,200px);line-height:1;animation:wobble 0.5s ease-in-out infinite}h1{font-size:clamp(1.5rem,8vw,4rem);margin-top:1rem;text-transform:uppercase;letter-spacing:0.05em}@keyframes wobble{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}</style></head><body><div class="bin">🗑️</div><h1>Oi! That\'s none ya business</h1></body></html>');
-            document.close();
-        }
-    })();
-    </script>
     <title>{{meta_title}}</title>
     <link rel="canonical" href="{{canonical_url}}">
     {{ghost_head}}
@@ -52,5 +42,6 @@
     <script src="{{asset "js/scenes/terminal-spawn.js"}}"></script>
     <script src="{{asset "js/scenes/windswept-mask.js"}}"></script>
     <script src="{{asset "js/scenes/claude-codes-supporting.js"}}"></script>
+    <script src="{{asset "js/scenes/projection-carousel.js"}}"></script>
 </body>
 </html>
