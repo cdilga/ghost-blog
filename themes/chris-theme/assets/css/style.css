@@ -2036,9 +2036,15 @@ pre code {
     position: relative;
 }
 
+/* ==========================================================================
+   TV Turn-On YouTube Embed
+   Classic CRT power-on effect - clean and simple
+   ========================================================================== */
+
 .youtube-3d-container {
     width: 100%;
     max-width: 900px;
+    margin: 0 auto; /* CENTER THE VIDEO */
     perspective: 1500px;
     position: relative;
 }
@@ -2049,79 +2055,20 @@ pre code {
     transform-style: preserve-3d;
 }
 
-/* ===== MULTI-LAYER GLOW SYSTEM ===== */
+/* ===== TV POWER-ON EFFECTS ===== */
 
-/* Layer 1: Core energy glow (orange) */
-.youtube-glow {
+/* TV power-on white flash overlay */
+.youtube-flash {
     position: absolute;
-    inset: -50%;
-    background: radial-gradient(
-        ellipse at center,
-        rgba(247, 147, 26, 0.5) 0%,
-        rgba(247, 147, 26, 0.25) 25%,
-        rgba(251, 191, 36, 0.1) 45%,
-        transparent 65%
-    );
-    border-radius: 50%;
+    inset: 0;
+    background: white;
     pointer-events: none;
-    z-index: -1;
-    filter: blur(60px);
-}
-
-/* Layer 2: Outer bloom (wider, softer) */
-.youtube-bloom {
-    position: absolute;
-    inset: -80%;
-    background: radial-gradient(
-        ellipse at center,
-        rgba(255, 100, 50, 0.15) 0%,
-        rgba(247, 147, 26, 0.08) 30%,
-        transparent 55%
-    );
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: -2;
-    filter: blur(80px);
-}
-
-/* Layer 3: Electric ring (animated) */
-.youtube-ring {
-    position: absolute;
-    inset: -10%;
-    border: 2px solid transparent;
-    border-radius: var(--radius-xl);
-    pointer-events: none;
-    z-index: 5;
-    background: linear-gradient(var(--color-bg), var(--color-bg)) padding-box,
-                linear-gradient(135deg,
-                    rgba(247, 147, 26, 0) 0%,
-                    rgba(247, 147, 26, 0.8) 25%,
-                    rgba(255, 200, 100, 1) 50%,
-                    rgba(247, 147, 26, 0.8) 75%,
-                    rgba(247, 147, 26, 0) 100%
-                ) border-box;
+    z-index: 20;
+    border-radius: var(--radius-lg);
     opacity: 0;
 }
 
-/* Ring sweep animation */
-@keyframes ring-sweep {
-    0% {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(1.1);
-    }
-}
-
-/* ===== TV POWER-ON EFFECTS ===== */
-
-/* Scan line overlay */
+/* Subtle scan line overlay for CRT feel */
 .youtube-scanlines {
     position: absolute;
     inset: 0;
@@ -2129,109 +2076,13 @@ pre code {
         0deg,
         transparent 0px,
         transparent 2px,
-        rgba(0, 0, 0, 0.03) 2px,
-        rgba(0, 0, 0, 0.03) 4px
+        rgba(0, 0, 0, 0.02) 2px,
+        rgba(0, 0, 0, 0.02) 4px
     );
     pointer-events: none;
     z-index: 15;
     border-radius: var(--radius-lg);
     opacity: 0;
-}
-
-/* CRT flicker effect */
-.youtube-flicker {
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.1);
-    pointer-events: none;
-    z-index: 14;
-    border-radius: var(--radius-lg);
-    opacity: 0;
-    mix-blend-mode: overlay;
-}
-
-@keyframes tv-flicker {
-    0%, 100% { opacity: 0; }
-    5% { opacity: 0.2; }
-    10% { opacity: 0; }
-    15% { opacity: 0.15; }
-    20% { opacity: 0; }
-    50% { opacity: 0.05; }
-    55% { opacity: 0; }
-}
-
-/* ===== PARTICLE SYSTEM ===== */
-
-.youtube-particles {
-    position: absolute;
-    inset: -20%;
-    pointer-events: none;
-    z-index: 20;
-    overflow: visible;
-}
-
-.youtube-particle {
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    background: var(--color-accent);
-    border-radius: 50%;
-    opacity: 0;
-    box-shadow: 0 0 6px var(--color-accent),
-                0 0 12px var(--color-accent);
-}
-
-/* ===== CHROMATIC ABERRATION ===== */
-
-.youtube-chromatic {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 13;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    opacity: 0;
-}
-
-.youtube-chromatic::before,
-.youtube-chromatic::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: var(--radius-lg);
-}
-
-.youtube-chromatic::before {
-    background: rgba(255, 0, 0, 0.05);
-    transform: translateX(-3px);
-}
-
-.youtube-chromatic::after {
-    background: rgba(0, 255, 255, 0.05);
-    transform: translateX(3px);
-}
-
-/* ===== REFLECTION SURFACE ===== */
-
-.youtube-reflection {
-    position: absolute;
-    bottom: 0;
-    left: 5%;
-    right: 5%;
-    height: 80px;
-    transform: translateY(100%) scaleY(-0.3) perspective(500px) rotateX(30deg);
-    transform-origin: top center;
-    pointer-events: none;
-    z-index: -3;
-    opacity: 0;
-    background: linear-gradient(
-        to bottom,
-        rgba(247, 147, 26, 0.15) 0%,
-        transparent 100%
-    );
-    filter: blur(4px);
-    mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
 }
 
 /* ===== MAIN EMBED STYLES ===== */
@@ -2282,21 +2133,13 @@ pre code {
     z-index: 11;
 }
 
-/* HOVER STATE: Dramatic lift with enhanced glow */
+/* HOVER STATE: Subtle lift */
 .youtube-3d-container .embed--3d:hover lite-youtube {
-    transform: perspective(1500px) translateY(-8px) translateZ(20px);
+    transform: perspective(1500px) translateY(-6px) translateZ(15px);
     box-shadow:
-        0 60px 120px rgba(0, 0, 0, 0.5),
-        0 0 100px rgba(247, 147, 26, 0.3),
-        0 0 0 1px rgba(255, 255, 255, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-/* Hover glow intensification */
-.youtube-3d-container .embed--3d:hover ~ .youtube-glow {
-    filter: blur(50px);
-    transform: scale(1.1);
-    transition: all 0.5s var(--ease-out);
+        0 50px 100px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 /* Ensure proper aspect ratio */
@@ -2351,24 +2194,6 @@ pre code {
         max-width: 100%;
     }
 
-    /* Reduce glow intensity on mobile */
-    .youtube-glow {
-        inset: -30%;
-        filter: blur(40px);
-    }
-
-    .youtube-bloom {
-        display: none;
-    }
-
-    .youtube-ring {
-        inset: -5%;
-    }
-
-    .youtube-reflection {
-        display: none;
-    }
-
     .youtube-3d-container .embed--3d lite-youtube {
         box-shadow:
             0 20px 40px rgba(0, 0, 0, 0.35),
@@ -2378,8 +2203,7 @@ pre code {
     .youtube-3d-container .embed--3d:hover lite-youtube {
         transform: perspective(1500px) translateY(-4px) translateZ(10px);
         box-shadow:
-            0 30px 60px rgba(0, 0, 0, 0.4),
-            0 0 50px rgba(247, 147, 26, 0.2);
+            0 30px 60px rgba(0, 0, 0, 0.4);
     }
 
     /* Disable floating on mobile for performance */
@@ -2390,14 +2214,8 @@ pre code {
 
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
-    .youtube-glow,
-    .youtube-bloom,
-    .youtube-ring,
     .youtube-scanlines,
-    .youtube-flicker,
-    .youtube-particles,
-    .youtube-chromatic,
-    .youtube-reflection {
+    .youtube-flash {
         display: none;
     }
 

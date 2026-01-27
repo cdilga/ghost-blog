@@ -569,84 +569,44 @@
         // Individual code lines are visible once the window appears
 
         // Content Creator 3D YouTube embed animation
-        // WOW FACTOR: TV power-on, particles, chromatic aberration, neon glow
+        // Classic TV turn-on effect: horizontal line → expand → flash → reveal
         const youtube3dContainer = document.querySelector('.youtube-3d-container');
         if (youtube3dContainer) {
             const embed = youtube3dContainer.querySelector('lite-youtube');
             const wrapper = youtube3dContainer.querySelector('.embed--3d');
 
             if (embed && wrapper) {
-                // Create all effect elements
-                const glow = document.createElement('div');
-                glow.className = 'youtube-glow';
+                // Check for reduced motion preference
+                const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-                const bloom = document.createElement('div');
-                bloom.className = 'youtube-bloom';
+                if (prefersReducedMotion) {
+                    // Reduced motion: just show the video instantly, no animation
+                    youtube3dContainer.classList.add('animation-complete');
+                    return; // Skip animation setup entirely
+                }
 
-                const ring = document.createElement('div');
-                ring.className = 'youtube-ring';
+                // Create minimal effect elements for TV turn-on
+                const flash = document.createElement('div');
+                flash.className = 'youtube-flash';
 
                 const scanlines = document.createElement('div');
                 scanlines.className = 'youtube-scanlines';
 
-                const flicker = document.createElement('div');
-                flicker.className = 'youtube-flicker';
-
-                const chromatic = document.createElement('div');
-                chromatic.className = 'youtube-chromatic';
-
-                const particles = document.createElement('div');
-                particles.className = 'youtube-particles';
-
-                const reflection = document.createElement('div');
-                reflection.className = 'youtube-reflection';
-
-                // Create particles (12 particles for burst effect)
-                for (let i = 0; i < 12; i++) {
-                    const particle = document.createElement('div');
-                    particle.className = 'youtube-particle';
-                    particles.appendChild(particle);
-                }
-
-                // Append all elements
-                wrapper.appendChild(glow);
-                wrapper.appendChild(bloom);
-                wrapper.appendChild(ring);
+                // Append elements
+                embed.appendChild(flash);
                 embed.appendChild(scanlines);
-                embed.appendChild(flicker);
-                embed.appendChild(chromatic);
-                wrapper.appendChild(particles);
-                youtube3dContainer.appendChild(reflection);
 
-                // Position particles around center
-                const particleEls = particles.querySelectorAll('.youtube-particle');
-                particleEls.forEach((p, i) => {
-                    const angle = (i / 12) * Math.PI * 2;
-                    gsap.set(p, {
-                        left: '50%',
-                        top: '50%',
-                        xPercent: -50,
-                        yPercent: -50,
-                    });
-                });
-
-                // Set DRAMATIC initial state
+                // Set initial state: thin horizontal line (scaleY very small)
                 gsap.set(embed, {
-                    scale: 0.05,
-                    rotateX: 35,
-                    rotateY: -20,
-                    rotateZ: 5,
+                    scaleY: 0.01,      // Thin horizontal line
+                    scaleX: 0.8,       // Slightly narrower
                     opacity: 0,
-                    filter: 'brightness(3) saturate(0)',
+                    filter: 'brightness(2)',
                     transformPerspective: 1500,
                     transformOrigin: 'center center',
                 });
 
-                gsap.set([glow, bloom], { opacity: 0, scale: 0.3 });
-                gsap.set(ring, { opacity: 0, scale: 0.8 });
-                gsap.set(reflection, { opacity: 0 });
-
-                // Epic multi-stage timeline
+                // Simple TV turn-on timeline
                 const tl = gsap.timeline({
                     scrollTrigger: {
                         trigger: youtube3dContainer,
@@ -654,175 +614,55 @@
                         toggleActions: 'play none none none',
                     },
                     onComplete: () => {
-                        // Enable floating animation after entrance
                         youtube3dContainer.classList.add('animation-complete');
                     }
                 });
 
-                // STAGE 1: Energy gathering - glow and bloom emerge (0.5s)
-                tl.to([glow, bloom], {
+                // STAGE 1: Thin horizontal line appears (CRT power-on start)
+                tl.to(embed, {
                     opacity: 1,
-                    scale: 1,
-                    duration: 0.5,
-                    ease: 'power2.out',
-                    stagger: 0.1,
+                    filter: 'brightness(3)',
+                    duration: 0.1,
+                    ease: 'power2.in',
                 })
 
-                // STAGE 2: TV power-on flash with white burst
+                // STAGE 2: Line expands vertically (classic TV effect)
                 .to(embed, {
-                    opacity: 1,
-                    scale: 0.15,
-                    filter: 'brightness(5) saturate(0)',
+                    scaleY: 1,
+                    scaleX: 1,
+                    filter: 'brightness(1.5)',
+                    duration: 0.25,
+                    ease: 'power2.out',
+                })
+
+                // STAGE 3: Brief white flash
+                .to(flash, {
+                    opacity: 0.7,
+                    duration: 0.05,
+                })
+                .to(flash, {
+                    opacity: 0,
                     duration: 0.15,
-                    ease: 'power4.in',
-                }, '-=0.2')
-
-                // TV flicker effect
-                .to(flicker, {
-                    opacity: 1,
-                    duration: 0.05,
-                })
-                .to(flicker, {
-                    opacity: 0,
-                    duration: 0.05,
-                })
-                .to(flicker, {
-                    opacity: 0.5,
-                    duration: 0.05,
-                })
-                .to(flicker, {
-                    opacity: 0,
-                    duration: 0.1,
+                    ease: 'power2.out',
                 })
 
-                // STAGE 3: Chromatic aberration during expansion
-                .to(chromatic, {
-                    opacity: 1,
-                    duration: 0.1,
-                }, '-=0.2')
-
-                // STAGE 4: Main expansion with rotation settle
+                // STAGE 4: Color normalizes, scanlines appear briefly
                 .to(embed, {
-                    scale: 0.5,
-                    rotateX: 15,
-                    rotateY: -10,
-                    rotateZ: 2,
-                    filter: 'brightness(1.5) saturate(0.7)',
-                    duration: 0.4,
-                    ease: 'power3.out',
-                })
-
-                // Enable scanlines during mid-expansion
-                .to(scanlines, {
-                    opacity: 0.5,
+                    filter: 'brightness(1)',
                     duration: 0.2,
-                }, '-=0.3')
-
-                // STAGE 5: Full expansion with color restore
-                .to(embed, {
-                    scale: 1,
-                    rotateX: 0,
-                    rotateY: 0,
-                    rotateZ: 0,
-                    filter: 'brightness(1) saturate(1)',
-                    duration: 0.8,
-                    ease: 'power2.out',
-                })
-
-                // Fade chromatic aberration
-                .to(chromatic, {
-                    opacity: 0,
-                    duration: 0.4,
-                }, '-=0.6')
-
-                // STAGE 6: Particle burst outward
-                .to(particleEls, {
-                    opacity: 1,
-                    duration: 0.1,
-                }, '-=0.5')
-                .to(particleEls, {
-                    x: (i) => Math.cos((i / 12) * Math.PI * 2) * 150,
-                    y: (i) => Math.sin((i / 12) * Math.PI * 2) * 100,
-                    opacity: 0,
-                    scale: 0,
-                    duration: 0.8,
-                    ease: 'power2.out',
-                    stagger: 0.02,
+                    ease: 'power1.out',
                 }, '-=0.1')
 
-                // STAGE 7: Neon ring sweep
-                .to(ring, {
-                    opacity: 1,
-                    scale: 1,
-                    duration: 0.3,
-                    ease: 'power2.out',
-                }, '-=0.6')
-                .to(ring, {
-                    opacity: 0,
-                    scale: 1.15,
-                    duration: 0.4,
-                    ease: 'power1.in',
-                })
-
-                // STAGE 8: Glow pulse and settle
-                .to(glow, {
-                    scale: 1.3,
-                    opacity: 0.8,
-                    duration: 0.3,
-                    ease: 'power2.in',
-                }, '-=0.5')
-                .to(glow, {
-                    scale: 1,
-                    opacity: 0.4,
-                    duration: 0.5,
-                    ease: 'power2.out',
-                })
-
-                // Bloom fades to subtle ambient
-                .to(bloom, {
-                    opacity: 0.3,
-                    duration: 0.5,
-                }, '-=0.5')
-
-                // STAGE 9: Scanlines fade to subtle
                 .to(scanlines, {
-                    opacity: 0.15,
+                    opacity: 0.3,
+                    duration: 0.1,
+                }, '-=0.15')
+
+                // STAGE 5: Scanlines fade to subtle
+                .to(scanlines, {
+                    opacity: 0.08,
                     duration: 0.4,
-                }, '-=0.3')
-
-                // STAGE 10: Landing shadow punch + reflection reveal
-                .to(embed, {
-                    boxShadow: '0 50px 100px rgba(0, 0, 0, 0.45), 0 0 120px rgba(247, 147, 26, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.12)',
-                    duration: 0.5,
-                    ease: 'back.out(1.7)',
-                }, '-=0.3')
-
-                .to(reflection, {
-                    opacity: 0.4,
-                    duration: 0.6,
-                    ease: 'power2.out',
-                }, '-=0.4');
-
-                // Parallax depth effect on scroll
-                ScrollTrigger.create({
-                    trigger: youtube3dContainer,
-                    start: 'top bottom',
-                    end: 'bottom top',
-                    scrub: 1,
-                    onUpdate: (self) => {
-                        if (tl.progress() >= 1) {
-                            const progress = self.progress;
-                            const tiltX = (progress - 0.5) * 10;
-                            const tiltY = Math.sin(progress * Math.PI) * 3;
-                            const translateZ = Math.sin(progress * Math.PI) * 40;
-                            gsap.set(embed, {
-                                rotateX: tiltX,
-                                rotateY: tiltY,
-                                z: translateZ,
-                                transformPerspective: 1500,
-                            });
-                        }
-                    }
+                    ease: 'power1.out',
                 });
             }
         }
