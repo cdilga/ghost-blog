@@ -3972,12 +3972,12 @@ img.project-card__thumbnail {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     background: var(--color-bg-dark, #1a1a1a);
     color: var(--color-text-on-dark);
     overflow: hidden;
-    padding: var(--space-8) 0 var(--space-24);
+    padding: var(--space-8) 0 0;
 }
 
 /* Background Video */
@@ -4029,24 +4029,32 @@ img.project-card__thumbnail {
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Wheel Container */
+/* Wheel Container - Cog geometry
+   The wheel center is positioned below the visible section (at 70% height).
+   We see the top semicircle of the cog rising up like gear teeth.
+   Cards use absolute positioning from the container origin (0,0). */
 .reel-navigator__wheel {
     position: relative;
     z-index: 5;
     width: 100%;
-    height: 450px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 70vh;
+    flex: 1;
+    overflow: visible;
 }
 
-/* Reel Card */
+/* Reel Card - Cog tooth style
+   Cards are positioned via JS transform: translate(x, y) translate(-50%, -50%)
+   This places the card center at the calculated position on the arc.
+   The rotation makes them point outward like cog teeth. */
 .reel-card {
     position: absolute;
-    width: 280px;
-    height: 340px;
-    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 320px;
+    transition: opacity 0.15s ease-out;
     will-change: transform, opacity;
+    /* No transition on transform - JS handles smooth positioning */
 }
 
 .reel-card__link {
@@ -4122,6 +4130,11 @@ img.project-card__thumbnail {
     overflow: hidden;
 }
 
+/* Active card emphasis */
+.reel-card--active .reel-card__link {
+    box-shadow: 0 15px 60px rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
 /* Scroll Hint */
 .reel-navigator__hint {
     position: relative;
@@ -4150,16 +4163,16 @@ img.project-card__thumbnail {
     }
 
     .reel-navigator__wheel {
-        height: 380px;
+        height: 60vh;
     }
 
     .reel-card {
-        width: 240px;
-        height: 300px;
+        width: 200px;
+        height: 260px;
     }
 
     .reel-card__image {
-        height: 150px;
+        height: 130px;
     }
 
     .reel-navigator__title {
@@ -4168,13 +4181,17 @@ img.project-card__thumbnail {
 }
 
 @media (max-width: 480px) {
+    .reel-navigator__wheel {
+        height: 55vh;
+    }
+
     .reel-card {
-        width: 200px;
-        height: 260px;
+        width: 160px;
+        height: 220px;
     }
 
     .reel-card__image {
-        height: 120px;
+        height: 100px;
     }
 
     .reel-card__content {
@@ -4182,7 +4199,7 @@ img.project-card__thumbnail {
     }
 
     .reel-card__title {
-        font-size: var(--text-base);
+        font-size: var(--text-sm);
     }
 }
 

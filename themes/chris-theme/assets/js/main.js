@@ -1312,8 +1312,8 @@
         // Initialize mobile accelerometer tilt
         initAccelerometerTilt();
 
-        // Initialize reel navigator (circular article wheel)
-        initReelNavigator();
+        // Reel navigator (circular article wheel) is now handled by projection-carousel.js
+        // initReelNavigator();
     }
 
     // ========================================
