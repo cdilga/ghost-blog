@@ -4002,7 +4002,7 @@ img.project-card__thumbnail {
 
 .reel-navigator {
     position: relative;
-    min-height: 100vh;
+    min-height: 60vh;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -4010,7 +4010,7 @@ img.project-card__thumbnail {
     background: var(--color-bg-dark, #1a1a1a);
     color: var(--color-text-on-dark);
     overflow: hidden;
-    padding: var(--space-8) 0 0;
+    padding: var(--space-4) 0 0;
 }
 
 /* Background Video */
@@ -4070,7 +4070,7 @@ img.project-card__thumbnail {
     position: relative;
     z-index: 5;
     width: 100%;
-    height: 70vh;
+    height: 42vh;
     flex: 1;
     overflow: visible;
 }
@@ -4189,14 +4189,24 @@ img.project-card__thumbnail {
     50% { opacity: 1; }
 }
 
+/* Footer inside reel-navigator - visible during pinned scroll */
+.reel-navigator__footer {
+    position: relative;
+    z-index: 15;
+    width: 100%;
+    margin-top: auto;
+    background: transparent;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Mobile adjustments */
 @media (max-width: 768px) {
     .reel-navigator {
-        min-height: 90vh;
+        min-height: 55vh;
     }
 
     .reel-navigator__wheel {
-        height: 60vh;
+        height: 35vh;
     }
 
     .reel-card {
@@ -4215,12 +4225,12 @@ img.project-card__thumbnail {
 
 @media (max-width: 480px) {
     .reel-navigator__wheel {
-        height: 55vh;
+        height: 30vh;
     }
 
     .reel-card {
-        width: 160px;
-        height: 220px;
+        width: 140px;
+        height: 180px;
     }
 
     .reel-card__image {
