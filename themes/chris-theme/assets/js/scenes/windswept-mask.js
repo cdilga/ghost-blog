@@ -1,12 +1,11 @@
 /**
- * Windswept Mask Transition - Noise-Distorted Shapes
+ * Windswept Mask Transition - Single Organic Edge Path
  *
- * Creates organic, irregular shapes using noise-displaced polygons.
- * Achieves the "hand-drawn/ink-splatter" look without SVG filters
- * (which don't work with clipPath on canvas elements).
+ * Uses a SINGLE path with:
+ * - Straight RIGHT edge (no gaps possible)
+ * - Organic noise-distorted LEFT edge (bubble-like wisps)
  *
- * Key technique: Generate blob shapes by displacing polygon vertices
- * with multi-octave noise, creating organic, flame-like edges.
+ * This guarantees no gaps since the mask is one continuous shape.
  */
 (function() {
     'use strict';
@@ -18,57 +17,47 @@
 
     // Configuration
     const CONFIG = {
-        // Transition zone: 20% of viewport width for seam coverage
-        transitionWidth: 0.22,
+        // Number of points along the organic edge
+        edgePoints: 40,
 
-        // Blob shape settings
-        blobs: {
-            // Large background blobs - wide coverage
-            large: { count: 5, radiusMin: 0.18, radiusMax: 0.30, vertexCount: 24 },
-            // Medium blobs - fill gaps
-            medium: { count: 8, radiusMin: 0.10, radiusMax: 0.18, vertexCount: 18 },
-            // Small accent blobs - detail
-            small: { count: 12, radiusMin: 0.05, radiusMax: 0.10, vertexCount: 14 },
-            // Edge blobs - tight seam coverage
-            edge: { count: 18, radiusMin: 0.06, radiusMax: 0.12, vertexCount: 16 }
-        },
+        // How far the organic edge extends left (as fraction of viewport)
+        maxDisplacement: 0.18,
 
-        // Noise settings for shape distortion
+        // Noise settings for the organic edge
         noise: {
-            // How much to displace vertices (0-1, multiplied by radius)
-            displacement: 0.5,
-            // Noise frequency (smaller = larger features)
-            frequency: 3,
-            // Multiple octaves for fractal detail
-            octaves: 4
+            frequency: 2.5,
+            octaves: 4,
+            // How "bubbly" the edge is (0-1)
+            amplitude: 0.8
         },
 
-        // Animation - wave motion for organic life while anchored to edge
-        waveAmplitude: 25,
-        waveFrequency: 0.6,
-        // Horizontal wobble (small, doesn't cause drift)
-        wobbleAmplitude: 15,
-        wobbleFrequency: 0.4,
+        // Animation
+        waveSpeed: 0.8,
+        waveAmplitude: 0.03, // Subtle wave as fraction of viewport
+        velocityMultiplier: 2.5,
 
-        // Exit animation
-        exitDuration: 1500,
-        exitAcceleration: 3
+        // Exit/enter animation
+        exitDuration: 600,
+        enterDuration: 400
     };
 
     // State
     let viewportWidth = window.innerWidth;
     let viewportHeight = window.innerHeight;
     let svgElement = null;
-    let clipPathElement = null;
-    let maskRect = null;
-    let blobShapes = [];
+    let maskPath = null;
     let animationId = null;
     let isAnimating = false;
     let isExiting = false;
+    let isEntering = false;
     let exitStartTime = 0;
+    let enterStartTime = 0;
     let animationStartTime = 0;
     let currentProgress = 0;
+    let lastProgress = 0;
+    let scrollVelocity = 0;
     let maskInitialized = false;
+    let noiseOffsets = []; // Pre-generated noise offsets for consistent shapes
 
     // Noise generator
     const Noise = {
@@ -113,7 +102,6 @@
             );
         },
 
-        // Fractal brownian motion - layered noise
         fbm(x, y, octaves = 4) {
             let value = 0;
             let amplitude = 1;
@@ -125,104 +113,91 @@
                 amplitude *= 0.5;
                 frequency *= 2;
             }
-            return value / maxValue;
+            return (value / maxValue + 1) / 2; // Normalize to 0-1
         }
     };
 
     /**
-     * Generate a noise-distorted blob path
-     * Uses fixed noise offset per blob - no time-based animation for stability
+     * Generate pre-computed noise offsets for consistent edge shape
      */
-    function generateBlobPath(cx, cy, baseRadius, vertexCount, noiseOffset) {
-        const points = [];
-        const { displacement, frequency, octaves } = CONFIG.noise;
+    function generateNoiseOffsets() {
+        noiseOffsets = [];
+        for (let i = 0; i <= CONFIG.edgePoints; i++) {
+            noiseOffsets.push(Math.random() * 100);
+        }
+    }
 
-        for (let i = 0; i < vertexCount; i++) {
-            const angle = (i / vertexCount) * Math.PI * 2;
+    /**
+     * Generate the organic edge path
+     * - RIGHT side is a straight vertical line
+     * - LEFT side is noise-distorted with bubble-like shapes
+     */
+    function generateMaskPath(edgeX, time) {
+        const { edgePoints, maxDisplacement, noise, waveSpeed, waveAmplitude, velocityMultiplier } = CONFIG;
+        const maxDisp = maxDisplacement * viewportWidth;
+        const waveAmp = waveAmplitude * viewportWidth;
 
-            // Sample noise at this angle - fixed per blob, no time animation
-            const nx = Math.cos(angle) * frequency + noiseOffset;
-            const ny = Math.sin(angle) * frequency + noiseOffset * 0.7;
-            const noiseVal = Noise.fbm(nx, ny, octaves);
+        // Velocity-scaled time for wind effect
+        const velocityBoost = 1 + scrollVelocity * velocityMultiplier;
+        const animTime = time * velocityBoost;
 
-            // Displace radius by noise (-0.5 to 0.5 range, scaled by displacement)
-            const radiusOffset = (noiseVal - 0.5) * displacement * baseRadius;
-            const r = baseRadius + radiusOffset;
+        // Generate left edge points (organic, from top to bottom)
+        const leftPoints = [];
+        for (let i = 0; i <= edgePoints; i++) {
+            const t = i / edgePoints;
+            const y = t * viewportHeight;
 
-            points.push({
-                x: cx + Math.cos(angle) * r,
-                y: cy + Math.sin(angle) * r
-            });
+            // Sample noise for this point
+            const noiseX = t * noise.frequency + noiseOffsets[i] * 0.1;
+            const noiseY = noiseOffsets[i] * 0.1;
+            const noiseVal = Noise.fbm(noiseX, noiseY, noise.octaves);
+
+            // Base displacement from noise (creates the bubble shapes)
+            const baseDisp = noiseVal * noise.amplitude * maxDisp;
+
+            // Add subtle wave motion
+            const wave = Math.sin(animTime * waveSpeed + t * Math.PI * 4) * waveAmp;
+
+            // Left edge X position (edgeX minus the organic displacement)
+            const x = edgeX - baseDisp + wave;
+            leftPoints.push({ x, y });
         }
 
-        // Create smooth path using quadratic bezier curves
-        let d = `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
+        // Build the path:
+        // Start at top-left of organic edge, go DOWN the organic edge,
+        // then RIGHT along bottom, UP the right edge, LEFT along top, close
 
-        for (let i = 0; i < points.length; i++) {
-            const p0 = points[i];
-            const p1 = points[(i + 1) % points.length];
+        // Start at top of organic edge
+        let d = `M ${leftPoints[0].x.toFixed(1)},0`;
 
-            // Control point at midpoint
+        // Go DOWN the organic left edge using quadratic bezier for smoothness
+        for (let i = 0; i < leftPoints.length - 1; i++) {
+            const p0 = leftPoints[i];
+            const p1 = leftPoints[i + 1];
             const midX = (p0.x + p1.x) / 2;
             const midY = (p0.y + p1.y) / 2;
-
             d += ` Q ${p0.x.toFixed(1)},${p0.y.toFixed(1)} ${midX.toFixed(1)},${midY.toFixed(1)}`;
         }
+
+        // Final point to bottom
+        const lastLeft = leftPoints[leftPoints.length - 1];
+        d += ` L ${lastLeft.x.toFixed(1)},${viewportHeight}`;
+
+        // Go RIGHT along bottom edge (straight)
+        d += ` L ${viewportWidth + 100},${viewportHeight}`;
+
+        // Go UP the right edge (straight) - extend past viewport to ensure coverage
+        d += ` L ${viewportWidth + 100},0`;
+
+        // Go LEFT along top edge back to start (straight)
+        d += ` L ${leftPoints[0].x.toFixed(1)},0`;
 
         d += ' Z';
         return d;
     }
 
     /**
-     * Create blob shape data
-     */
-    function createBlob(type, config, index, total) {
-        const radius = (config.radiusMin + Math.random() * (config.radiusMax - config.radiusMin)) *
-                      Math.min(viewportWidth, viewportHeight);
-
-        // Position based on type
-        let xOffset, yPos;
-        const transitionZone = viewportWidth * CONFIG.transitionWidth;
-
-        if (type === 'edge') {
-            // Edge blobs - evenly distributed vertically, centered on edge
-            yPos = (index / total) * viewportHeight * 1.3 - viewportHeight * 0.15;
-            xOffset = (Math.random() - 0.3) * transitionZone * 0.4;
-        } else if (type === 'large') {
-            // Large blobs - spread wide, extend into both images
-            yPos = Math.random() * viewportHeight;
-            xOffset = (Math.random() - 0.5) * transitionZone * 2;
-        } else if (type === 'medium') {
-            yPos = Math.random() * viewportHeight;
-            xOffset = (Math.random() - 0.4) * transitionZone * 1.2;
-        } else {
-            // Small blobs - scattered
-            yPos = Math.random() * viewportHeight;
-            xOffset = (Math.random() - 0.5) * transitionZone;
-        }
-
-        // Create SVG path element
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('fill', 'white'); // Not used in clipPath but good practice
-
-        return {
-            element: path,
-            type,
-            radius,
-            vertexCount: config.vertexCount,
-            baseXOffset: xOffset,
-            baseY: yPos,
-            noiseOffset: Math.random() * 100, // Unique noise sample per blob
-            driftPhase: Math.random() * Math.PI * 2,
-            waveAmp: CONFIG.waveAmplitude * (0.5 + Math.random()),
-            waveFreq: CONFIG.waveFrequency * (0.8 + Math.random() * 0.4),
-            wobbleAmp: CONFIG.wobbleAmplitude * (0.5 + Math.random()),
-            wobbleFreq: CONFIG.wobbleFrequency * (0.8 + Math.random() * 0.4)
-        };
-    }
-
-    /**
-     * Create SVG with clipPath
+     * Create SVG with clipPath containing single path
      */
     function createMaskSVG() {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -232,89 +207,56 @@
 
         const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
 
-        // Create clipPath
         const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
         clipPath.setAttribute('id', 'windswept-mask');
         clipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
 
-        // Main rect
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('x', '0');
-        rect.setAttribute('y', '0');
-        rect.setAttribute('width', String(viewportWidth));
-        rect.setAttribute('height', String(viewportHeight));
-        clipPath.appendChild(rect);
-        maskRect = rect;
-
-        // Create blobs
-        const blobs = [];
-        for (let i = 0; i < CONFIG.blobs.large.count; i++) {
-            blobs.push(createBlob('large', CONFIG.blobs.large, i, CONFIG.blobs.large.count));
-        }
-        for (let i = 0; i < CONFIG.blobs.medium.count; i++) {
-            blobs.push(createBlob('medium', CONFIG.blobs.medium, i, CONFIG.blobs.medium.count));
-        }
-        for (let i = 0; i < CONFIG.blobs.small.count; i++) {
-            blobs.push(createBlob('small', CONFIG.blobs.small, i, CONFIG.blobs.small.count));
-        }
-        for (let i = 0; i < CONFIG.blobs.edge.count; i++) {
-            blobs.push(createBlob('edge', CONFIG.blobs.edge, i, CONFIG.blobs.edge.count));
-        }
-
-        blobs.forEach(blob => {
-            clipPath.appendChild(blob.element);
-            blobShapes.push(blob);
-        });
+        // Single path element for the entire mask
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', generateMaskPath(0, 0));
+        clipPath.appendChild(path);
+        maskPath = path;
 
         defs.appendChild(clipPath);
         svg.appendChild(defs);
-        clipPathElement = clipPath;
 
         return svg;
     }
 
     /**
-     * Update all blob shapes
-     * Blobs stay anchored to the transition edge with wave + wobble motion
+     * Update the mask path position
      */
-    function updateBlobShapes(time, progress) {
-        const edgeX = progress * viewportWidth;
+    function updateMask(time, progress) {
+        // Calculate edge position based on progress
+        let edgeX = progress * viewportWidth;
 
-        // During exit: drift blobs off to the RIGHT (continuing transition direction)
-        let exitDrift = 0;
+        // During exit: continue moving right past the viewport
         if (isExiting) {
             const exitTime = time - exitStartTime;
-            exitDrift = exitTime * exitTime * viewportWidth * 0.5; // Accelerating drift
+            const exitProgress = Math.min(1, exitTime / (CONFIG.exitDuration / 1000));
+            // Ease out
+            const eased = 1 - Math.pow(1 - exitProgress, 2);
+            edgeX = viewportWidth + eased * viewportWidth * 0.3;
         }
 
-        blobShapes.forEach(blob => {
-            // Vertical wave motion
-            const wave = Math.sin(time * blob.waveFreq + blob.driftPhase) * blob.waveAmp;
-            // Horizontal wobble (offset phase so it's not synchronized with wave)
-            const wobble = Math.sin(time * blob.wobbleFreq + blob.driftPhase + Math.PI * 0.5) * blob.wobbleAmp;
+        // During enter (from right): animate in from right
+        if (isEntering) {
+            const enterTime = time - enterStartTime;
+            const enterProgress = Math.min(1, enterTime / (CONFIG.enterDuration / 1000));
+            // Ease out
+            const eased = 1 - Math.pow(1 - enterProgress, 2);
+            // Start from right edge, animate to current progress position
+            const startX = viewportWidth * 1.2;
+            const endX = progress * viewportWidth;
+            edgeX = startX + (endX - startX) * eased;
 
-            // Position anchored to transition edge with wobble, plus exit drift to move RIGHT
-            const cx = edgeX + blob.baseXOffset + wobble + exitDrift;
-            const cy = blob.baseY + wave;
+            if (enterProgress >= 1) {
+                isEntering = false;
+            }
+        }
 
-            // Generate noise-distorted path (fixed shape per blob)
-            const pathData = generateBlobPath(
-                cx, cy,
-                blob.radius,
-                blob.vertexCount,
-                blob.noiseOffset
-            );
-
-            blob.element.setAttribute('d', pathData);
-        });
-    }
-
-    /**
-     * Update mask rect position
-     */
-    function updateMaskRect(progress) {
-        const rectX = progress * viewportWidth;
-        maskRect.setAttribute('x', String(rectX));
+        const pathData = generateMaskPath(edgeX, time);
+        maskPath.setAttribute('d', pathData);
     }
 
     function isExitComplete(time) {
@@ -327,8 +269,7 @@
 
         const time = (timestamp - animationStartTime) / 1000;
 
-        updateMaskRect(currentProgress);
-        updateBlobShapes(time, currentProgress);
+        updateMask(time, currentProgress);
 
         if (isExiting && isExitComplete(time)) {
             const heroCoderCanvas = document.getElementById('depth-canvas-hero-coder');
@@ -347,16 +288,14 @@
         isAnimating = true;
         isExiting = false;
         animationStartTime = performance.now();
-        // Immediately update positions to current progress before first frame
-        // This prevents flash of wrong positions when scrolling back
-        updateMaskRect(currentProgress);
-        updateBlobShapes(0, currentProgress);
+        updateMask(0, currentProgress);
         animationId = requestAnimationFrame(animationLoop);
     }
 
     function stopAnimation() {
         isAnimating = false;
         isExiting = false;
+        isEntering = false;
         if (animationId) {
             cancelAnimationFrame(animationId);
             animationId = null;
@@ -369,19 +308,28 @@
         exitStartTime = (performance.now() - animationStartTime) / 1000;
     }
 
+    function startEnterAnimation() {
+        isEntering = true;
+        enterStartTime = (performance.now() - animationStartTime) / 1000;
+    }
+
     function updateMaskPosition(progress) {
+        // Track scroll velocity
+        const deltaProgress = Math.abs(progress - lastProgress);
+        scrollVelocity = Math.min(1, deltaProgress * 15);
+        lastProgress = progress;
+
         currentProgress = progress;
         if (!isAnimating) {
-            updateMaskRect(progress);
-            updateBlobShapes(0, progress);
+            updateMask(0, progress);
         }
     }
 
     function resetMask() {
         currentProgress = 0;
         isExiting = false;
-        updateMaskRect(0);
-        updateBlobShapes(0, 0);
+        isEntering = false;
+        updateMask(0, 0);
     }
 
     function positionForTransition(heroCoderCanvas, claudeCodesCanvas, forTransition) {
@@ -433,8 +381,9 @@
             return;
         }
 
-        // Initialize noise
+        // Initialize
         Noise.init();
+        generateNoiseOffsets();
 
         // Create SVG
         svgElement = createMaskSVG();
@@ -451,8 +400,7 @@
             resizeTimeout = setTimeout(() => {
                 viewportWidth = window.innerWidth;
                 viewportHeight = window.innerHeight;
-                maskRect.setAttribute('width', String(viewportWidth));
-                maskRect.setAttribute('height', String(viewportHeight));
+                updateMask(0, currentProgress);
             }, 100);
         });
 
@@ -473,18 +421,17 @@
                 startExitAnimation();
             },
             onEnterBack: () => {
-                // Reset exit state before showing canvas
+                // Coming back from below - animate in from right
                 isExiting = false;
-                // Set progress to current scroll position (should be ~1 when entering back)
                 currentProgress = transitionTrigger.progress;
-                // Update positions immediately before showing canvas
-                updateMaskRect(currentProgress);
-                updateBlobShapes(0, currentProgress);
-                // Now show canvases
                 positionForTransition(heroCoderCanvas, claudeCodesCanvas, true);
                 heroCoderCanvas.style.opacity = '1';
                 claudeCodesCanvas.style.opacity = '1';
-                startAnimation();
+
+                if (!isAnimating) {
+                    startAnimation();
+                }
+                startEnterAnimation();
             },
             onLeaveBack: () => {
                 claudeCodesCanvas.style.opacity = '0';
@@ -497,22 +444,21 @@
         window.ChrisTheme.windsweptMask = {
             trigger: transitionTrigger,
             svg: svgElement,
-            maskRect,
-            blobs: blobShapes,
+            path: maskPath,
             reset: resetMask,
             setProgress: updateMaskPosition,
             startAnimation,
             stopAnimation,
             startExitAnimation,
+            startEnterAnimation,
             isAnimating: () => isAnimating,
             isExiting: () => isExiting,
+            isEntering: () => isEntering,
             config: CONFIG,
             noise: Noise
         };
 
-        const total = CONFIG.blobs.large.count + CONFIG.blobs.medium.count +
-                     CONFIG.blobs.small.count + CONFIG.blobs.edge.count;
-        console.log('[windswept-mask] Initialized with', total, 'noise-distorted blobs');
+        console.log('[windswept-mask] Initialized with single organic edge path');
     }
 
     function waitForChrisTheme(callback, maxAttempts = 30) {
