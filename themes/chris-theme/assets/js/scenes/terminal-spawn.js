@@ -31,10 +31,13 @@
         const header = document.querySelector('.site-header');
         const depthCanvas = document.getElementById('depth-canvas-claude-codes');
 
-        if (!terminals || terminals.length === 0 || !header || !scene) {
+        if (!terminals || terminals.length === 0 || !scene) {
             console.warn('[terminal-spawn] Missing required elements');
             return;
         }
+
+        // Header is optional - use fallback position if not present
+        const hasHeader = !!header;
 
         // Check for reduced motion preference
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -71,7 +74,8 @@
         const sceneTop = sceneRect.top + originalScroll;
 
         // Calculate offsets using document-relative positions (scroll-independent)
-        const headerHeight = header.offsetHeight;
+        // Use header height if available, otherwise use 60px as fallback (typical navbar height)
+        const headerHeight = hasHeader ? header.offsetHeight : 60;
         const navbarCenterX = window.innerWidth / 2;
         const navbarY = headerHeight; // Bottom of header in document coordinates
 

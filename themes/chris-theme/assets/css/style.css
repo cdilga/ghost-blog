@@ -2757,27 +2757,47 @@ pre code {
 }
 
 /* Header backdrop for readability against desert background */
+/* Using a soft radial gradient that feels organic, like heat shimmer or distant haze */
 .scene--claude-codes .scene__header {
     position: relative;
     padding: var(--space-8);
-    border-radius: var(--radius-xl);
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* No hard-edged box - use pseudo-element for organic shape */
+}
+
+.scene--claude-codes .scene__header::before {
+    content: '';
+    position: absolute;
+    inset: -20px -40px;
+    background: radial-gradient(
+        ellipse 100% 100% at 50% 40%,
+        rgba(30, 30, 40, 0.65) 0%,
+        rgba(30, 30, 40, 0.4) 40%,
+        rgba(30, 30, 40, 0.15) 70%,
+        transparent 100%
+    );
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: -1;
+    border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
 }
 
 .scene--claude-codes .scene__label {
     color: var(--color-accent);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .scene--claude-codes .scene__title {
     color: var(--color-text-on-dark);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.6),
+        0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .scene--claude-codes .scene__description {
-    color: rgba(255, 255, 255, 0.85);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow:
+        0 1px 4px rgba(0, 0, 0, 0.6),
+        0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Terminal Grid */
@@ -2894,6 +2914,10 @@ pre code {
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.7);
     white-space: nowrap;
+    /* Override default code element styling */
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
 }
 
 .terminal__prompt {
