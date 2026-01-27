@@ -53,20 +53,18 @@
     container.className = 'claude-codes__depth-canvas';
     container.id = 'depth-canvas-claude-codes';
     container.style.cssText = `
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
+        width: 100vw;
+        height: 100vh;
         pointer-events: none;
-        z-index: 0;
+        z-index: -1;
         opacity: 0;
-        transition: opacity 0.5s ease;
     `;
 
-    // Insert canvas into section (at the beginning, behind content)
-    claudeCodesSection.style.position = 'relative';
-    claudeCodesSection.insertBefore(container, claudeCodesSection.firstChild);
+    // Insert canvas into body (fixed position, behind content)
+    document.body.appendChild(container);
 
     // PixiJS setup
     let app = null;
@@ -149,10 +147,13 @@
     function animate() {
         if (!displacementFilter) return;
 
-        // STATIC MODE: No displacement, just show the depth-mapped image
-        // The depth effect is baked into the image itself
-        displacementFilter.scale.x = 0;
-        displacementFilter.scale.y = 0;
+        // Smooth interpolation toward target
+        currentX += (targetX - currentX) * CONFIG.smoothing;
+        currentY += (targetY - currentY) * CONFIG.smoothing;
+
+        // Apply displacement based on motion input
+        displacementFilter.scale.x = currentX * maxDisplacement;
+        displacementFilter.scale.y = currentY * maxDisplacement;
     }
 
     // =========================================================================
