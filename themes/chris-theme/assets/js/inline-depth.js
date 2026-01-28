@@ -6,6 +6,12 @@
 (function() {
     'use strict';
 
+    // Prevent multiple initializations
+    if (window.__inlineDepthInitialized) {
+        return;
+    }
+    window.__inlineDepthInitialized = true;
+
     // Skip if reduced motion preferred
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         return;
@@ -45,6 +51,10 @@
     async function initDepthImage(img) {
         const depthMapPath = img.dataset.depthMap;
         if (!depthMapPath) return;
+
+        // Skip if already initialized
+        if (img.dataset.depthInitialized) return;
+        img.dataset.depthInitialized = 'true';
 
         const imageSrc = img.src;
         const container = img.parentElement;
