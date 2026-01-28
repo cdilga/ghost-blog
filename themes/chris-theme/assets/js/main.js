@@ -389,14 +389,41 @@
         // ========================================
         // PINNED SCROLL-CAPTURED TIMELINE
         // ========================================
+        // Track if we've exited forward (to prevent re-showing on scroll back from below)
+        let hasExitedForward = false;
+
         const coderTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: coderSection,
                 start: 'top top',
                 end: '+=1500',  // 1500px of scroll while pinned
                 pin: true,      // 🔥 PAGE STAYS FIXED
-                scrub: 1,       // 🔥 SCROLL DRIVES TIMELINE
+                scrub: true,    // 🔥 SCROLL DRIVES TIMELINE (true = immediate, no smoothing)
                 anticipatePin: 1,
+
+                // When exiting forward (scrolling down past section)
+                onLeave: () => {
+                    hasExitedForward = true;
+                    // Ensure content stays hidden
+                    gsap.set(header, { opacity: 0, x: -120 });
+                    gsap.set(contentElements, { opacity: 0, x: 60 });
+                    gsap.set(whiteOverlay, { opacity: 0 });
+                },
+
+                // When scrolling back UP into section from below
+                onEnterBack: () => {
+                    // Content should already be at exit state from onLeave
+                    // Timeline will animate it as user scrolls back
+                },
+
+                // When scrolling back UP past the start (returning to Hero)
+                onLeaveBack: () => {
+                    hasExitedForward = false;
+                    // Reset to initial hidden state
+                    gsap.set(header, { opacity: 0, x: -80 });
+                    gsap.set(contentElements, { opacity: 0, x: 100 });
+                    gsap.set(whiteOverlay, { opacity: 0 });
+                },
             }
         });
 
@@ -451,7 +478,7 @@
             stagger: 0.02,
         }, 0.75);
 
-        console.log('Chris Theme: Coder section choreography initialized (pin: true, scrub: 1)');
+        console.log('Chris Theme: Coder section choreography initialized (pin: true, scrub: true, with onLeave/onLeaveBack)');
     }
 
     // ========================================
@@ -522,7 +549,7 @@
                 start: 'top top',
                 end: '+=2500',  // Total scroll distance for this section
                 pin: true,      // 🔥 PAGE STAYS FIXED
-                scrub: 1,       // 🔥 SCROLL DRIVES TIMELINE
+                scrub: true,    // 🔥 SCROLL DRIVES TIMELINE (true = immediate sync, no smoothing)
                 anticipatePin: 1,
                 onUpdate: (self) => {
                     // CRT "kick" - when animation reaches 90%, auto-scroll to next section
@@ -545,6 +572,14 @@
                     }
                 },
                 onLeave: () => {
+                    // Ensure content stays hidden after exiting forward
+                    gsap.set(header, { opacity: 0, y: -400 });
+                    gsap.set(terminals, { opacity: 0, scale: 0.8 });
+                    gsap.set(terminalGrid, { y: -400 });
+                    if (cta) gsap.set(cta, { opacity: 0 });
+                    gsap.set(darkOverlay, { opacity: 0 });
+                    gsap.set(crtOverlay, { opacity: 0 });
+
                     // Backup: ensure we reach Speaker if kick didn't fire
                     if (speakerSection && window.ChrisTheme?.lenis) {
                         window.ChrisTheme.lenis.scrollTo(speakerSection, {
@@ -552,6 +587,16 @@
                             easing: (t) => 1 - Math.pow(1 - t, 3)
                         });
                     }
+                },
+                onLeaveBack: () => {
+                    // Reset to initial hidden state when scrolling back past start
+                    crtKickTriggered = false;
+                    gsap.set(darkOverlay, { opacity: 0 });
+                    gsap.set(crtOverlay, { opacity: 0 });
+                    gsap.set(header, { opacity: 0, y: 30 });
+                    gsap.set(terminalGrid, { y: 0 });
+                    gsap.set(terminals, { opacity: 0, scale: 0.8, y: 50 });
+                    if (cta) gsap.set(cta, { opacity: 0, y: 20 });
                 }
             }
         });
@@ -668,7 +713,7 @@
             duration: 0.05,
         }, 0.95);
 
-        console.log('Chris Theme: Claude Codes section choreography initialized (pin: true, scrub: 1)');
+        console.log('Chris Theme: Claude Codes section choreography initialized (pin: true, scrub: true, with onLeave/onLeaveBack)');
     }
 
     // Initialize scene scroll animations (Speaker, Projects, etc.)
@@ -1371,7 +1416,7 @@
             { // Terminal 1: Feature
                 title: 'claude-1: spec',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "write spec"' },
+                    { type: 'prompt', text: 'claude -p "write spec"' },
                     { type: 'output', text: 'Reading requirements...' },
                     { type: 'output', text: 'Analyzing codebase' },
                     { type: 'output', text: 'Drafting PRD sections' },
@@ -1381,7 +1426,7 @@
             { // Terminal 2: Implement 1
                 title: 'claude-2: impl',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "auth module"' },
+                    { type: 'prompt', text: 'claude -p "auth module"' },
                     { type: 'output', text: 'Creating middleware...' },
                     { type: 'output', text: 'JWT validation logic' },
                     { type: 'output', text: 'Session management' },
@@ -1391,7 +1436,7 @@
             { // Terminal 3: Implement 2
                 title: 'claude-3: impl',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "api routes"' },
+                    { type: 'prompt', text: 'claude -p "api routes"' },
                     { type: 'output', text: 'Scaffolding endpoints' },
                     { type: 'output', text: 'Adding validation' },
                     { type: 'output', text: 'Rate limiting done' },
@@ -1401,7 +1446,7 @@
             { // Terminal 4: Implement 3
                 title: 'claude-4: impl',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "ui components"' },
+                    { type: 'prompt', text: 'claude -p "ui components"' },
                     { type: 'output', text: 'Building components' },
                     { type: 'output', text: 'Styling dark mode' },
                     { type: 'output', text: 'Adding animations' },
@@ -1411,7 +1456,7 @@
             { // Terminal 5: Research 1
                 title: 'claude-5: research',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "perf analysis"' },
+                    { type: 'prompt', text: 'claude -p "perf analysis"' },
                     { type: 'output', text: 'Profiling hot paths' },
                     { type: 'output', text: 'Memory leak found' },
                     { type: 'output', text: 'Optimization plan' },
@@ -1421,7 +1466,7 @@
             { // Terminal 6: Research 2
                 title: 'claude-6: research',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "security audit"' },
+                    { type: 'prompt', text: 'claude -p "security audit"' },
                     { type: 'output', text: 'Scanning deps...' },
                     { type: 'output', text: 'OWASP checklist' },
                     { type: 'output', text: '2 CVEs patched' },
@@ -1431,7 +1476,7 @@
             { // Terminal 7: Review
                 title: 'claude-7: review',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "code review"' },
+                    { type: 'prompt', text: 'claude -p "code review"' },
                     { type: 'output', text: 'Reading 47 files...' },
                     { type: 'output', text: 'Checking patterns' },
                     { type: 'output', text: '12 suggestions' },
@@ -1441,7 +1486,7 @@
             { // Terminal 8: Deploy
                 title: 'claude-8: deploy',
                 lines: [
-                    { type: 'prompt', text: 'claude --task "deploy prod"' },
+                    { type: 'prompt', text: 'claude -p "deploy prod"' },
                     { type: 'output', text: 'Building bundle...' },
                     { type: 'output', text: 'Running smoke tests' },
                     { type: 'output', text: 'Deploying v2.3.1' },

@@ -405,11 +405,13 @@
         });
 
         // Scroll trigger
+        // NOTE: Using scrub: true for immediate sync (no smoothing delay)
+        // This ensures the mask position matches scroll position precisely
         const transitionTrigger = ScrollTrigger.create({
             trigger: coderSection,
             start: 'bottom 80%',
             end: () => `+=${window.innerHeight * 0.8}`,
-            scrub: 1,
+            scrub: true,
             onUpdate: (self) => {
                 updateMaskPosition(self.progress);
             },
