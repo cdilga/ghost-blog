@@ -59,50 +59,6 @@
         // Register ScrollTrigger plugin
         gsap.registerPlugin(ScrollTrigger);
 
-        // Enable normalizeScroll on touch devices to prevent mobile browser
-        // chrome (address bar) from hiding/showing during scroll, which causes
-        // viewport height changes and layout shifts
-        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        if (isTouchDevice) {
-            ScrollTrigger.normalizeScroll({
-                allowNestedScroll: true,  // Allow scrolling in nested containers
-                type: 'touch,wheel,pointer',  // Normalize all input types
-                ignore: '.reel-navigator__wheel'  // Allow carousel to handle its own touch gestures
-            });
-
-            // Prevent accidental clicks during scroll gestures
-            // normalizeScroll can cause touch scrolls to register as clicks
-            let touchStartX = 0;
-            let touchStartY = 0;
-            let isScrollGesture = false;
-            const SCROLL_THRESHOLD = 10; // pixels of movement to consider it a scroll
-
-            document.addEventListener('touchstart', (e) => {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-                isScrollGesture = false;
-            }, { passive: true });
-
-            document.addEventListener('touchmove', (e) => {
-                const dx = Math.abs(e.touches[0].clientX - touchStartX);
-                const dy = Math.abs(e.touches[0].clientY - touchStartY);
-                if (dx > SCROLL_THRESHOLD || dy > SCROLL_THRESHOLD) {
-                    isScrollGesture = true;
-                }
-            }, { passive: true });
-
-            // Capture phase to intercept clicks before they reach links
-            document.addEventListener('click', (e) => {
-                if (isScrollGesture) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    isScrollGesture = false;
-                }
-            }, { capture: true });
-
-            console.log('Chris Theme: normalizeScroll enabled for touch device');
-        }
-
         // Sync Lenis scroll with ScrollTrigger
         lenis.on('scroll', ScrollTrigger.update);
 
