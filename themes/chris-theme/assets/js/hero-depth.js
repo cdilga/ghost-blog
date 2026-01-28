@@ -75,16 +75,9 @@
     const container = document.createElement('div');
     container.className = 'hero__depth-canvas';
     container.id = 'depth-canvas-hero-coder';
-    container.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        pointer-events: none;
-        z-index: -1;
-        opacity: 1;
-    `;
+    // Note: position/size/z-index defined in CSS (.hero__depth-canvas)
+    // Only set opacity here - CSS handles height with 100lvh for mobile chrome transitions
+    container.style.opacity = '1';
     document.body.appendChild(container);
 
     // Get sky layer reference for later hiding

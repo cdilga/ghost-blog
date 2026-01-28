@@ -88,16 +88,9 @@
     const container = document.createElement('div');
     container.className = 'claude-codes__depth-canvas';
     container.id = 'depth-canvas-claude-codes';
-    container.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        pointer-events: none;
-        z-index: -1;
-        opacity: 0;
-    `;
+    // Note: position/size/z-index defined in CSS (.claude-codes__depth-canvas)
+    // Only set opacity here - CSS handles height with 100lvh for mobile chrome transitions
+    container.style.opacity = '0';
 
     // Insert canvas into body (fixed position, behind content)
     document.body.appendChild(container);

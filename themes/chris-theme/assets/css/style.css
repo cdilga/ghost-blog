@@ -199,6 +199,20 @@ body {
     overscroll-behavior: none;
 }
 
+/* Depth-map canvas containers - fixed position, behind content
+   Use 100lvh (largest viewport height) to prevent gaps when mobile browser chrome hides */
+.hero__depth-canvas,
+.claude-codes__depth-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;      /* Fallback for older browsers */
+    height: 100lvh;     /* Largest viewport - always covers max height */
+    pointer-events: none;
+    z-index: -1;
+}
+
 /* ==========================================================================
    3. Typography
    ========================================================================== */
