@@ -13,6 +13,9 @@ services:
       database__connection__filename: /var/lib/ghost/content/data/ghost.db
       # Enable development mode for faster theme reloading
       NODE_ENV: development
+      # Disable email sending for local dev
+      mail__transport: Direct
+      mail__options__service: ''
     volumes:
       # Mount your theme for live editing
       - ./themes/chris-theme:/var/lib/ghost/content/themes/chris-theme

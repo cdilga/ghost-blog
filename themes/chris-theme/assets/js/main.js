@@ -285,6 +285,19 @@
                 anticipatePin: 1, // Smoother pin initiation
                 invalidateOnRefresh: true, // Recalculate on resize/refresh
 
+                // 🚨 CRITICAL: onUpdate ensures hero is visible when scrolling back
+                // This handles edge cases where onLeaveBack might not fire correctly
+                // (e.g., rapid scrolling from bottom of page back to top)
+                onUpdate: (self) => {
+                    // When progress is near 0 (at or near start), ensure hero is fully visible
+                    if (self.progress < 0.05) {
+                        gsap.set(hero, { clipPath: 'inset(0 0 0% 0)' });
+                        if (scrollIndicator) {
+                            gsap.set(scrollIndicator, { opacity: 1 });
+                        }
+                    }
+                },
+
                 // 🚨 CRITICAL: This callback is REQUIRED for scroll-back to work
                 // Without it, hero stays clipped (hidden) when returning to top
                 onLeaveBack: () => {
