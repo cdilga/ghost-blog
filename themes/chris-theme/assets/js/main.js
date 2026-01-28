@@ -238,8 +238,37 @@
             gsap.set(scrollIndicator, { opacity: 1, y: 0 });
         }
 
-        // CRITICAL: Set explicit initial clipPath so GSAP can properly reverse
-        // Without this, scrolling back to top doesn't restore the hero content
+        // ═══════════════════════════════════════════════════════════════════════════
+        // 🚨 CRITICAL FIX: HERO SCROLL-BACK VISIBILITY 🚨
+        // ═══════════════════════════════════════════════════════════════════════════
+        // This fix has been reverted multiple times. DO NOT CHANGE without understanding:
+        //
+        // PROBLEM: When user scrolls down past Hero, then scrolls back to top,
+        //          the "Chris Dilger" content stays hidden (clipPath: inset(0 0 100% 0))
+        //
+        // ROOT CAUSES (all three must be addressed):
+        //
+        // 1. scrub: true (NOT scrub: 1)
+        //    - scrub: 1 adds 1-second smoothing delay, causing desync on rapid scroll
+        //    - scrub: true = immediate sync, reliable reversal
+        //    - ❌ WRONG: scrub: 1   ✅ CORRECT: scrub: true
+        //
+        // 2. onLeaveBack callback (REQUIRED)
+        //    - Without this, GSAP doesn't reset clipPath when scrolling back past trigger
+        //    - This callback explicitly resets hero to visible state
+        //    - ❌ WRONG: no onLeaveBack   ✅ CORRECT: onLeaveBack resets clipPath
+        //
+        // 3. fromTo() with explicit start value (NOT to())
+        //    - to() only defines end state; GSAP guesses start state on reversal
+        //    - fromTo() explicitly defines both states for reliable reversal
+        //    - ❌ WRONG: .to(hero, {clipPath: '...'})
+        //    - ✅ CORRECT: .fromTo(hero, {clipPath: '0%'}, {clipPath: '100%'})
+        //
+        // TEST: Scroll to bottom of page, then scroll back to top.
+        //       "Chris Dilger" title MUST be visible.
+        // ═══════════════════════════════════════════════════════════════════════════
+
+        // Set explicit initial clipPath so GSAP can properly reverse
         gsap.set(hero, { clipPath: 'inset(0 0 0% 0)' });
 
         const heroTimeline = gsap.timeline({
@@ -248,12 +277,17 @@
                 start: 'top top',
                 end: '+=800',   // Compressed: 800px of scroll (was 2000)
                 pin: true,      // 🔥 NON-NEGOTIABLE: Page stays fixed
-                scrub: true,    // 🔥 Immediate sync (no smoothing delay) for reliable reversal
+
+                // 🚨 CRITICAL: Must be `true`, NOT a number like `1`
+                // scrub: 1 adds smoothing delay that breaks scroll-back reversal
+                scrub: true,
+
                 anticipatePin: 1, // Smoother pin initiation
                 invalidateOnRefresh: true, // Recalculate on resize/refresh
+
+                // 🚨 CRITICAL: This callback is REQUIRED for scroll-back to work
+                // Without it, hero stays clipped (hidden) when returning to top
                 onLeaveBack: () => {
-                    // Reset hero when scrolling back past the start trigger point
-                    // This ensures content is visible when returning to top
                     gsap.set(hero, { clipPath: 'inset(0 0 0% 0)' });
                     if (scrollIndicator) {
                         gsap.set(scrollIndicator, { opacity: 1 });
@@ -277,10 +311,13 @@
 
         // Hero content slides UP and exits (70% - 100% = 1400-2000px)
         // Using clip-path for a "peel away" effect
-        // IMPORTANT: Use fromTo() with explicit start/end values to ensure proper reversal
+        //
+        // 🚨 CRITICAL: Must use fromTo() NOT to()
+        // to() only defines end state; GSAP guesses start on reversal (often wrong)
+        // fromTo() explicitly defines both states = reliable reversal
         heroTimeline.fromTo(hero,
-            { clipPath: 'inset(0 0 0% 0)' },
-            { clipPath: 'inset(0 0 100% 0)', duration: 0.30, ease: 'power2.inOut' }
+            { clipPath: 'inset(0 0 0% 0)' },   // Start: fully visible
+            { clipPath: 'inset(0 0 100% 0)', duration: 0.30, ease: 'power2.inOut' }  // End: clipped away
         );
 
         // ========================================
@@ -476,6 +513,9 @@
         // ========================================
         // PINNED SCROLL-CAPTURED TIMELINE
         // ========================================
+        // Track if CRT kick has been triggered (prevent multiple triggers)
+        let crtKickTriggered = false;
+
         const claudeCodesTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: claudeCodesSection,
@@ -484,8 +524,28 @@
                 pin: true,      // 🔥 PAGE STAYS FIXED
                 scrub: 1,       // 🔥 SCROLL DRIVES TIMELINE
                 anticipatePin: 1,
+                onUpdate: (self) => {
+                    // CRT "kick" - when animation reaches 90%, auto-scroll to next section
+                    // This creates the effect of the CRT turning off and "launching" you forward
+                    if (self.progress >= 0.90 && !crtKickTriggered && self.direction === 1) {
+                        crtKickTriggered = true;
+
+                        // Smooth scroll kick to Speaker section
+                        if (speakerSection && window.ChrisTheme?.lenis) {
+                            window.ChrisTheme.lenis.scrollTo(speakerSection, {
+                                duration: 0.6,
+                                easing: (t) => 1 - Math.pow(1 - t, 3) // ease-out-cubic
+                            });
+                        }
+                    }
+
+                    // Reset kick flag when scrolling back (allows re-trigger)
+                    if (self.progress < 0.85 && crtKickTriggered) {
+                        crtKickTriggered = false;
+                    }
+                },
                 onLeave: () => {
-                    // After timeline completes, smooth scroll to Speaker
+                    // Backup: ensure we reach Speaker if kick didn't fire
                     if (speakerSection && window.ChrisTheme?.lenis) {
                         window.ChrisTheme.lenis.scrollTo(speakerSection, {
                             duration: 0.3,
