@@ -59,6 +59,18 @@
         // Register ScrollTrigger plugin
         gsap.registerPlugin(ScrollTrigger);
 
+        // Enable normalizeScroll on touch devices to prevent mobile browser
+        // chrome (address bar) from hiding/showing during scroll, which causes
+        // viewport height changes and layout shifts
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (isTouchDevice) {
+            ScrollTrigger.normalizeScroll({
+                allowNestedScroll: true,  // Allow scrolling in nested containers
+                type: 'touch,wheel,pointer'  // Normalize all input types
+            });
+            console.log('Chris Theme: normalizeScroll enabled for touch device');
+        }
+
         // Sync Lenis scroll with ScrollTrigger
         lenis.on('scroll', ScrollTrigger.update);
 
