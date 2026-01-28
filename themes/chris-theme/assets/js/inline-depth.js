@@ -52,9 +52,38 @@
         const depthMapPath = img.dataset.depthMap;
         if (!depthMapPath) return;
 
-        // Skip if already initialized
+        // Skip if already initialized or currently initializing
         if (img.dataset.depthInitialized) return;
-        img.dataset.depthInitialized = 'true';
+        img.dataset.depthInitialized = 'pending';
+
+        // For lazy-loaded images that haven't started loading yet,
+        // use IntersectionObserver to wait until they're in viewport
+        if (img.loading === 'lazy' && !img.complete && img.naturalWidth === 0) {
+            await new Promise((resolve) => {
+                const visibilityObserver = new IntersectionObserver((entries, obs) => {
+                    if (entries[0].isIntersecting) {
+                        obs.disconnect();
+                        resolve();
+                    }
+                }, { threshold: 0.1 });
+                visibilityObserver.observe(img);
+            });
+        }
+
+        // Wait for image to load (triggered by lazy loading when in viewport)
+        if (!img.complete || img.naturalWidth === 0) {
+            await new Promise((resolve) => {
+                img.addEventListener('load', resolve, { once: true });
+                img.addEventListener('error', resolve, { once: true });
+            });
+        }
+
+        // Skip if image failed to load
+        if (img.naturalWidth === 0) {
+            console.warn('Inline Depth: Image failed to load', img.src);
+            img.dataset.depthInitialized = '';
+            return;
+        }
 
         const imageSrc = img.src;
         const container = img.parentElement;
@@ -247,11 +276,14 @@
 
             resizeObserver.observe(container);
 
+            // Mark as successfully initialized
+            img.dataset.depthInitialized = 'true';
             console.log('Inline Depth: Initialized for', img.alt || 'image');
 
         } catch (error) {
             console.error('Inline Depth: Failed to initialize', error);
             img.style.visibility = 'visible';
+            img.dataset.depthInitialized = '';
             canvasContainer.remove();
         }
     }
