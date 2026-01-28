@@ -718,16 +718,16 @@
     <div class="reel-navigator__hint" aria-hidden="true">
         <span class="reel-navigator__hint-text">Scroll to rotate</span>
     </div>
-</section>
 
-{{!-- Social Footer --}}
-<footer class="social-footer" id="social-footer">
-    <nav class="social-footer__nav" aria-label="Social links">
-        <a href="#all-posts" class="social-footer__link">Articles</a>
-        <a href="https://github.com/cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">GitHub</a>
-        <a href="https://x.com/cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">X</a>
-        <a href="https://linkedin.com/in/cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">LinkedIn</a>
-        <a href="https://youtube.com/@cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">YouTube</a>
-        <span class="social-footer__copyright">&copy; {{date format="YYYY"}} {{@site.title}}</span>
-    </nav>
-</footer>
+    {{!-- Footer inside reel-navigator so it's visible during pinned scroll --}}
+    <footer class="social-footer reel-navigator__footer" id="social-footer">
+        <nav class="social-footer__nav" aria-label="Social links">
+            <a href="#all-posts" class="social-footer__link">Articles</a>
+            <a href="https://github.com/cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">GitHub</a>
+            <a href="https://x.com/cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">X</a>
+            <a href="https://linkedin.com/in/cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">LinkedIn</a>
+            <a href="https://youtube.com/@cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">YouTube</a>
+            <span class="social-footer__copyright">&copy; {{date format="YYYY"}} {{@site.title}}</span>
+        </nav>
+    </footer>
+</section>
