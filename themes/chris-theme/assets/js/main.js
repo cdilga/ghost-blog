@@ -66,7 +66,8 @@
         if (isTouchDevice) {
             ScrollTrigger.normalizeScroll({
                 allowNestedScroll: true,  // Allow scrolling in nested containers
-                type: 'touch,wheel,pointer'  // Normalize all input types
+                type: 'touch,wheel,pointer',  // Normalize all input types
+                ignore: '.reel-navigator__wheel'  // Allow carousel to handle its own touch gestures
             });
 
             // Prevent accidental clicks during scroll gestures
