@@ -127,6 +127,8 @@ html {
     line-height: var(--leading-normal);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+    -webkit-overscroll-behavior: none;
 }
 
 /* Lenis smooth scroll - required styles */
@@ -193,6 +195,8 @@ body {
     /* Transparent to allow depth-map canvas (z-index: -1) to show through */
     background: transparent;
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport - adapts to mobile browser chrome changes */
+    overscroll-behavior: none;
 }
 
 /* ==========================================================================
@@ -455,6 +459,7 @@ pre code {
 
 .hero--full {
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport - adapts to mobile browser chrome changes */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3247,6 +3252,7 @@ pre code {
 
 .contact-page {
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport - adapts to mobile browser chrome changes */
     display: flex;
     flex-direction: column;
 }
