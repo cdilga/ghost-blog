@@ -67,7 +67,7 @@ test.describe('Carousel Fixes Verification', () => {
         await page.locator('.reel-navigator').screenshot({ path: 'test-results/carousel-with-footer.png' });
     });
 
-    test('section height is reduced to ~60%', async ({ page }) => {
+    test('section height fills viewport for pinned scroll', async ({ page }) => {
         await page.goto(BASE_URL);
 
         const sectionBox = await page.locator('.reel-navigator').boundingBox();
@@ -78,11 +78,12 @@ test.describe('Carousel Fixes Verification', () => {
         console.log(`Viewport height: ${viewportHeight}px`);
         console.log(`Section as % of viewport: ${sectionPercent.toFixed(1)}%`);
 
-        // Section should be around 60-75% of viewport (not 100%)
-        expect(sectionPercent).toBeLessThan(85);
-        expect(sectionPercent).toBeGreaterThan(50);
+        // Section should fill viewport (100vh) for full-screen cog wheel experience
+        // Allow 90-100% to account for browser chrome and rounding
+        expect(sectionPercent).toBeGreaterThanOrEqual(90);
+        expect(sectionPercent).toBeLessThanOrEqual(100);
 
-        console.log('✓ Section height is reduced');
+        console.log('✓ Section fills viewport for pinned scroll');
     });
 
     test('cards have gentler rotation (max ~60°)', async ({ page }) => {

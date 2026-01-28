@@ -20,7 +20,9 @@
     // CONFIG
     // =========================================================================
     const CONFIG = {
-        radius: 450,                    // Distance from center to cards
+        // Geometry
+        arcSpan: 199,                   // Degrees of arc for all cards (>180 lets edges peek under footer)
+        radius: 550,                    // Distance from center to cards
         radiusMobile: 280,              // Mobile radius
         numVisibleCards: 7,             // How many cards to show in the arc
         scrollPerCard: 200,             // Scroll pixels per card
@@ -28,14 +30,14 @@
         // Detent (snap) settings
         // detentStrength: how hard it snaps (0 = no snap, 1 = instant snap)
         // smoothness: how smooth the movement (0.9 = quick stop, 0.99 = glide)
-        detentStrength: 0.05,
-        smoothness: 0.96,               // Higher = smoother/longer glide
+        detentStrength: 0,              // No snap - free scrolling
+        smoothness: 0.94,               // Higher = smoother/longer glide
 
-        // Visual - all cards same scale/opacity for uniform look
+        // Visual - uniform cards
         activeScale: 0.65,
         inactiveScale: 0.65,
-        activeOpacity: 1.0,
-        inactiveOpacity: 1.0,
+        activeOpacity: 1,
+        inactiveOpacity: 1,
 
         // Drag
         dragSensitivity: 0.3,
@@ -92,11 +94,10 @@
         // Responsive radius
         radius = window.innerWidth <= 768 ? CONFIG.radiusMobile : CONFIG.radius;
 
-        // Angle between cards - spread them across a 120° arc (not full 180°)
-        // This keeps edge cards at max ~60° tilt instead of 90° (horizontal)
-        const arcSpan = 120; // degrees
+        // Angle between cards - spread them across the configured arc
+        // 200° allows edge cards to peek under the footer
         const numCards = Math.max(cards.length, CONFIG.numVisibleCards);
-        anglePerCard = arcSpan / Math.max(1, numCards - 1);
+        anglePerCard = CONFIG.arcSpan / Math.max(1, numCards - 1);
     }
 
     // =========================================================================
@@ -150,7 +151,7 @@
             // Distance from the active position (90°)
             // 0 = at active, 1 = at the edges
             // Use arcSpan/2 for proper scaling with any arc size
-            const halfArc = arcSpan / 2;
+            const halfArc = CONFIG.arcSpan / 2;
             const distFromActive = Math.min(1, Math.abs(normAngle - 90) / halfArc);
 
             // Scale and opacity based on distance from active
@@ -528,7 +529,6 @@
     // =========================================================================
     // DEBUG PANEL
     // =========================================================================
-    let arcSpan = 200; // Track arc span separately - >180 allows edges to peek under footer
 
     function createDebugPanel() {
         // Remove existing panel if any
@@ -612,8 +612,8 @@
 
             <div class="control">
                 <label>Arc Span</label>
-                <input type="range" id="dbg-arcSpan" min="60" max="240" value="${arcSpan}">
-                <span class="value" id="dbg-arcSpan-val">${arcSpan}°</span>
+                <input type="range" id="dbg-arcSpan" min="60" max="240" value="${CONFIG.arcSpan}">
+                <span class="value" id="dbg-arcSpan-val">${CONFIG.arcSpan}°</span>
             </div>
 
             <div class="control">
@@ -684,11 +684,9 @@
             input.addEventListener('input', () => {
                 const rawVal = parseFloat(input.value);
                 const val = transform(rawVal);
+                CONFIG[configKey] = val;
                 if (configKey === 'arcSpan') {
-                    arcSpan = val;
                     updateGeometry();
-                } else {
-                    CONFIG[configKey] = val;
                 }
                 valSpan.textContent = display(val);
                 positionCards();
@@ -708,7 +706,7 @@
         // Copy config button
         document.getElementById('dbg-copy').addEventListener('click', () => {
             const config = {
-                arcSpan,
+                arcSpan: CONFIG.arcSpan,
                 radius: CONFIG.radius,
                 radiusMobile: CONFIG.radiusMobile,
                 scrollPerCard: CONFIG.scrollPerCard,
@@ -728,21 +726,6 @@
             location.reload();
         });
     }
-
-    // Override updateGeometry to use arcSpan variable
-    const originalUpdateGeometry = updateGeometry;
-    updateGeometry = function() {
-        if (!wheel) return;
-
-        const rect = wheel.getBoundingClientRect();
-        centerX = rect.width / 2;
-        centerY = rect.height + 80;
-        radius = window.innerWidth <= 768 ? CONFIG.radiusMobile : CONFIG.radius;
-
-        // Use arcSpan variable (can be modified by debug panel)
-        const numCards = Math.max(cards.length, CONFIG.numVisibleCards);
-        anglePerCard = arcSpan / Math.max(1, numCards - 1);
-    };
 
     function waitForTheme(cb, max = 50) {
         let n = 0;

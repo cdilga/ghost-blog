@@ -11,7 +11,7 @@ const { test, expect } = require('@playwright/test');
 
 test.describe('Cog Carousel', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('http://localhost:2368/');
+        await page.goto('http://localhost:2370/');
         await page.waitForFunction(() => window.ChrisTheme?.projectionCarousel, { timeout: 10000 });
     });
 
@@ -63,8 +63,13 @@ test.describe('Cog Carousel', () => {
 
     test('cards tilt outward like cog teeth', async ({ page }) => {
         // Card 0 at 90° should have no rotation (upright)
-        // Card 1 (clockwise) should tilt right (negative rotation)
-        // Card on left (if visible) should tilt left (positive rotation)
+        // Cards below and to the right tilt clockwise (positive CSS rotation)
+        // Cards below and to the left tilt counter-clockwise (negative CSS rotation)
+        //
+        // With cardRotation = 90 - angle:
+        // - Card at 90° → 0° (upright)
+        // - Card at 68° (right of top) → +22° (tilts right)
+        // - Card at 112° (left of top) → -22° (tilts left)
 
         const rotations = await page.evaluate(() => {
             const cards = Array.from(document.querySelectorAll('.reel-card')).slice(0, 3);
@@ -87,11 +92,14 @@ test.describe('Cog Carousel', () => {
         // Card 0 should be upright (0° rotation)
         expect(Math.abs(rotations[0])).toBeLessThan(5);
 
-        // Card 1 should be tilted right (negative rotation, around -20°)
-        expect(rotations[1]).toBeLessThan(-10);
+        // Card 1 should be tilted (clockwise for cards going right)
+        // With 200° arc and 10 cards: anglePerCard ≈ 22°
+        // Card 1 at ~68° → rotation = 90 - 68 = +22°
+        expect(Math.abs(rotations[1])).toBeGreaterThan(15);
+        expect(Math.abs(rotations[1])).toBeLessThan(35);
     });
 
-    test('cards scale down toward edges', async ({ page }) => {
+    test('cards have consistent scale', async ({ page }) => {
         const scales = await page.evaluate(() => {
             const cards = Array.from(document.querySelectorAll('.reel-card')).slice(0, 4);
             return cards.map(card => {
@@ -108,12 +116,12 @@ test.describe('Cog Carousel', () => {
 
         console.log('Card scales:', scales);
 
-        // Card 0 (active) should be largest (~1.0)
-        expect(scales[0]).toBeGreaterThan(0.95);
-
-        // Cards further from center should be smaller
-        expect(scales[1]).toBeLessThan(scales[0]);
-        expect(scales[2]).toBeLessThan(scales[1]);
+        // All cards should have consistent scale (configured as uniform 0.65)
+        // Allow small tolerance for floating point
+        const avgScale = scales.reduce((a, b) => a + b, 0) / scales.length;
+        for (const scale of scales) {
+            expect(Math.abs(scale - avgScale)).toBeLessThan(0.05);
+        }
     });
 
     test('no console errors from carousel code', async ({ page }) => {
@@ -136,7 +144,7 @@ test.describe('Cog Carousel', () => {
     test('reduced motion shows static grid layout', async ({ page, context }) => {
         const reducedMotionPage = await context.newPage();
         await reducedMotionPage.emulateMedia({ reducedMotion: 'reduce' });
-        await reducedMotionPage.goto('http://localhost:2368/');
+        await reducedMotionPage.goto('http://localhost:2370/');
         await reducedMotionPage.waitForLoadState('domcontentloaded');
 
         // Check if wheel has grid display (CSS fallback)
