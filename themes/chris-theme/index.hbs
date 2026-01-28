@@ -1,40 +1,733 @@
 {{!< default}}
 
-<div class="container">
-    {{#if @site.cover_image}}
-    <section class="hero" style="background-image: url({{@site.cover_image}})">
-        <h1>{{@site.title}}</h1>
-        {{#if @site.description}}
-        <p>{{@site.description}}</p>
-        {{/if}}
-    </section>
-    {{/if}}
-
-    <section class="homepage-content">
-        {{!-- This is where your fancy custom homepage will go --}}
-        <div class="intro">
-            <h2>Welcome</h2>
-            <p>This is a custom homepage. Edit index.hbs to customize.</p>
+{{!-- Hero Section: Desert Parallax --}}
+<section class="hero hero--full hero--parallax" id="hero">
+    <div class="hero__background">
+        {{!-- Sky layer (slowest parallax) --}}
+        <div class="hero__layer hero__layer--sky" data-parallax-speed="0.1">
+            <img src="{{asset "images/desert_ground_from_top_of_big_red.jpg"}}" alt="" loading="eager" aria-hidden="true">
         </div>
-    </section>
+        {{!-- Dune layer (medium parallax) --}}
+        <div class="hero__layer hero__layer--dunes" data-parallax-speed="0.3">
+            <img src="{{asset "images/desert_dune_tufts_big_red.jpg"}}" alt="" loading="eager" aria-hidden="true">
+        </div>
+        {{!-- Foreground gradient overlay --}}
+        <div class="hero__layer hero__layer--overlay" data-parallax-speed="0"></div>
+    </div>
 
-    <section class="recent-posts">
-        <h2>Recent Posts</h2>
-        <div class="post-grid">
-            {{#foreach posts}}
-            <article class="post-card">
-                {{#if feature_image}}
-                <a href="{{url}}" class="post-card-image" style="background-image: url({{feature_image}})"></a>
-                {{/if}}
-                <div class="post-card-content">
-                    <h3><a href="{{url}}">{{title}}</a></h3>
-                    <p>{{excerpt words="30"}}</p>
-                    <time datetime="{{date format="YYYY-MM-DD"}}">{{date format="D MMM YYYY"}}</time>
+    <div class="hero__content">
+        <h1 class="hero__title" data-animate="fade-up">CHRIS DILGER</h1>
+        <p class="hero__subtitle" data-animate="fade-up" data-animate-delay="0.1">Makes things work.</p>
+        <div class="hero__cta" data-animate="fade-up" data-animate-delay="0.2">
+            <a href="#all-posts" class="btn btn--primary btn--large">View Work</a>
+            <a href="/about/" class="btn btn--secondary btn--large">About Me</a>
+        </div>
+    </div>
+
+    {{!-- Scroll indicator --}}
+    <div class="hero__scroll-indicator" aria-hidden="true">
+        <span class="hero__scroll-text">Scroll</span>
+        <div class="hero__scroll-line"></div>
+    </div>
+</section>
+
+{{!-- Scene: The Coder --}}
+<section class="scene scene--coder" id="the-coder" data-scene="coder">
+    <div class="container">
+        <header class="scene__header" data-animate="fade-up">
+            <span class="scene__label">The Coder</span>
+            <h2 class="scene__title">Writes Code That Ships</h2>
+            <p class="scene__description">Fifteen years of putting things into production. Started in a computer shop in Far North Queensland. Now builds systems that handle the load.</p>
+        </header>
+
+        <div class="coder__content">
+            {{!-- Keyboard visualization --}}
+            <a href="https://x.com/cdilga" target="_blank" rel="noopener noreferrer" class="coder__keyboard" data-animate="fade-up" data-animate-delay="0.1" aria-label="Visit my X.com profile">
+                <div class="keyboard">
+                    <div class="keyboard__row">
+                        <span class="key" data-key="1">~</span>
+                        <span class="key">1</span>
+                        <span class="key">2</span>
+                        <span class="key">3</span>
+                        <span class="key">4</span>
+                        <span class="key">5</span>
+                        <span class="key">6</span>
+                        <span class="key">7</span>
+                        <span class="key">8</span>
+                        <span class="key">9</span>
+                        <span class="key">0</span>
+                        <span class="key">-</span>
+                        <span class="key">=</span>
+                        <span class="key key--wide">⌫</span>
+                    </div>
+                    <div class="keyboard__row">
+                        <span class="key key--wide">Tab</span>
+                        <span class="key">Q</span>
+                        <span class="key">W</span>
+                        <span class="key" data-key="2">E</span>
+                        <span class="key">R</span>
+                        <span class="key">T</span>
+                        <span class="key">Y</span>
+                        <span class="key">U</span>
+                        <span class="key" data-key="5">I</span>
+                        <span class="key" data-key="6">O</span>
+                        <span class="key">P</span>
+                        <span class="key">[</span>
+                        <span class="key">]</span>
+                        <span class="key">\</span>
+                    </div>
+                    <div class="keyboard__row">
+                        <span class="key key--wide">Caps</span>
+                        <span class="key">A</span>
+                        <span class="key" data-key="3">S</span>
+                        <span class="key">D</span>
+                        <span class="key">F</span>
+                        <span class="key">G</span>
+                        <span class="key" data-key="7">H</span>
+                        <span class="key">J</span>
+                        <span class="key">K</span>
+                        <span class="key" data-key="8">L</span>
+                        <span class="key">;</span>
+                        <span class="key">'</span>
+                        <span class="key key--wide key--accent">↵</span>
+                    </div>
+                    <div class="keyboard__row">
+                        <span class="key key--wide">⇧</span>
+                        <span class="key">Z</span>
+                        <span class="key">X</span>
+                        <span class="key" data-key="4">C</span>
+                        <span class="key">V</span>
+                        <span class="key">B</span>
+                        <span class="key">N</span>
+                        <span class="key">M</span>
+                        <span class="key">,</span>
+                        <span class="key">.</span>
+                        <span class="key">/</span>
+                        <span class="key key--wide">⇧</span>
+                    </div>
+                    <div class="keyboard__row">
+                        <span class="key">Ctrl</span>
+                        <span class="key">⌥</span>
+                        <span class="key">⌘</span>
+                        <span class="key key--space"></span>
+                        <span class="key">⌘</span>
+                        <span class="key">⌥</span>
+                        <span class="key">←</span>
+                        <span class="key">↓</span>
+                        <span class="key">→</span>
+                    </div>
+                </div>
+                <span class="coder__keyboard-label">Follow on X →</span>
+            </a>
+
+            {{!-- Code snippet --}}
+            <div class="coder__code" data-animate="fade-up" data-animate-delay="0.2">
+                <div class="code-window">
+                    <div class="code-window__header">
+                        <span class="code-window__dot code-window__dot--red"></span>
+                        <span class="code-window__dot code-window__dot--yellow"></span>
+                        <span class="code-window__dot code-window__dot--green"></span>
+                        <span class="code-window__title">main.ts</span>
+                    </div>
+                    <pre class="code-window__content"><code class="code-lines" data-stagger-lines><span class="code-line"><span class="code-keyword">async</span> <span class="code-keyword">function</span> <span class="code-function">buildSomethingGreat</span>() {</span>
+<span class="code-line">  <span class="code-keyword">const</span> ideas = <span class="code-keyword">await</span> <span class="code-function">gather</span>(inspiration);</span>
+<span class="code-line">  <span class="code-keyword">const</span> solution = <span class="code-function">iterate</span>(ideas, passion);</span>
+<span class="code-line">  </span>
+<span class="code-line">  <span class="code-keyword">return</span> <span class="code-function">ship</span>(solution);</span>
+<span class="code-line">}</span></code></pre>
+                </div>
+            </div>
+
+            {{!-- GitHub contribution graph --}}
+            <div class="coder__github" data-animate="fade-up" data-animate-delay="0.3">
+                <h3 class="coder__github-title">
+                    <svg class="coder__github-icon" viewBox="0 0 16 16" width="20" height="20" aria-hidden="true">
+                        <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                    GitHub Activity
+                </h3>
+                <a href="https://github.com/cdilga" target="_blank" rel="noopener noreferrer" class="github-graph" aria-label="View my GitHub profile">
+                    <div class="github-graph__grid" data-github-graph>
+                        {{!-- Grid generated via JS --}}
+                    </div>
+                    <div class="github-graph__legend">
+                        <span>Less</span>
+                        <span class="github-graph__level github-graph__level--0"></span>
+                        <span class="github-graph__level github-graph__level--1"></span>
+                        <span class="github-graph__level github-graph__level--2"></span>
+                        <span class="github-graph__level github-graph__level--3"></span>
+                        <span class="github-graph__level github-graph__level--4"></span>
+                        <span>More</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{!-- Scene: 8 Claude Codes --}}
+<section class="scene scene--claude-codes" id="claude-codes" data-scene="claude-codes">
+    <div class="container">
+        <header class="scene__header" data-animate="fade-up">
+            <span class="scene__label">8 Claude Codes</span>
+            <h2 class="scene__title">What I'm Building Right Now</h2>
+            <p class="scene__description">One agent writes specs. Three implement. Two research. One reviews. One deploys. It mostly works. I'm figuring out the rest as we go.</p>
+        </header>
+
+        <div class="terminal-grid" data-animate="stagger">
+            {{!-- Terminal 1: Feature Development --}}
+            <div class="terminal" data-terminal="1">
+                <div class="terminal__header">
+                    <span class="terminal__dot terminal__dot--red"></span>
+                    <span class="terminal__dot terminal__dot--yellow"></span>
+                    <span class="terminal__dot terminal__dot--green"></span>
+                    <span class="terminal__title">claude-1: feature</span>
+                </div>
+                <div class="terminal__body">
+                    <div class="terminal__scroll" aria-hidden="true">
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> claude -p "implement auth"</code>
+                        <code class="terminal__line terminal__line--output">Analyzing codebase...</code>
+                        <code class="terminal__line terminal__line--output">Creating auth middleware</code>
+                        <code class="terminal__line terminal__line--output">Adding JWT validation</code>
+                        <code class="terminal__line terminal__line--success">✓ Auth module complete</code>
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> npm test auth</code>
+                        <code class="terminal__line terminal__line--success">All tests passing</code>
+                    </div>
+                </div>
+            </div>
+
+            {{!-- Terminal 2: Testing --}}
+            <div class="terminal" data-terminal="2">
+                <div class="terminal__header">
+                    <span class="terminal__dot terminal__dot--red"></span>
+                    <span class="terminal__dot terminal__dot--yellow"></span>
+                    <span class="terminal__dot terminal__dot--green"></span>
+                    <span class="terminal__title">claude-2: tests</span>
+                </div>
+                <div class="terminal__body">
+                    <div class="terminal__scroll" aria-hidden="true">
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> claude -p "write tests"</code>
+                        <code class="terminal__line terminal__line--output">Scanning components...</code>
+                        <code class="terminal__line terminal__line--output">Generating test cases</code>
+                        <code class="terminal__line terminal__line--output">Coverage: 87% → 94%</code>
+                        <code class="terminal__line terminal__line--success">✓ 47 tests added</code>
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> jest --coverage</code>
+                        <code class="terminal__line terminal__line--success">All suites passing</code>
+                    </div>
+                </div>
+            </div>
+
+            {{!-- Terminal 3: Refactoring --}}
+            <div class="terminal" data-terminal="3">
+                <div class="terminal__header">
+                    <span class="terminal__dot terminal__dot--red"></span>
+                    <span class="terminal__dot terminal__dot--yellow"></span>
+                    <span class="terminal__dot terminal__dot--green"></span>
+                    <span class="terminal__title">claude-3: refactor</span>
+                </div>
+                <div class="terminal__body">
+                    <div class="terminal__scroll" aria-hidden="true">
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> claude -p "refactor api"</code>
+                        <code class="terminal__line terminal__line--output">Finding duplications...</code>
+                        <code class="terminal__line terminal__line--output">Extracting utilities</code>
+                        <code class="terminal__line terminal__line--output">Simplifying handlers</code>
+                        <code class="terminal__line terminal__line--success">✓ -340 lines removed</code>
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> git diff --stat</code>
+                        <code class="terminal__line terminal__line--output">12 files changed</code>
+                    </div>
+                </div>
+            </div>
+
+            {{!-- Terminal 4: Documentation --}}
+            <div class="terminal" data-terminal="4">
+                <div class="terminal__header">
+                    <span class="terminal__dot terminal__dot--red"></span>
+                    <span class="terminal__dot terminal__dot--yellow"></span>
+                    <span class="terminal__dot terminal__dot--green"></span>
+                    <span class="terminal__title">claude-4: docs</span>
+                </div>
+                <div class="terminal__body">
+                    <div class="terminal__scroll" aria-hidden="true">
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> claude -p "update docs"</code>
+                        <code class="terminal__line terminal__line--output">Parsing API endpoints...</code>
+                        <code class="terminal__line terminal__line--output">Generating OpenAPI spec</code>
+                        <code class="terminal__line terminal__line--output">Writing README sections</code>
+                        <code class="terminal__line terminal__line--success">✓ Docs synchronized</code>
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> npx spectral lint</code>
+                        <code class="terminal__line terminal__line--success">No issues found</code>
+                    </div>
+                </div>
+            </div>
+
+            {{!-- Terminal 5: Bug Fixes --}}
+            <div class="terminal" data-terminal="5">
+                <div class="terminal__header">
+                    <span class="terminal__dot terminal__dot--red"></span>
+                    <span class="terminal__dot terminal__dot--yellow"></span>
+                    <span class="terminal__dot terminal__dot--green"></span>
+                    <span class="terminal__title">claude-5: bugfix</span>
+                </div>
+                <div class="terminal__body">
+                    <div class="terminal__scroll" aria-hidden="true">
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> claude -p "fix #142"</code>
+                        <code class="terminal__line terminal__line--output">Reproducing issue...</code>
+                        <code class="terminal__line terminal__line--output">Root cause: race cond</code>
+                        <code class="terminal__line terminal__line--output">Implementing mutex</code>
+                        <code class="terminal__line terminal__line--success">✓ Issue resolved</code>
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> gh issue close 142</code>
+                        <code class="terminal__line terminal__line--success">Issue closed</code>
+                    </div>
+                </div>
+            </div>
+
+            {{!-- Terminal 6: Performance --}}
+            <div class="terminal" data-terminal="6">
+                <div class="terminal__header">
+                    <span class="terminal__dot terminal__dot--red"></span>
+                    <span class="terminal__dot terminal__dot--yellow"></span>
+                    <span class="terminal__dot terminal__dot--green"></span>
+                    <span class="terminal__title">claude-6: perf</span>
+                </div>
+                <div class="terminal__body">
+                    <div class="terminal__scroll" aria-hidden="true">
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> claude -p "optimize"</code>
+                        <code class="terminal__line terminal__line--output">Profiling hot paths...</code>
+                        <code class="terminal__line terminal__line--output">Adding memoization</code>
+                        <code class="terminal__line terminal__line--output">Optimizing queries</code>
+                        <code class="terminal__line terminal__line--success">✓ 3x faster response</code>
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> npm run benchmark</code>
+                        <code class="terminal__line terminal__line--success">All benchmarks green</code>
+                    </div>
+                </div>
+            </div>
+
+            {{!-- Terminal 7: Security --}}
+            <div class="terminal" data-terminal="7">
+                <div class="terminal__header">
+                    <span class="terminal__dot terminal__dot--red"></span>
+                    <span class="terminal__dot terminal__dot--yellow"></span>
+                    <span class="terminal__dot terminal__dot--green"></span>
+                    <span class="terminal__title">claude-7: security</span>
+                </div>
+                <div class="terminal__body">
+                    <div class="terminal__scroll" aria-hidden="true">
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> claude -p "audit"</code>
+                        <code class="terminal__line terminal__line--output">Scanning dependencies...</code>
+                        <code class="terminal__line terminal__line--output">Checking OWASP top 10</code>
+                        <code class="terminal__line terminal__line--output">Fixing XSS vectors</code>
+                        <code class="terminal__line terminal__line--success">✓ 0 vulnerabilities</code>
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> npm audit</code>
+                        <code class="terminal__line terminal__line--success">No issues found</code>
+                    </div>
+                </div>
+            </div>
+
+            {{!-- Terminal 8: Deployment --}}
+            <div class="terminal" data-terminal="8">
+                <div class="terminal__header">
+                    <span class="terminal__dot terminal__dot--red"></span>
+                    <span class="terminal__dot terminal__dot--yellow"></span>
+                    <span class="terminal__dot terminal__dot--green"></span>
+                    <span class="terminal__title">claude-8: deploy</span>
+                </div>
+                <div class="terminal__body">
+                    <div class="terminal__scroll" aria-hidden="true">
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> claude -p "deploy"</code>
+                        <code class="terminal__line terminal__line--output">Building production...</code>
+                        <code class="terminal__line terminal__line--output">Running smoke tests</code>
+                        <code class="terminal__line terminal__line--output">Deploying to prod</code>
+                        <code class="terminal__line terminal__line--success">✓ v2.1.0 live</code>
+                        <code class="terminal__line"><span class="terminal__prompt">$</span> curl -I prod.app</code>
+                        <code class="terminal__line terminal__line--success">HTTP/2 200 OK</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="claude-codes__cta" data-animate="fade-up">
+            <p class="claude-codes__cta-text">Multiply your development velocity with AI</p>
+            <a href="https://github.com/cdilga" target="_blank" rel="noopener noreferrer" class="btn btn--primary btn--large">See My Workflows</a>
+        </div>
+    </div>
+</section>
+
+{{!-- Scene: The Speaker --}}
+<section class="scene scene--speaker" id="speaker">
+    <div class="container">
+        <header class="scene__header" data-animate="fade-up">
+            <span class="scene__label">The Speaker</span>
+            <h2 class="scene__title">Talks About Weird Stuff</h2>
+            <p class="scene__description">Hardware wallets and why secure elements are a tradeoff. AI that morphs faces in real-time. Data governance nobody asked for. Cloud architectures that actually scale. I go deep.</p>
+        </header>
+
+        <div class="speaker__gallery" data-animate="stagger">
+            <figure class="speaker__photo speaker__photo--primary">
+                <img src="{{asset "images/speaker/peter-doherty-awards.jpg"}}" alt="Chris Dilger speaking at Peter Doherty Awards 2023" loading="lazy" data-scroll-parallax data-scroll-parallax-x="35" data-scroll-parallax-y="60">
+                <figcaption>Peter Doherty Awards 2023</figcaption>
+            </figure>
+            <figure class="speaker__photo">
+                <img src="{{asset "images/speaker/speaking_awards_ceremony.jpg"}}" alt="Chris Dilger at podium" loading="lazy" data-scroll-parallax data-scroll-parallax-x="-25" data-scroll-parallax-y="45">
+            </figure>
+            <figure class="speaker__photo">
+                <img src="{{asset "images/speaker/presso.jpeg"}}" alt="Chris Dilger giving a presentation" loading="lazy" data-scroll-parallax data-scroll-parallax-x="20" data-scroll-parallax-y="50">
+            </figure>
+            <figure class="speaker__photo">
+                <img src="{{asset "images/speaker/community-day.jpeg"}}" alt="Chris Dilger at AWS Community Day Melbourne" loading="lazy" data-scroll-parallax data-scroll-parallax-x="-30" data-scroll-parallax-y="55">
+                <figcaption>AWS Community Day Melbourne</figcaption>
+            </figure>
+        </div>
+
+        <div class="speaker__cta" data-animate="fade-up">
+            <p class="speaker__cta-text">Available for speaking engagements</p>
+            <a href="/contact/" class="btn btn--primary btn--large">Get in Touch</a>
+        </div>
+    </div>
+</section>
+
+{{!-- Scene: The Content Creator --}}
+<section class="scene scene--content-creator" id="content-creator" data-scene="content-creator">
+    <div class="container">
+        <header class="scene__header" data-animate="fade-up">
+            <span class="scene__label">The Content Creator</span>
+            <h2 class="scene__title">Shows The Work</h2>
+            <p class="scene__description">Conference recordings, project walkthroughs, and the occasional deep-dive into something nobody else is covering.</p>
+        </header>
+
+        <div class="content-creator__showcase" data-animate="fade-up" data-animate-delay="0.2">
+            {{!-- 3D YouTube embed with perspective effect --}}
+            <div class="youtube-3d-container">
+                <div class="embed embed--youtube embed--3d">
+                    <lite-youtube
+                        videoid="uVwReaMfQSQ"
+                        playlabel="Play: Featured Video"
+                        params="rel=0"
+                    >
+                        <a href="https://youtube.com/watch?v=uVwReaMfQSQ" class="lty-playbtn" title="Play: Featured Video">
+                            <span class="lyt-visually-hidden">Play: Featured Video</span>
+                        </a>
+                    </lite-youtube>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-creator__cta" data-animate="fade-up" data-animate-delay="0.3">
+            <p class="content-creator__cta-text">Watch more on my YouTube channel</p>
+            <a href="https://youtube.com/@cdilga" target="_blank" rel="noopener noreferrer" class="btn btn--primary btn--large">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                Subscribe
+            </a>
+        </div>
+    </div>
+</section>
+
+{{!-- Scene: The Builder --}}
+<section class="scene scene--consultant" id="builder">
+    <div class="container">
+        <header class="scene__header" data-animate="fade-up">
+            <span class="scene__label">The Builder</span>
+            <h2 class="scene__title">Enterprise-Scale, Startup-Speed</h2>
+            <p class="scene__description">Banks, hospitals, schools, government. Big migrations, bigger architectures. Built systems that onboard millions. Moved on to weirder things.</p>
+        </header>
+
+        <div class="consultant__content">
+            {{!-- Problem → Solution Cards --}}
+            <div class="consultant__cases">
+                <article class="case-study" data-animate="fade-up" data-animate-delay="0.1">
+                    <div class="case-study__problem">
+                        <span class="case-study__label">Challenge</span>
+                        <h3 class="case-study__title">Healthcare Insights</h3>
+                        <p class="case-study__text">Melbourne hospitals needed better ways to support patients with Type 2 Diabetes</p>
+                    </div>
+                    <div class="case-study__arrow" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </div>
+                    <div class="case-study__solution">
+                        <span class="case-study__label case-study__label--accent">Solution</span>
+                        <h3 class="case-study__title">AWS Innovation Centre</h3>
+                        <p class="case-study__text">Led the technical build using AWS Working Backwards methodology with health consultants and hospitals</p>
+                    </div>
+                </article>
+
+                <article class="case-study" data-animate="fade-up" data-animate-delay="0.2">
+                    <div class="case-study__problem">
+                        <span class="case-study__label">Challenge</span>
+                        <h3 class="case-study__title">Enterprise Data Silos</h3>
+                        <p class="case-study__text">Australian enterprises struggling to unify data across legacy systems</p>
+                    </div>
+                    <div class="case-study__arrow" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </div>
+                    <div class="case-study__solution">
+                        <span class="case-study__label case-study__label--accent">Solution</span>
+                        <h3 class="case-study__title">Modern Data Platforms</h3>
+                        <p class="case-study__text">Built scalable AWS data platforms, pipelines, and automation systems at Versent over 4 years</p>
+                    </div>
+                </article>
+
+                <article class="case-study" data-animate="fade-up" data-animate-delay="0.3">
+                    <div class="case-study__problem">
+                        <span class="case-study__label">Challenge</span>
+                        <h3 class="case-study__title">Remote Education</h3>
+                        <p class="case-study__text">Queensland students in remote areas needed engaging STEM learning tools</p>
+                    </div>
+                    <div class="case-study__arrow" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </div>
+                    <div class="case-study__solution">
+                        <span class="case-study__label case-study__label--accent">Solution</span>
+                        <h3 class="case-study__title">Interactive Learning Platform</h3>
+                        <p class="case-study__text">Created web-based physics labs and Moodle systems for the Queensland Department of Education</p>
+                    </div>
+                </article>
+            </div>
+
+            {{!-- Visual/Photo --}}
+            <div class="consultant__visual" data-animate="fade-up" data-animate-delay="0.4">
+                <figure class="consultant__image">
+                    <img src="{{asset "images/consultant/laptop_in_bag.jpg"}}" alt="Ready for consulting work" loading="lazy" data-scroll-parallax data-scroll-parallax-x="25" data-scroll-parallax-y="45">
+                </figure>
+            </div>
+        </div>
+
+        <div class="consultant__cta" data-animate="fade-up" data-animate-delay="0.5">
+            <p class="consultant__cta-text">Let's discuss your technology challenges</p>
+            <a href="/contact/" class="btn btn--primary btn--large">Start a Conversation</a>
+        </div>
+    </div>
+</section>
+
+{{!-- Scene: The Teacher --}}
+<section class="scene scene--teacher" id="teacher" data-scene="teacher">
+    <div class="container">
+        <header class="scene__header" data-animate="fade-up">
+            <span class="scene__label">The Teacher</span>
+            <h2 class="scene__title">Grows Engineers</h2>
+            <p class="scene__description">Instructor at Data Engineer Camp. The modern data stack: dbt, Snowflake, Airflow. Turns beginners into people who ship pipelines.</p>
+        </header>
+
+        <div class="teacher__content">
+            <div class="teacher__highlights" data-animate="stagger">
+                <article class="teacher__highlight" data-animate="fade-up" data-animate-delay="0.1">
+                    <div class="teacher__highlight-icon" aria-hidden="true">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                    </div>
+                    <h3 class="teacher__highlight-title">Modern Data Stack</h3>
+                    <p class="teacher__highlight-text">Teaching dbt, Snowflake, Airflow, and the tools that power today's data teams</p>
+                </article>
+
+                <article class="teacher__highlight" data-animate="fade-up" data-animate-delay="0.2">
+                    <div class="teacher__highlight-icon" aria-hidden="true">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <h3 class="teacher__highlight-title">Hands-On Projects</h3>
+                    <p class="teacher__highlight-text">Students build real data pipelines and develop skills through practical work</p>
+                </article>
+
+                <article class="teacher__highlight" data-animate="fade-up" data-animate-delay="0.3">
+                    <div class="teacher__highlight-icon" aria-hidden="true">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </div>
+                    <h3 class="teacher__highlight-title">Career Outcomes</h3>
+                    <p class="teacher__highlight-text">Helping aspiring data engineers launch careers in the data space</p>
+                </article>
+            </div>
+        </div>
+
+        <div class="teacher__cta" data-animate="fade-up" data-animate-delay="0.4">
+            <p class="teacher__cta-text">Interested in tutoring or mentorship?</p>
+            <a href="/contact/" class="btn btn--primary btn--large">Get in Touch</a>
+        </div>
+    </div>
+</section>
+
+{{!-- Projects Section: Animated Cards --}}
+<section class="projects-section" id="projects">
+    <div class="container">
+        <header class="section-header">
+            <h2 class="section-title" data-animate="fade-up">Featured Work</h2>
+            <p class="section-subtitle" data-animate="fade-up" data-animate-delay="0.1">Projects, tools, and things I've built</p>
+        </header>
+
+        <div class="projects-grid">
+            <article class="project-card" data-animate="fade-up" data-animate-delay="0.1">
+                <div class="project-card__media">
+                    <img class="project-card__thumbnail" src="{{asset "images/projects/multiplayer-racer-demo.gif"}}" alt="Multiplayer Racer gameplay demo" loading="lazy" data-scroll-parallax data-scroll-parallax-x="15" data-scroll-parallax-y="35">
+                </div>
+                <div class="project-card__content">
+                    <h3 class="project-card__title">Multiplayer Racer</h3>
+                    <p class="project-card__description">A local multiplayer racing game built with JavaScript. Grab some friends and race head-to-head on the same screen.</p>
+                    <div class="project-card__tags">
+                        <span class="tag">JavaScript</span>
+                        <span class="tag">Game</span>
+                        <span class="tag">Multiplayer</span>
+                    </div>
+                    <div class="project-card__links">
+                        <a href="https://github.com/cdilga/multiplayer-racer" class="project-card__link" aria-label="View on GitHub">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        </a>
+                    </div>
                 </div>
             </article>
-            {{/foreach}}
-        </div>
-    </section>
 
-    {{pagination}}
-</div>
+            <article class="project-card" data-animate="fade-up" data-animate-delay="0.2">
+                <div class="project-card__media">
+                    <img class="project-card__thumbnail" src="{{asset "images/projects/ladder-logic-demo.gif"}}" alt="Ladder Logic Editor demo" loading="lazy" data-scroll-parallax data-scroll-parallax-x="-15" data-scroll-parallax-y="35">
+                </div>
+                <div class="project-card__content">
+                    <h3 class="project-card__title">Ladder Logic Editor</h3>
+                    <p class="project-card__description">Web-based IEC 61131-3 Structured Text to Ladder Diagram editor with live PLC simulation for industrial automation.</p>
+                    <div class="project-card__tags">
+                        <span class="tag">TypeScript</span>
+                        <span class="tag">PLC</span>
+                        <span class="tag">Industrial</span>
+                    </div>
+                    <div class="project-card__links">
+                        <a href="https://lle.dilger.dev" class="project-card__link" target="_blank" rel="noopener noreferrer" aria-label="Visit Ladder Logic Editor">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        </a>
+                        <a href="https://github.com/cdilga/ladder-logic-editor" class="project-card__link" target="_blank" rel="noopener noreferrer" aria-label="View on GitHub">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="project-card" data-animate="fade-up" data-animate-delay="0.3">
+                <div class="project-card__media">
+                    <img class="project-card__thumbnail" src="{{asset "images/projects/steelkey-product.jpg"}}" alt="SteelKey steel seed phrase backup plate" loading="lazy" data-scroll-parallax data-scroll-parallax-x="15" data-scroll-parallax-y="35">
+                </div>
+                <div class="project-card__content">
+                    <h3 class="project-card__title">SteelKey.io</h3>
+                    <p class="project-card__description">Raw Australian steel plates for backing up cryptocurrency seed phrases. Paper burns, paper floods, paper fades. Steel doesn't.</p>
+                    <div class="project-card__tags">
+                        <span class="tag">Next.js</span>
+                        <span class="tag">Crypto</span>
+                        <span class="tag">E-commerce</span>
+                    </div>
+                    <div class="project-card__links">
+                        <a href="https://steelkey.io" class="project-card__link" target="_blank" rel="noopener noreferrer" aria-label="Visit SteelKey.io">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+{{!-- Dev Playground: Experimental .dev projects --}}
+<section class="dev-playground" id="playground">
+    <div class="container">
+        <header class="section-header" data-animate="fade-up">
+            <span class="section-label">Experiments</span>
+            <h2 class="section-title">Dev Playground</h2>
+            <p class="section-subtitle">Works in progress and weekend experiments</p>
+        </header>
+
+        <div class="playground-grid">
+            {{!-- facemorph.me - card links to live site, GitHub icon for code --}}
+            <div class="playground-tile playground-tile--with-github" data-animate="fade-up" data-animate-delay="0.1">
+                <a href="https://facemorph.me" target="_blank" rel="noopener noreferrer" class="playground-tile__card-link" aria-label="Visit facemorph.me">
+                    <span class="playground-tile__icon" aria-hidden="true">👤</span>
+                    <span class="playground-tile__domain">facemorph.me</span>
+                    <span class="playground-tile__status">Archived</span>
+                </a>
+                <a href="https://github.com/check-face/checkface" target="_blank" rel="noopener noreferrer" class="playground-tile__github" aria-label="View facemorph.me source on GitHub">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                </a>
+            </div>
+
+            {{!-- dishmate - card links to live site, GitHub icon for code --}}
+            <div class="playground-tile playground-tile--with-github" data-animate="fade-up" data-animate-delay="0.15">
+                <a href="https://cdilga.github.io/dishmate/" target="_blank" rel="noopener noreferrer" class="playground-tile__card-link" aria-label="Visit dishmate">
+                    <span class="playground-tile__icon" aria-hidden="true">🍽️</span>
+                    <span class="playground-tile__domain">dishmate</span>
+                    <span class="playground-tile__status">Active</span>
+                </a>
+                <a href="https://github.com/cdilga/dishmate" target="_blank" rel="noopener noreferrer" class="playground-tile__github" aria-label="View dishmate source on GitHub">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                </a>
+            </div>
+
+            {{!-- exquisite-corpse - card links to live site, GitHub icon for code --}}
+            <div class="playground-tile playground-tile--with-github" data-animate="fade-up" data-animate-delay="0.2">
+                <a href="https://exquisite-corpse.dilger.dev/" target="_blank" rel="noopener noreferrer" class="playground-tile__card-link" aria-label="Visit Exquisite Corpse">
+                    <span class="playground-tile__icon" aria-hidden="true">✍️</span>
+                    <span class="playground-tile__domain">exquisite-corpse</span>
+                    <span class="playground-tile__status">Active</span>
+                </a>
+                <a href="https://github.com/cdilga/exquisite-corpse" target="_blank" rel="noopener noreferrer" class="playground-tile__github" aria-label="View Exquisite Corpse source on GitHub">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                </a>
+            </div>
+
+            {{!-- yearly - card links to live site, GitHub icon for code --}}
+            <div class="playground-tile playground-tile--with-github" data-animate="fade-up" data-animate-delay="0.25">
+                <a href="https://yearly.dilger.dev/" target="_blank" rel="noopener noreferrer" class="playground-tile__card-link" aria-label="Visit Yearly">
+                    <span class="playground-tile__icon" aria-hidden="true">📅</span>
+                    <span class="playground-tile__domain">yearly</span>
+                    <span class="playground-tile__status">Active</span>
+                </a>
+                <a href="https://github.com/cdilga/yearly" target="_blank" rel="noopener noreferrer" class="playground-tile__github" aria-label="View Yearly source on GitHub">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{!-- Reel Navigator - Circular Article Wheel with Video Background --}}
+<section class="reel-navigator" id="all-posts">
+    {{!-- Background: Windswept sand dune video --}}
+    <video class="reel-navigator__video" autoplay muted loop playsinline poster="{{asset 'images/windswept-poster.jpg'}}">
+        <source src="{{asset 'video/windswept.webm'}}" type="video/webm">
+        <source src="{{asset 'video/windswept.mp4'}}" type="video/mp4">
+    </video>
+
+    {{!-- Gradient overlay for depth --}}
+    <div class="reel-navigator__overlay"></div>
+
+    {{!-- Header --}}
+    <div class="reel-navigator__header">
+        <h2 class="reel-navigator__title" data-animate="fade-up">All My Writing</h2>
+        <p class="reel-navigator__subtitle" data-animate="fade-up" data-animate-delay="0.1">Scroll to explore articles</p>
+    </div>
+
+    {{!-- Circular Wheel Container --}}
+    <div class="reel-navigator__wheel" role="list" aria-label="Blog posts reel">
+        {{#foreach posts}}
+        <article class="reel-card" role="listitem" data-index="{{@index}}">
+            <a href="{{url}}" class="reel-card__link">
+                {{#if feature_image}}
+                <div class="reel-card__image" style="background-image: url({{feature_image}})"></div>
+                {{else}}
+                <div class="reel-card__image reel-card__image--placeholder">
+                    <span class="reel-card__placeholder-icon" aria-hidden="true">📝</span>
+                </div>
+                {{/if}}
+                <div class="reel-card__content">
+                    <time class="reel-card__date" datetime="{{date format="YYYY-MM-DD"}}">{{date format="D MMM YYYY"}}</time>
+                    <h3 class="reel-card__title">{{title}}</h3>
+                </div>
+            </a>
+        </article>
+        {{/foreach}}
+    </div>
+
+    {{!-- Scroll Hint --}}
+    <div class="reel-navigator__hint" aria-hidden="true">
+        <span class="reel-navigator__hint-text">Scroll to rotate</span>
+    </div>
+
+    {{!-- Footer inside reel-navigator so it's visible during pinned scroll --}}
+    <footer class="social-footer reel-navigator__footer" id="social-footer">
+        <nav class="social-footer__nav" aria-label="Social links">
+            <a href="#all-posts" class="social-footer__link">Articles</a>
+            <a href="https://github.com/cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">GitHub</a>
+            <a href="https://x.com/cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">X</a>
+            <a href="https://linkedin.com/in/cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">LinkedIn</a>
+            <a href="https://youtube.com/@cdilga" target="_blank" rel="noopener noreferrer" class="social-footer__link">YouTube</a>
+            <span class="social-footer__copyright">&copy; {{date format="YYYY"}} {{@site.title}}</span>
+        </nav>
+    </footer>
+</section>

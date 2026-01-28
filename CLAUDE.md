@@ -23,6 +23,24 @@ npm start    # Start Ghost if not running
 npm test     # Run ALL tests
 ```
 
+### Mobile Testing (with Claude in Chrome)
+
+When working on mobile-specific features (accelerometer, touch, responsive), **test at mobile viewport**:
+
+1. **Resize to mobile**: `resize_window` to 375x812 (iPhone)
+2. **Reload**: Hard refresh to reinitialize with mobile detection
+3. **Check console**: Verify mobile-specific code paths initialized
+4. **Simulate gyroscope** (if applicable):
+   ```javascript
+   // Dispatch device orientation event
+   window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', {
+       alpha: 0, beta: 45, gamma: 15
+   }));
+   ```
+5. **Compare screenshots**: Capture before/after to verify effect
+
+**Do this for EACH iteration** when tuning mobile-specific values.
+
 ## Available Commands
 
 | Command | Description |
@@ -49,6 +67,31 @@ Run `bd prime` for workflow context, or install hooks (`bd hooks install`) for a
 - `bd sync` - Sync with git (run at session end)
 
 For full workflow details: `bd prime`
+
+## Closing Issues - Acceptance Verification
+
+**Before closing ANY issue**, verify ALL acceptance criteria are met:
+
+1. **Read the issue**: `bd show <id>` - check the `## Acceptance` section
+2. **Verify each criterion** with evidence:
+   - **Code changes**: Show the implementation matches the requirement
+   - **Visual changes**: Take screenshots/GIFs to demonstrate the effect
+   - **Fallbacks**: Test reduced-motion, error states, edge cases
+   - **Tests**: Run `npm test` and confirm relevant tests pass
+3. **Document verification** in the close reason or comment
+
+**Example verification table:**
+
+| Criterion | Status | Evidence |
+|-----------|--------|----------|
+| Feature X works | ✅ PASS | Screenshot shows X in action |
+| Reduced-motion fallback | ✅ PASS | Tested: element visible without animation |
+| No console errors | ✅ PASS | `npm test` passes |
+
+**DO NOT close issues with unchecked acceptance criteria.** If criteria can't be verified, either:
+- Fix the implementation until it passes
+- Update the issue explaining why criteria changed
+- Ask the user for clarification
 
 ## Session Completion
 

@@ -1,0 +1,22 @@
+{{!-- YouTube Embed Partial
+     Usage: {{> "embed-youtube" videoid="dQw4w9WgXcQ" title="Video Title" use3d=true}}
+     Uses lite-youtube-embed for performance (~1KB vs 500KB official embed)
+     Set use3d=true for 3D perspective transform effect on hover
+--}}
+
+<div class="embed embed--youtube{{#if use3d}} embed--3d{{/if}}{{#if class}} {{class}}{{/if}}">
+    <lite-youtube
+        videoid="{{videoid}}"
+        {{#if title}}playlabel="Play: {{title}}"{{/if}}
+        params="rel=0"
+    >
+        {{#if title}}
+        <a href="https://youtube.com/watch?v={{videoid}}" class="lty-playbtn" title="Play: {{title}}">
+            <span class="lyt-visually-hidden">Play: {{title}}</span>
+        </a>
+        {{/if}}
+    </lite-youtube>
+    {{#if caption}}
+    <p class="embed__caption">{{caption}}</p>
+    {{/if}}
+</div>
