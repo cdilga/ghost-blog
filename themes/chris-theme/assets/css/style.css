@@ -509,6 +509,7 @@ pre code {
 
 .hero--parallax {
     position: relative;
+    z-index: 1; /* Ensure hero content stays above the depth-map canvas (z-index: -1) */
     min-height: 100vh;
     min-height: 100dvh; /* Dynamic viewport height for mobile */
     display: flex;
