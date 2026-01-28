@@ -2604,30 +2604,11 @@ pre code {
     opacity: 0;
 }
 
-/* Header backdrop for readability against desert background */
-/* Using a soft radial gradient that feels organic, like heat shimmer or distant haze */
+/* Claude Codes header - no backdrop needed, dark overlay provides readability */
 .scene--claude-codes .scene__header {
     position: relative;
     padding: var(--space-8);
     z-index: 2; /* Above the dark overlay */
-    /* No hard-edged box - use pseudo-element for organic shape */
-}
-
-.scene--claude-codes .scene__header::before {
-    content: '';
-    position: absolute;
-    inset: -20px -40px;
-    background: radial-gradient(
-        ellipse 100% 100% at 50% 40%,
-        rgba(30, 30, 40, 0.65) 0%,
-        rgba(30, 30, 40, 0.4) 40%,
-        rgba(30, 30, 40, 0.15) 70%,
-        transparent 100%
-    );
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: -1;
-    border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
 }
 
 .scene--claude-codes .scene__label {
