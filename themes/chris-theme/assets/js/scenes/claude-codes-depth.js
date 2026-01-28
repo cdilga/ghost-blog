@@ -2,6 +2,15 @@
 // Second depth-map canvas for the Claude Codes section
 // Uses PixiJS DisplacementFilter with desert_ground_from_top_of_big_red image
 // Shares MotionInput with Hero+Coder canvas for synchronized parallax
+//
+// MOBILE COMPATIBILITY NOTE:
+// This script reads image URLs from preloaded <img> elements in the HTML
+// (see index.hbs .claude-codes__background-preload). This pattern is REQUIRED
+// for mobile devices - constructing URLs from stylesheets fails on real mobile
+// even though it works in Chrome's mobile emulation.
+//
+// The hero-depth.js uses the same pattern (reading from .hero__layer--dunes img)
+// which is why the hero canvas works reliably on mobile.
 
 (function() {
     'use strict';
@@ -56,10 +65,24 @@
         return;
     }
 
-    // Resolve asset paths using Ghost theme assets
-    const themeAssetsBase = document.querySelector('link[href*="screen.css"]')?.href?.replace(/\/css\/screen\.css.*$/, '') || '/assets';
-    const imageSrc = themeAssetsBase + '/images/desert_ground_from_top_of_big_red.jpg';
-    const depthMapSrc = themeAssetsBase + '/images/desert_ground_from_top_of_big_red_depth_anything_2_greyscale.png';
+    // Get image sources from preloaded <img> elements in HTML (like hero-depth.js pattern)
+    // This ensures images are preloaded by browser and URLs are correct
+    const bgImage = claudeCodesSection.querySelector('.claude-codes__bg-image');
+    const depthImage = claudeCodesSection.querySelector('.claude-codes__depth-image');
+
+    if (!bgImage || !depthImage) {
+        console.warn('[claude-codes-depth] Preload images not found, falling back to constructed paths');
+        // Fallback to constructed paths if preload elements don't exist
+        const stylesheetLink = document.querySelector('link[href*="style.css"]') || document.querySelector('link[href*="screen.css"]');
+        const themeAssetsBase = stylesheetLink?.href?.replace(/\/css\/style\.css.*$/, '').replace(/\/css\/screen\.css.*$/, '') || '/assets';
+        var imageSrc = themeAssetsBase + '/images/desert_ground_from_top_of_big_red.jpg';
+        var depthMapSrc = themeAssetsBase + '/images/desert_ground_from_top_of_big_red_depth_anything_2_greyscale.png';
+    } else {
+        var imageSrc = bgImage.src;
+        var depthMapSrc = depthImage.src;
+    }
+
+    console.log('[claude-codes-depth] Init:', { isMobile, imageSrc: imageSrc.substring(imageSrc.lastIndexOf('/') + 1), fromPreload: !!bgImage });
 
     // Create PixiJS canvas container
     const container = document.createElement('div');

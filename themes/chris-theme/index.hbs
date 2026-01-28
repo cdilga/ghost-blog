@@ -167,6 +167,25 @@
 
 {{!-- Scene: 8 Claude Codes --}}
 <section class="scene scene--claude-codes" id="claude-codes" data-scene="claude-codes">
+    {{!--
+        IMPORTANT: Hidden preload images for PixiJS depth effect
+
+        These images MUST exist for mobile compatibility. Without them, the depth
+        canvas fails to load on real mobile devices (works in Chrome emulation but
+        fails on actual iOS/Android).
+
+        Why this works:
+        1. Ghost's {{asset}} helper generates correct absolute URLs
+        2. Browser preloads images eagerly before JS runs
+        3. claude-codes-depth.js reads .src from these elements (like hero-depth.js)
+        4. This matches the hero section pattern which works reliably on mobile
+
+        DO NOT REMOVE - See claude-codes-depth.js for the JS side of this pattern.
+    --}}
+    <div class="claude-codes__background-preload" aria-hidden="true" style="display:none;">
+        <img src="{{asset "images/desert_ground_from_top_of_big_red.jpg"}}" alt="" loading="eager" class="claude-codes__bg-image">
+        <img src="{{asset "images/desert_ground_from_top_of_big_red_depth_anything_2_greyscale.png"}}" alt="" loading="eager" class="claude-codes__depth-image">
+    </div>
     <div class="container">
         <header class="scene__header" data-animate="fade-up">
             <span class="scene__label">8 Claude Codes</span>
