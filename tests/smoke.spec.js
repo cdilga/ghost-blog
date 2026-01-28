@@ -74,6 +74,90 @@ test.describe('Theme Smoke Tests', () => {
     await expect(page.locator('.hero__cta')).toBeVisible();
   });
 
+  test('hero visual consistency after full scroll cycle', async ({ page }) => {
+    // CRITICAL REGRESSION TEST
+    // This test prevents regressions where hero content becomes invisible
+    // after scrolling to the bottom and back to top (z-index/stacking issues)
+    //
+    // The baseline screenshot is taken AFTER a full scroll cycle.
+    // If the hero is broken (invisible content), this test will fail when
+    // compared against the baseline of a working hero.
+
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000); // Wait for all animations to initialize
+
+    // Helper to scroll with Lenis and update ScrollTrigger
+    const scrollTo = async (y) => {
+      await page.evaluate((scrollY) => {
+        if (window.ChrisTheme?.lenis) {
+          window.ChrisTheme.lenis.scrollTo(scrollY, { immediate: true });
+        }
+        window.ChrisTheme?.ScrollTrigger?.update();
+        window.ChrisTheme?.gsap?.ticker.tick();
+      }, y);
+      await page.waitForTimeout(100);
+    };
+
+    // Get page height to scroll all the way down
+    const pageHeight = await page.evaluate(() => document.body.scrollHeight);
+
+    // Scroll ALL the way to the bottom (not just past hero)
+    await scrollTo(pageHeight);
+    await page.waitForTimeout(300);
+
+    // Scroll back to top in steps (simulates real user behavior)
+    const steps = [pageHeight * 0.75, pageHeight * 0.5, pageHeight * 0.25, 500, 0];
+    for (const y of steps) {
+      await scrollTo(y);
+    }
+
+    // Wait for animations to fully settle
+    await page.waitForTimeout(500);
+
+    // Visual regression check: compare hero appearance against baseline
+    // First run creates baseline, subsequent runs compare against it
+    // Uses 1% pixel difference threshold for anti-aliasing tolerance
+    await expect(page.locator('.hero')).toHaveScreenshot('hero-after-full-scroll-cycle.png', {
+      maxDiffPixelRatio: 0.01,
+      animations: 'disabled', // Disable CSS animations for consistent screenshots
+    });
+
+    // Also verify specific elements are visible (belt and suspenders approach)
+    const heroContent = await page.evaluate(() => {
+      const title = document.querySelector('.hero__title');
+      const subtitle = document.querySelector('.hero__subtitle');
+      const cta = document.querySelector('.hero__cta');
+
+      if (!title || !subtitle || !cta) return { found: false };
+
+      const getVisibility = (el) => {
+        const rect = el.getBoundingClientRect();
+        const style = getComputedStyle(el);
+        return {
+          inViewport: rect.top >= 0 && rect.top < window.innerHeight,
+          visible: style.visibility !== 'hidden',
+          opacity: parseFloat(style.opacity),
+          hasSize: rect.width > 0 && rect.height > 0
+        };
+      };
+
+      return {
+        found: true,
+        title: getVisibility(title),
+        subtitle: getVisibility(subtitle),
+        cta: getVisibility(cta)
+      };
+    });
+
+    expect(heroContent.found).toBe(true);
+    expect(heroContent.title.visible).toBe(true);
+    expect(heroContent.title.opacity).toBeGreaterThan(0);
+    expect(heroContent.title.hasSize).toBe(true);
+    expect(heroContent.subtitle.visible).toBe(true);
+    expect(heroContent.cta.visible).toBe(true);
+  });
+
   test('hero content visible after scroll back to top', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
