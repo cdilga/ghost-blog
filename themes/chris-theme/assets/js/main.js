@@ -248,9 +248,17 @@
                 start: 'top top',
                 end: '+=800',   // Compressed: 800px of scroll (was 2000)
                 pin: true,      // 🔥 NON-NEGOTIABLE: Page stays fixed
-                scrub: 1,       // 🔥 NON-NEGOTIABLE: Scroll drives timeline
+                scrub: true,    // 🔥 Immediate sync (no smoothing delay) for reliable reversal
                 anticipatePin: 1, // Smoother pin initiation
                 invalidateOnRefresh: true, // Recalculate on resize/refresh
+                onLeaveBack: () => {
+                    // Reset hero when scrolling back past the start trigger point
+                    // This ensures content is visible when returning to top
+                    gsap.set(hero, { clipPath: 'inset(0 0 0% 0)' });
+                    if (scrollIndicator) {
+                        gsap.set(scrollIndicator, { opacity: 1 });
+                    }
+                },
             }
         });
 
