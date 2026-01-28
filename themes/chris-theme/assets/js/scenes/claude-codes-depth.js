@@ -23,6 +23,11 @@
             mobile: 30
         },
         smoothing: 0.08,
+        // Scroll-based parallax intensity (like hero-depth.js)
+        scrollIntensity: {
+            x: 0.3,
+            y: 1.0
+        },
         // Asset paths (relative to theme assets)
         imagePath: '/assets/images/desert_ground_from_top_of_big_red.jpg',
         depthMapPath: '/assets/images/desert_ground_from_top_of_big_red_depth_anything_2_greyscale.png'
@@ -36,6 +41,14 @@
     let currentY = 0;
     let targetX = 0;
     let targetY = 0;
+
+    // Scroll-based offset (added to motion/mouse input)
+    let scrollOffsetX = 0;
+    let scrollOffsetY = 0;
+
+    // Motion/mouse input (separate from scroll)
+    let motionX = 0;
+    let motionY = 0;
 
     // DOM elements
     const claudeCodesSection = document.querySelector('.scene--claude-codes');
@@ -135,6 +148,9 @@
             // Subscribe to MotionInput (shared with Hero+Coder canvas)
             initMotionInput();
 
+            // Initialize scroll-based parallax
+            initScrollParallax();
+
             // Initially paused until section is visible
             app.ticker.stop();
 
@@ -147,11 +163,15 @@
     function animate() {
         if (!displacementFilter) return;
 
+        // Combine motion/mouse input with scroll offset (like hero-depth.js)
+        targetX = motionX + scrollOffsetX;
+        targetY = motionY + scrollOffsetY;
+
         // Smooth interpolation toward target
         currentX += (targetX - currentX) * CONFIG.smoothing;
         currentY += (targetY - currentY) * CONFIG.smoothing;
 
-        // Apply displacement based on motion input
+        // Apply displacement based on combined input
         displacementFilter.scale.x = currentX * maxDisplacement;
         displacementFilter.scale.y = currentY * maxDisplacement;
     }
@@ -164,8 +184,8 @@
         // Check if MotionInput is available - subscribe to same input as Hero canvas
         if (typeof MotionInput !== 'undefined') {
             MotionInput.subscribe((x, y) => {
-                targetX = x;
-                targetY = y;
+                motionX = x;
+                motionY = y;
             });
         } else {
             // Fallback to mouse-only if MotionInput not loaded
@@ -176,14 +196,46 @@
     function initMouseFallback() {
         claudeCodesSection.addEventListener('mousemove', (e) => {
             // Use viewport-relative coordinates for consistent effect
-            targetX = (e.clientX / window.innerWidth - 0.5) * 2;
-            targetY = (e.clientY / window.innerHeight - 0.5) * 2;
+            motionX = (e.clientX / window.innerWidth - 0.5) * 2;
+            motionY = (e.clientY / window.innerHeight - 0.5) * 2;
         });
 
         claudeCodesSection.addEventListener('mouseleave', () => {
-            targetX = 0;
-            targetY = 0;
+            motionX = 0;
+            motionY = 0;
         });
+    }
+
+    // =========================================================================
+    // Scroll-Based Parallax (like hero-depth.js)
+    // =========================================================================
+
+    function initScrollParallax() {
+        function updateScrollOffset() {
+            const rect = claudeCodesSection.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+
+            // Calculate progress based on section position in viewport
+            const sectionCenter = rect.top + rect.height / 2;
+            const scrollProgress = 1 - (sectionCenter / viewportHeight);
+            const clampedProgress = Math.max(0, Math.min(1, scrollProgress));
+
+            // Apply scroll intensity to create displacement offset
+            scrollOffsetX = (clampedProgress - 0.5) * CONFIG.scrollIntensity.x * 2;
+            scrollOffsetY = clampedProgress * CONFIG.scrollIntensity.y;
+        }
+
+        // Check for Lenis in window.ChrisTheme
+        const lenisInstance = window.ChrisTheme && window.ChrisTheme.lenis;
+
+        if (lenisInstance && typeof lenisInstance.on === 'function') {
+            lenisInstance.on('scroll', updateScrollOffset);
+        } else {
+            window.addEventListener('scroll', updateScrollOffset, { passive: true });
+        }
+
+        // Initial calculation
+        updateScrollOffset();
     }
 
     // =========================================================================
