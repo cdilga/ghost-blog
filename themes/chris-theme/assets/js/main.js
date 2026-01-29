@@ -852,9 +852,13 @@
                 const scanlines = document.createElement('div');
                 scanlines.className = 'youtube-scanlines';
 
+                const glare = document.createElement('div');
+                glare.className = 'youtube-glare';
+
                 // Append elements
                 embed.appendChild(flash);
                 embed.appendChild(scanlines);
+                embed.appendChild(glare);
 
                 // Set initial state: thin horizontal line (scaleY very small)
                 gsap.set(embed, {
@@ -917,13 +921,19 @@
                     opacity: 0.3,
                     duration: 0.1,
                 }, '-=0.15')
+                .to(glare, {
+                    opacity: 1,
+                    duration: 0.15,
+                }, '-=0.1')
 
-                // STAGE 5: Scanlines fade to subtle
+                // STAGE 5: Scanlines fade to subtle, glare stays
                 .to(scanlines, {
                     opacity: 0.08,
                     duration: 0.4,
                     ease: 'power1.out',
-                });
+                })
+                // Clear GSAP inline transforms so CSS takes over cleanly
+                .set(embed, { clearProps: 'transform,filter' });
             }
         }
 
