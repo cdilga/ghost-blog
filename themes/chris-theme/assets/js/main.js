@@ -405,11 +405,15 @@
         // Track if we've exited forward (to prevent re-showing on scroll back from below)
         let hasExitedForward = false;
 
+        // Use shorter scroll distance on mobile since content is simplified
+        const isMobile = window.innerWidth <= 768;
+        const scrollDistance = isMobile ? 1000 : 1500;
+
         const coderTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: coderSection,
                 start: 'top top',
-                end: '+=1500',  // 1500px of scroll while pinned
+                end: `+=${scrollDistance}`,  // Responsive scroll distance
                 pin: true,      // 🔥 PAGE STAYS FIXED
                 scrub: true,    // 🔥 SCROLL DRIVES TIMELINE (true = immediate, no smoothing)
                 anticipatePin: 1,
@@ -556,11 +560,15 @@
         // Track if CRT kick has been triggered (prevent multiple triggers)
         let crtKickTriggered = false;
 
+        // Use shorter scroll distance on mobile (fewer terminals, simpler layout)
+        const isMobile = window.innerWidth <= 768;
+        const scrollDistance = isMobile ? 1500 : 2500;
+
         const claudeCodesTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: claudeCodesSection,
                 start: 'top top',
-                end: '+=2500',  // Total scroll distance for this section
+                end: `+=${scrollDistance}`,  // Responsive scroll distance
                 pin: true,      // 🔥 PAGE STAYS FIXED
                 scrub: true,    // 🔥 SCROLL DRIVES TIMELINE (true = immediate sync, no smoothing)
                 anticipatePin: 1,
@@ -932,8 +940,18 @@
                     duration: 0.4,
                     ease: 'power1.out',
                 })
-                // Clear GSAP inline transforms so CSS takes over cleanly
-                .set(embed, { clearProps: 'transform,filter' });
+                // STAGE 6: Smoothly transition to final CSS transform
+                // Must match CSS: transform: perspective(1500px) translateZ(0)
+                .to(embed, {
+                    transform: 'perspective(1500px) translateZ(0)',
+                    filter: 'none',
+                    duration: 0.4,
+                    ease: 'power2.out',
+                    onComplete: () => {
+                        // Clear GSAP inline styles so CSS takes over
+                        gsap.set(embed, { clearProps: 'transform,filter' });
+                    }
+                });
             }
         }
 

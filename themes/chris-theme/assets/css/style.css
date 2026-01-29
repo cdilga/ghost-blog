@@ -2584,6 +2584,12 @@ pre code {
 @media (max-width: 768px) {
     .coder__content {
         grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
+
+    /* Hide keyboard on mobile - too cramped and not essential */
+    .coder__keyboard {
+        display: none;
     }
 
     .coder__code {
@@ -2591,22 +2597,45 @@ pre code {
         grid-row: auto;
     }
 
-    .keyboard {
-        font-size: 8px;
+    /* GitHub activity comes after code window on mobile */
+    .coder__github {
+        grid-column: 1;
     }
 
-    .key {
-        min-width: 22px;
-        height: 22px;
-        font-size: 8px;
+    /* Compact code window for mobile - so both code + github fit */
+    .code-window__content {
+        padding: var(--space-3);
+        font-size: 11px;
+        line-height: 1.6;
     }
 
-    .key--wide {
-        min-width: 36px;
+    .code-window__header {
+        padding: var(--space-2) var(--space-3);
     }
 
-    .key--space {
-        min-width: 120px;
+    /* Compact GitHub graph for mobile */
+    .github-graph {
+        padding: var(--space-3);
+    }
+
+    .github-graph__grid {
+        grid-template-columns: repeat(15, 1fr);
+        gap: 2px;
+        margin-bottom: var(--space-2);
+    }
+
+    .coder__github-title {
+        font-size: var(--text-base);
+        margin-bottom: var(--space-2);
+    }
+
+    /* Tighter scene header on mobile */
+    .scene--coder .scene__header {
+        padding-bottom: var(--space-4);
+    }
+
+    .scene--coder .scene__description {
+        font-size: var(--text-sm);
     }
 }
 
@@ -2845,13 +2874,25 @@ pre code {
         gap: var(--space-3);
     }
 
-    /* Show only 4 terminals on mobile */
-    .terminal:nth-child(n+5) {
+    /* Show only 3 terminals on mobile for better fit */
+    .terminal:nth-child(n+4) {
         display: none;
     }
 
     .terminal__body {
-        height: 140px;
+        height: 120px;
+    }
+
+    .terminal__line {
+        font-size: 10px;
+    }
+
+    .scene--claude-codes .scene__header {
+        padding: var(--space-4);
+    }
+
+    .scene--claude-codes .scene__description {
+        font-size: var(--text-sm);
     }
 }
 
@@ -3030,16 +3071,17 @@ pre code {
 }
 
 .consultant__content {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: var(--space-12);
-    align-items: start;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
 }
 
 .consultant__cases {
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
+    max-width: 900px; /* Keep cards from stretching too wide */
+    margin: 0 auto; /* Center the cards */
 }
 
 /* Case Study Card */
@@ -3113,8 +3155,7 @@ pre code {
 
 /* Consultant Visual */
 .consultant__visual {
-    position: sticky;
-    top: var(--space-8);
+    order: -1; /* Image above cards */
 }
 
 .consultant__image {
@@ -3122,7 +3163,7 @@ pre code {
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow-lg);
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 21 / 9; /* Wider crop on desktop */
     position: relative;
 }
 
@@ -3152,14 +3193,8 @@ pre code {
 
 /* Mobile responsive for consultant */
 @media (max-width: 1024px) {
-    .consultant__content {
-        grid-template-columns: 1fr;
-    }
-
-    .consultant__visual {
-        position: static;
-        order: -1;
-        margin-bottom: var(--space-8);
+    .consultant__image {
+        aspect-ratio: 4 / 3; /* Taller on mobile */
     }
 }
 
