@@ -609,6 +609,11 @@
                     }
                 },
                 onLeave: () => {
+                    // Pause typing animation when leaving section
+                    if (window.ChrisTheme?.pauseChaosTyping) {
+                        window.ChrisTheme.pauseChaosTyping();
+                    }
+
                     // Ensure content stays hidden after exiting forward
                     gsap.set(header, { opacity: 0, y: -400 });
                     gsap.set(terminals, { opacity: 0, scale: 0.8 });
@@ -625,7 +630,18 @@
                         });
                     }
                 },
+                onEnterBack: () => {
+                    // Resume typing animation when scrolling back into section
+                    if (window.ChrisTheme?.resumeChaosTyping) {
+                        window.ChrisTheme.resumeChaosTyping();
+                    }
+                },
                 onLeaveBack: () => {
+                    // Pause typing animation when leaving section backwards
+                    if (window.ChrisTheme?.pauseChaosTyping) {
+                        window.ChrisTheme.pauseChaosTyping();
+                    }
+
                     // Reset to initial hidden state when scrolling back past start
                     crtKickTriggered = false;
                     gsap.set(darkOverlay, { opacity: 0 });
@@ -654,6 +670,7 @@
         }, 0);
 
         // Phase 2: Terminals spawn with stagger (8% - 30%)
+        // NOTE: Terminal typing animation is triggered when this completes
         claudeCodesTimeline.to(terminals, {
             opacity: 1,
             scale: 1,
@@ -661,6 +678,12 @@
             duration: 0.20,
             ease: 'back.out(1.4)',
             stagger: 0.02,
+            onComplete: () => {
+                // Start the chaos terminal typing animation once terminals are visible
+                if (window.ChrisTheme?.startChaosTyping) {
+                    window.ChrisTheme.startChaosTyping();
+                }
+            }
         }, 0.08);
 
         // Phase 3: CTA appears (28% - 35%)
@@ -673,15 +696,16 @@
             }, 0.28);
         }
 
-        // Phase 4: Hold for viewing chaos animation (35% - 40%)
-        claudeCodesTimeline.to({}, { duration: 0.05 });
+        // Phase 4: Hold for viewing chaos animation and CTA (35% - 55%)
+        // Extended hold to ensure CTA is visible on all screen sizes before scroll-up
+        claudeCodesTimeline.to({}, { duration: 0.20 });
 
-        // Phase 5: ALL CONTENT scrolls UP together (40% - 75%)
+        // Phase 5: ALL CONTENT scrolls UP together (55% - 75%)
         // Header, terminals, and CTA all move up as a unified scroll effect
         // This continues until the TV close animation
         const scrollUpDistance = -400; // Total scroll distance
-        const scrollUpDuration = 0.35; // 40% to 75%
-        const scrollUpStart = 0.40;
+        const scrollUpDuration = 0.20; // 55% to 75%
+        const scrollUpStart = 0.55;
 
         // Terminal grid scrolls up
         claudeCodesTimeline.to(terminalGrid, {
@@ -1772,25 +1796,21 @@
             setTimeout(chaosLoop, 3000);
         }
 
-        // ScrollTrigger to start/pause animation based on visibility
-        ScrollTrigger.create({
-            trigger: terminalGrid,
-            start: 'top 85%',
-            end: 'bottom 15%',
-            onEnter: () => {
-                animationPaused = false;
-                startAnimation();
-            },
-            onLeave: () => {
-                animationPaused = true;
-            },
-            onEnterBack: () => {
-                animationPaused = false;
-            },
-            onLeaveBack: () => {
-                animationPaused = true;
-            }
-        });
+        // Expose startAnimation so the pinned choreography can trigger it
+        // The Claude Codes section is pinned, so we can't rely on ScrollTrigger position
+        window.ChrisTheme = window.ChrisTheme || {};
+        window.ChrisTheme.startChaosTyping = () => {
+            animationPaused = false;
+            startAnimation();
+        };
+        window.ChrisTheme.pauseChaosTyping = () => {
+            animationPaused = true;
+        };
+        window.ChrisTheme.resumeChaosTyping = () => {
+            animationPaused = false;
+        };
+
+        console.log('Chris Theme: Chaos terminals initialized (waiting for choreography trigger)');
     }
 
     // Initialize when DOM is ready
