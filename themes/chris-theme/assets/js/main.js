@@ -387,7 +387,8 @@
         const contentElements = [keyboard, codeWindow, github].filter(Boolean);
 
         // Set initial states (hidden)
-        gsap.set(header, { opacity: 0, x: -80 });
+        gsap.set(header, { opacity: 0, x: -80, y: 0 });
+        gsap.set(content, { y: 0, opacity: 1 }); // Content container for scroll-up
         gsap.set(contentElements, { opacity: 0, x: 100 });
 
         // Create white overlay for readability (like Claude Codes dark overlay)
@@ -421,9 +422,10 @@
                 // When exiting forward (scrolling down past section)
                 onLeave: () => {
                     hasExitedForward = true;
-                    // Ensure content stays hidden
-                    gsap.set(header, { opacity: 0, x: -120 });
-                    gsap.set(contentElements, { opacity: 0, x: 60 });
+                    // Ensure content stays hidden at exit position
+                    gsap.set(header, { opacity: 0, x: -120, y: -170 });
+                    gsap.set(content, { opacity: 0, y: -200 });
+                    gsap.set(contentElements, { opacity: 0 });
                     gsap.set(whiteOverlay, { opacity: 0 });
                 },
 
@@ -437,7 +439,8 @@
                 onLeaveBack: () => {
                     hasExitedForward = false;
                     // Reset to initial hidden state
-                    gsap.set(header, { opacity: 0, x: -80 });
+                    gsap.set(header, { opacity: 0, x: -80, y: 0 });
+                    gsap.set(content, { y: 0, opacity: 1 });
                     gsap.set(contentElements, { opacity: 0, x: 100 });
                     gsap.set(whiteOverlay, { opacity: 0 });
                 },
@@ -469,8 +472,21 @@
             ease: 'power2.out',
         }, 0.20);
 
-        // Phase 3: Hold for reading (40% - 65%)
-        coderTimeline.to({}, { duration: 0.25 });
+        // Phase 3: Content scrolls UP to reveal GitHub section (40% - 60%)
+        // This ensures GitHub Activity is visible on all aspect ratios
+        const scrollUpAmount = isMobile ? 0 : -120; // Only scroll on desktop (mobile already shows GitHub)
+        coderTimeline.to(content, {
+            y: scrollUpAmount,
+            duration: 0.20,
+            ease: 'power2.inOut',
+        }, 0.40);
+
+        // Also scroll header up to keep alignment
+        coderTimeline.to(header, {
+            y: scrollUpAmount,
+            duration: 0.20,
+            ease: 'power2.inOut',
+        }, 0.40);
 
         // Phase 3b: White overlay fades out BEFORE content exits (65% - 70%)
         coderTimeline.to(whiteOverlay, {
@@ -483,17 +499,17 @@
         coderTimeline.to(header, {
             opacity: 0,
             x: -120,
+            y: scrollUpAmount - 50, // Continue upward motion
             duration: 0.15,
             ease: 'power2.in',
         }, 0.7);
 
-        coderTimeline.to(contentElements, {
+        coderTimeline.to(content, {
             opacity: 0,
-            x: 60,
-            duration: 0.15,
+            y: scrollUpAmount - 80, // Continue upward motion
+            duration: 0.20,
             ease: 'power2.in',
-            stagger: 0.02,
-        }, 0.75);
+        }, 0.70);
 
         console.log('Chris Theme: Coder section choreography initialized (pin: true, scrub: true, with onLeave/onLeaveBack)');
     }
