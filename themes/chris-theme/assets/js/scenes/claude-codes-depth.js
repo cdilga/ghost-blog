@@ -125,7 +125,7 @@
             // Scale to cover container with buffer to prevent edge gaps on unusual aspect ratios
             const scaleX = app.screen.width / mainSprite.width;
             const scaleY = app.screen.height / mainSprite.height;
-            const scale = Math.max(scaleX, scaleY) * 1.05; // 5% buffer
+            const scale = Math.max(scaleX, scaleY) * 1.15; // 15% buffer for high aspect ratios
             mainSprite.scale.set(scale);
             mainSprite.anchor.set(0.5);
             mainSprite.x = app.screen.width / 2;
@@ -139,7 +139,7 @@
             // Displacement sprite must cover full screen with buffer
             const depthScaleX = app.screen.width / displacementSprite.width;
             const depthScaleY = app.screen.height / displacementSprite.height;
-            const depthScale = Math.max(depthScaleX, depthScaleY) * 1.05; // Match main sprite buffer
+            const depthScale = Math.max(depthScaleX, depthScaleY) * 1.15; // Match main sprite buffer
             displacementSprite.scale.set(depthScale);
             displacementSprite.anchor.set(0.5);
             displacementSprite.x = app.screen.width / 2;
@@ -266,7 +266,7 @@
             const scale = Math.max(
                 app.screen.width / mainSprite.texture.width,
                 app.screen.height / mainSprite.texture.height
-            ) * 1.05; // 5% buffer to prevent edge gaps
+            ) * 1.15; // 15% buffer for high aspect ratios to prevent edge gaps
             mainSprite.scale.set(scale);
             mainSprite.x = app.screen.width / 2;
             mainSprite.y = app.screen.height / 2;
@@ -276,7 +276,7 @@
             const depthScale = Math.max(
                 app.screen.width / displacementSprite.texture.width,
                 app.screen.height / displacementSprite.texture.height
-            ) * 1.05; // Match main sprite buffer
+            ) * 1.15; // Match main sprite buffer
             displacementSprite.scale.set(depthScale);
             displacementSprite.x = app.screen.width / 2;
             displacementSprite.y = app.screen.height / 2;

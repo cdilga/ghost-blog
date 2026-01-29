@@ -392,11 +392,12 @@
         gsap.set(contentElements, { opacity: 0, x: 100 });
 
         // Create white overlay for readability (like Claude Codes dark overlay)
-        let whiteOverlay = coderSection.querySelector('.coder__overlay');
+        // Append to body to avoid clipping by section's overflow:hidden and ScrollTrigger pin-spacer
+        let whiteOverlay = document.querySelector('.coder__overlay');
         if (!whiteOverlay) {
             whiteOverlay = document.createElement('div');
             whiteOverlay.className = 'coder__overlay';
-            coderSection.appendChild(whiteOverlay);
+            document.body.appendChild(whiteOverlay);
         }
         gsap.set(whiteOverlay, { opacity: 0 });
 
