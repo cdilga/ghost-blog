@@ -412,10 +412,21 @@
         // Keyboard
         document.addEventListener('keydown', handleKey);
 
-        // Resize
+        // Resize - debounced to avoid rapid recalculations during drag resize
+        let resizeTimeout;
         window.addEventListener('resize', () => {
-            updateGeometry();
-            positionCards();
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // Wait for layout to settle before recalculating
+                requestAnimationFrame(() => {
+                    updateGeometry();
+                    positionCards();
+                    // Refresh ScrollTrigger to recalculate pin positions
+                    if (scrollTriggerInstance) {
+                        ScrollTrigger.refresh();
+                    }
+                });
+            }, 150);
         });
     }
 

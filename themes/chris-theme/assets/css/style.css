@@ -127,6 +127,8 @@ html {
     line-height: var(--leading-normal);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+    -webkit-overscroll-behavior: none;
 }
 
 /* Lenis smooth scroll - required styles */
@@ -193,6 +195,22 @@ body {
     /* Transparent to allow depth-map canvas (z-index: -1) to show through */
     background: transparent;
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport - adapts to mobile browser chrome changes */
+    overscroll-behavior: none;
+}
+
+/* Depth-map canvas containers - fixed position, behind content
+   Use 100lvh (largest viewport height) to prevent gaps when mobile browser chrome hides */
+.hero__depth-canvas,
+.claude-codes__depth-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;      /* Fallback for older browsers */
+    height: 100lvh;     /* Largest viewport - always covers max height */
+    pointer-events: none;
+    z-index: -1;
 }
 
 /* ==========================================================================
@@ -455,6 +473,7 @@ pre code {
 
 .hero--full {
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport - adapts to mobile browser chrome changes */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2107,6 +2126,7 @@ pre code {
     content: '';
     position: absolute;
     inset: 0;
+    height: auto; /* Override lite-youtube library's 99px height */
     border-radius: var(--radius-lg);
     box-shadow:
         inset 0 0 0 4px rgba(20, 20, 20, 0.95),
@@ -2115,9 +2135,8 @@ pre code {
     z-index: 10;
 }
 
-/* Screen glare/reflection */
-.youtube-3d-container .embed--3d lite-youtube::after {
-    content: '';
+/* Screen glare/reflection - created via JS to not interfere with lite-youtube aspect ratio */
+.youtube-glare {
     position: absolute;
     top: 0;
     left: 0;
@@ -2132,6 +2151,7 @@ pre code {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     pointer-events: none;
     z-index: 11;
+    opacity: 0;
 }
 
 /* HOVER STATE: Subtle lift */
@@ -2143,10 +2163,13 @@ pre code {
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
-/* Ensure proper aspect ratio */
+/* Ensure proper aspect ratio and positioning context for pseudo-elements */
 .youtube-3d-container lite-youtube {
     aspect-ratio: 16/9;
     display: block;
+    position: relative;
+    max-width: 100%;
+    margin: 0 auto; /* Center the lite-youtube element */
 }
 
 /* ===== FLOATING ANIMATION (Post-entrance) ===== */
@@ -2258,7 +2281,7 @@ pre code {
 .coder__overlay {
     position: fixed;
     inset: 0;
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.55);
     pointer-events: none;
     z-index: 0; /* Behind section content */
     opacity: 0;
@@ -2268,6 +2291,22 @@ pre code {
 .scene--coder .scene__header {
     position: relative;
     z-index: 2;
+}
+
+/* Text styling for readability against background */
+.scene--coder .scene__label {
+    color: var(--color-accent);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.scene--coder .scene__title {
+    color: var(--color-text);
+    text-shadow: 0 1px 3px rgba(255, 255, 255, 0.6);
+}
+
+.scene--coder .scene__description {
+    color: var(--color-text);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 .coder__content {
@@ -2465,7 +2504,10 @@ pre code {
     align-items: center;
     gap: var(--space-2);
     font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
     margin-bottom: var(--space-4);
+    color: var(--color-text);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 .coder__github-icon {
@@ -2542,6 +2584,12 @@ pre code {
 @media (max-width: 768px) {
     .coder__content {
         grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
+
+    /* Hide keyboard on mobile - too cramped and not essential */
+    .coder__keyboard {
+        display: none;
     }
 
     .coder__code {
@@ -2549,22 +2597,45 @@ pre code {
         grid-row: auto;
     }
 
-    .keyboard {
-        font-size: 8px;
+    /* GitHub activity comes after code window on mobile */
+    .coder__github {
+        grid-column: 1;
     }
 
-    .key {
-        min-width: 22px;
-        height: 22px;
-        font-size: 8px;
+    /* Compact code window for mobile - so both code + github fit */
+    .code-window__content {
+        padding: var(--space-3);
+        font-size: 11px;
+        line-height: 1.6;
     }
 
-    .key--wide {
-        min-width: 36px;
+    .code-window__header {
+        padding: var(--space-2) var(--space-3);
     }
 
-    .key--space {
-        min-width: 120px;
+    /* Compact GitHub graph for mobile */
+    .github-graph {
+        padding: var(--space-3);
+    }
+
+    .github-graph__grid {
+        grid-template-columns: repeat(15, 1fr);
+        gap: 2px;
+        margin-bottom: var(--space-2);
+    }
+
+    .coder__github-title {
+        font-size: var(--text-base);
+        margin-bottom: var(--space-2);
+    }
+
+    /* Tighter scene header on mobile */
+    .scene--coder .scene__header {
+        padding-bottom: var(--space-4);
+    }
+
+    .scene--coder .scene__description {
+        font-size: var(--text-sm);
     }
 }
 
@@ -2803,13 +2874,25 @@ pre code {
         gap: var(--space-3);
     }
 
-    /* Show only 4 terminals on mobile */
-    .terminal:nth-child(n+5) {
+    /* Show only 3 terminals on mobile for better fit */
+    .terminal:nth-child(n+4) {
         display: none;
     }
 
     .terminal__body {
-        height: 140px;
+        height: 120px;
+    }
+
+    .terminal__line {
+        font-size: 10px;
+    }
+
+    .scene--claude-codes .scene__header {
+        padding: var(--space-4);
+    }
+
+    .scene--claude-codes .scene__description {
+        font-size: var(--text-sm);
     }
 }
 
@@ -2988,16 +3071,17 @@ pre code {
 }
 
 .consultant__content {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: var(--space-12);
-    align-items: start;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
 }
 
 .consultant__cases {
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
+    max-width: 900px; /* Keep cards from stretching too wide */
+    margin: 0 auto; /* Center the cards */
 }
 
 /* Case Study Card */
@@ -3071,8 +3155,7 @@ pre code {
 
 /* Consultant Visual */
 .consultant__visual {
-    position: sticky;
-    top: var(--space-8);
+    order: -1; /* Image above cards */
 }
 
 .consultant__image {
@@ -3080,12 +3163,15 @@ pre code {
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow-lg);
+    aspect-ratio: 21 / 9; /* Wider crop on desktop */
+    position: relative;
 }
 
 .consultant__image img {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
+    object-fit: cover;
     transition: transform var(--duration-slow) var(--ease-out);
 }
 
@@ -3107,14 +3193,8 @@ pre code {
 
 /* Mobile responsive for consultant */
 @media (max-width: 1024px) {
-    .consultant__content {
-        grid-template-columns: 1fr;
-    }
-
-    .consultant__visual {
-        position: static;
-        order: -1;
-        margin-bottom: var(--space-8);
+    .consultant__image {
+        aspect-ratio: 4 / 3; /* Taller on mobile */
     }
 }
 
@@ -3244,6 +3324,7 @@ pre code {
 
 .contact-page {
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport - adapts to mobile browser chrome changes */
     display: flex;
     flex-direction: column;
 }
