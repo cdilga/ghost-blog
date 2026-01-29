@@ -472,44 +472,44 @@
             ease: 'power2.out',
         }, 0.20);
 
-        // Phase 3: Content scrolls UP to reveal GitHub section (40% - 60%)
+        // Phase 3: Content scrolls UP to reveal GitHub section (40% - 70%)
         // This ensures GitHub Activity is visible on all aspect ratios
         const scrollUpAmount = isMobile ? 0 : -120; // Only scroll on desktop (mobile already shows GitHub)
         coderTimeline.to(content, {
             y: scrollUpAmount,
-            duration: 0.20,
+            duration: 0.30,
             ease: 'power2.inOut',
         }, 0.40);
 
         // Also scroll header up to keep alignment
         coderTimeline.to(header, {
             y: scrollUpAmount,
-            duration: 0.20,
+            duration: 0.30,
             ease: 'power2.inOut',
         }, 0.40);
 
-        // Phase 3b: White overlay fades out BEFORE content exits (65% - 70%)
+        // Phase 3b: White overlay fades out BEFORE content exits (85% - 90%)
         coderTimeline.to(whiteOverlay, {
             opacity: 0,
             duration: 0.05,
             ease: 'power2.in',
-        }, 0.65);
+        }, 0.85);
 
-        // Phase 4: Content exits - header out left, content fades (70% - 95%)
+        // Phase 4: Content exits - header out left, content fades (90% - 100%)
         coderTimeline.to(header, {
             opacity: 0,
             x: -120,
             y: scrollUpAmount - 50, // Continue upward motion
-            duration: 0.15,
+            duration: 0.10,
             ease: 'power2.in',
-        }, 0.7);
+        }, 0.90);
 
         coderTimeline.to(content, {
             opacity: 0,
             y: scrollUpAmount - 80, // Continue upward motion
-            duration: 0.20,
+            duration: 0.10,
             ease: 'power2.in',
-        }, 0.70);
+        }, 0.90);
 
         console.log('Chris Theme: Coder section choreography initialized (pin: true, scrub: true, with onLeave/onLeaveBack)');
     }
