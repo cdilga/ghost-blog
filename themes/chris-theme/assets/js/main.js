@@ -387,15 +387,17 @@
         const contentElements = [keyboard, codeWindow, github].filter(Boolean);
 
         // Set initial states (hidden)
-        gsap.set(header, { opacity: 0, x: -80 });
+        gsap.set(header, { opacity: 0, x: -80, y: 0 });
+        gsap.set(content, { y: 0, opacity: 1 }); // Content container for scroll-up
         gsap.set(contentElements, { opacity: 0, x: 100 });
 
         // Create white overlay for readability (like Claude Codes dark overlay)
-        let whiteOverlay = coderSection.querySelector('.coder__overlay');
+        // Append to body to avoid clipping by section's overflow:hidden and ScrollTrigger pin-spacer
+        let whiteOverlay = document.querySelector('.coder__overlay');
         if (!whiteOverlay) {
             whiteOverlay = document.createElement('div');
             whiteOverlay.className = 'coder__overlay';
-            coderSection.appendChild(whiteOverlay);
+            document.body.appendChild(whiteOverlay);
         }
         gsap.set(whiteOverlay, { opacity: 0 });
 
@@ -405,11 +407,15 @@
         // Track if we've exited forward (to prevent re-showing on scroll back from below)
         let hasExitedForward = false;
 
+        // Use shorter scroll distance on mobile since content is simplified
+        const isMobile = window.innerWidth <= 768;
+        const scrollDistance = isMobile ? 1000 : 1500;
+
         const coderTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: coderSection,
                 start: 'top top',
-                end: '+=1500',  // 1500px of scroll while pinned
+                end: `+=${scrollDistance}`,  // Responsive scroll distance
                 pin: true,      // 🔥 PAGE STAYS FIXED
                 scrub: true,    // 🔥 SCROLL DRIVES TIMELINE (true = immediate, no smoothing)
                 anticipatePin: 1,
@@ -417,9 +423,10 @@
                 // When exiting forward (scrolling down past section)
                 onLeave: () => {
                     hasExitedForward = true;
-                    // Ensure content stays hidden
-                    gsap.set(header, { opacity: 0, x: -120 });
-                    gsap.set(contentElements, { opacity: 0, x: 60 });
+                    // Ensure content stays hidden at exit position
+                    gsap.set(header, { opacity: 0, x: -120, y: -170 });
+                    gsap.set(content, { opacity: 0, y: -200 });
+                    gsap.set(contentElements, { opacity: 0 });
                     gsap.set(whiteOverlay, { opacity: 0 });
                 },
 
@@ -433,7 +440,8 @@
                 onLeaveBack: () => {
                     hasExitedForward = false;
                     // Reset to initial hidden state
-                    gsap.set(header, { opacity: 0, x: -80 });
+                    gsap.set(header, { opacity: 0, x: -80, y: 0 });
+                    gsap.set(content, { y: 0, opacity: 1 });
                     gsap.set(contentElements, { opacity: 0, x: 100 });
                     gsap.set(whiteOverlay, { opacity: 0 });
                 },
@@ -465,31 +473,44 @@
             ease: 'power2.out',
         }, 0.20);
 
-        // Phase 3: Hold for reading (40% - 65%)
-        coderTimeline.to({}, { duration: 0.25 });
+        // Phase 3: Content scrolls UP to reveal GitHub section (40% - 70%)
+        // This ensures GitHub Activity is visible on all aspect ratios
+        const scrollUpAmount = isMobile ? 0 : -120; // Only scroll on desktop (mobile already shows GitHub)
+        coderTimeline.to(content, {
+            y: scrollUpAmount,
+            duration: 0.30,
+            ease: 'power2.inOut',
+        }, 0.40);
 
-        // Phase 3b: White overlay fades out BEFORE content exits (65% - 70%)
+        // Also scroll header up to keep alignment
+        coderTimeline.to(header, {
+            y: scrollUpAmount,
+            duration: 0.30,
+            ease: 'power2.inOut',
+        }, 0.40);
+
+        // Phase 3b: White overlay fades out BEFORE content exits (85% - 90%)
         coderTimeline.to(whiteOverlay, {
             opacity: 0,
             duration: 0.05,
             ease: 'power2.in',
-        }, 0.65);
+        }, 0.85);
 
-        // Phase 4: Content exits - header out left, content fades (70% - 95%)
+        // Phase 4: Content exits - header out left, content fades (90% - 100%)
         coderTimeline.to(header, {
             opacity: 0,
             x: -120,
-            duration: 0.15,
+            y: scrollUpAmount - 50, // Continue upward motion
+            duration: 0.10,
             ease: 'power2.in',
-        }, 0.7);
+        }, 0.90);
 
-        coderTimeline.to(contentElements, {
+        coderTimeline.to(content, {
             opacity: 0,
-            x: 60,
-            duration: 0.15,
+            y: scrollUpAmount - 80, // Continue upward motion
+            duration: 0.10,
             ease: 'power2.in',
-            stagger: 0.02,
-        }, 0.75);
+        }, 0.90);
 
         console.log('Chris Theme: Coder section choreography initialized (pin: true, scrub: true, with onLeave/onLeaveBack)');
     }
@@ -556,11 +577,15 @@
         // Track if CRT kick has been triggered (prevent multiple triggers)
         let crtKickTriggered = false;
 
+        // Use shorter scroll distance on mobile (fewer terminals, simpler layout)
+        const isMobile = window.innerWidth <= 768;
+        const scrollDistance = isMobile ? 1500 : 2500;
+
         const claudeCodesTimeline = gsap.timeline({
             scrollTrigger: {
                 trigger: claudeCodesSection,
                 start: 'top top',
-                end: '+=2500',  // Total scroll distance for this section
+                end: `+=${scrollDistance}`,  // Responsive scroll distance
                 pin: true,      // 🔥 PAGE STAYS FIXED
                 scrub: true,    // 🔥 SCROLL DRIVES TIMELINE (true = immediate sync, no smoothing)
                 anticipatePin: 1,
@@ -585,6 +610,11 @@
                     }
                 },
                 onLeave: () => {
+                    // Pause typing animation when leaving section
+                    if (window.ChrisTheme?.pauseChaosTyping) {
+                        window.ChrisTheme.pauseChaosTyping();
+                    }
+
                     // Ensure content stays hidden after exiting forward
                     gsap.set(header, { opacity: 0, y: -400 });
                     gsap.set(terminals, { opacity: 0, scale: 0.8 });
@@ -601,7 +631,18 @@
                         });
                     }
                 },
+                onEnterBack: () => {
+                    // Resume typing animation when scrolling back into section
+                    if (window.ChrisTheme?.resumeChaosTyping) {
+                        window.ChrisTheme.resumeChaosTyping();
+                    }
+                },
                 onLeaveBack: () => {
+                    // Pause typing animation when leaving section backwards
+                    if (window.ChrisTheme?.pauseChaosTyping) {
+                        window.ChrisTheme.pauseChaosTyping();
+                    }
+
                     // Reset to initial hidden state when scrolling back past start
                     crtKickTriggered = false;
                     gsap.set(darkOverlay, { opacity: 0 });
@@ -630,6 +671,7 @@
         }, 0);
 
         // Phase 2: Terminals spawn with stagger (8% - 30%)
+        // NOTE: Terminal typing animation is triggered when this completes
         claudeCodesTimeline.to(terminals, {
             opacity: 1,
             scale: 1,
@@ -637,6 +679,12 @@
             duration: 0.20,
             ease: 'back.out(1.4)',
             stagger: 0.02,
+            onComplete: () => {
+                // Start the chaos terminal typing animation once terminals are visible
+                if (window.ChrisTheme?.startChaosTyping) {
+                    window.ChrisTheme.startChaosTyping();
+                }
+            }
         }, 0.08);
 
         // Phase 3: CTA appears (28% - 35%)
@@ -649,15 +697,16 @@
             }, 0.28);
         }
 
-        // Phase 4: Hold for viewing chaos animation (35% - 40%)
-        claudeCodesTimeline.to({}, { duration: 0.05 });
+        // Phase 4: Hold for viewing chaos animation and CTA (35% - 55%)
+        // Extended hold to ensure CTA is visible on all screen sizes before scroll-up
+        claudeCodesTimeline.to({}, { duration: 0.20 });
 
-        // Phase 5: ALL CONTENT scrolls UP together (40% - 75%)
+        // Phase 5: ALL CONTENT scrolls UP together (55% - 75%)
         // Header, terminals, and CTA all move up as a unified scroll effect
         // This continues until the TV close animation
         const scrollUpDistance = -400; // Total scroll distance
-        const scrollUpDuration = 0.35; // 40% to 75%
-        const scrollUpStart = 0.40;
+        const scrollUpDuration = 0.20; // 55% to 75%
+        const scrollUpStart = 0.55;
 
         // Terminal grid scrolls up
         claudeCodesTimeline.to(terminalGrid, {
@@ -852,9 +901,13 @@
                 const scanlines = document.createElement('div');
                 scanlines.className = 'youtube-scanlines';
 
+                const glare = document.createElement('div');
+                glare.className = 'youtube-glare';
+
                 // Append elements
                 embed.appendChild(flash);
                 embed.appendChild(scanlines);
+                embed.appendChild(glare);
 
                 // Set initial state: thin horizontal line (scaleY very small)
                 gsap.set(embed, {
@@ -917,12 +970,28 @@
                     opacity: 0.3,
                     duration: 0.1,
                 }, '-=0.15')
+                .to(glare, {
+                    opacity: 1,
+                    duration: 0.15,
+                }, '-=0.1')
 
-                // STAGE 5: Scanlines fade to subtle
+                // STAGE 5: Scanlines fade to subtle, glare stays
                 .to(scanlines, {
                     opacity: 0.08,
                     duration: 0.4,
                     ease: 'power1.out',
+                })
+                // STAGE 6: Smoothly transition to final CSS transform
+                // Must match CSS: transform: perspective(1500px) translateZ(0)
+                .to(embed, {
+                    transform: 'perspective(1500px) translateZ(0)',
+                    filter: 'none',
+                    duration: 0.4,
+                    ease: 'power2.out',
+                    onComplete: () => {
+                        // Clear GSAP inline styles so CSS takes over
+                        gsap.set(embed, { clearProps: 'transform,filter' });
+                    }
                 });
             }
         }
@@ -1728,25 +1797,21 @@
             setTimeout(chaosLoop, 3000);
         }
 
-        // ScrollTrigger to start/pause animation based on visibility
-        ScrollTrigger.create({
-            trigger: terminalGrid,
-            start: 'top 85%',
-            end: 'bottom 15%',
-            onEnter: () => {
-                animationPaused = false;
-                startAnimation();
-            },
-            onLeave: () => {
-                animationPaused = true;
-            },
-            onEnterBack: () => {
-                animationPaused = false;
-            },
-            onLeaveBack: () => {
-                animationPaused = true;
-            }
-        });
+        // Expose startAnimation so the pinned choreography can trigger it
+        // The Claude Codes section is pinned, so we can't rely on ScrollTrigger position
+        window.ChrisTheme = window.ChrisTheme || {};
+        window.ChrisTheme.startChaosTyping = () => {
+            animationPaused = false;
+            startAnimation();
+        };
+        window.ChrisTheme.pauseChaosTyping = () => {
+            animationPaused = true;
+        };
+        window.ChrisTheme.resumeChaosTyping = () => {
+            animationPaused = false;
+        };
+
+        console.log('Chris Theme: Chaos terminals initialized (waiting for choreography trigger)');
     }
 
     // Initialize when DOM is ready

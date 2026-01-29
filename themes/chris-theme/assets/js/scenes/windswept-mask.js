@@ -212,8 +212,10 @@
         clipPath.setAttribute('clipPathUnits', 'userSpaceOnUse');
 
         // Single path element for the entire mask
+        // Start with edgeX far enough left that noise/wave can't make it visible
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', generateMaskPath(0, 0));
+        const safeOffscreenX = -(CONFIG.maxDisplacement + CONFIG.waveAmplitude + 0.1) * viewportWidth;
+        path.setAttribute('d', generateMaskPath(safeOffscreenX, 0));
         clipPath.appendChild(path);
         maskPath = path;
 
@@ -228,7 +230,11 @@
      */
     function updateMask(time, progress) {
         // Calculate edge position based on progress
-        let edgeX = progress * viewportWidth;
+        // Ensure edge stays off-screen when progress is 0 by accounting for noise/wave displacement
+        // At progress=0: edgeX = -safeOffset (off-screen)
+        // At progress=1: edgeX = viewportWidth (fully revealed)
+        const safeOffset = (CONFIG.maxDisplacement + CONFIG.waveAmplitude + 0.1) * viewportWidth;
+        let edgeX = -safeOffset + progress * (viewportWidth + safeOffset);
 
         // During exit: continue moving right past the viewport
         if (isExiting) {

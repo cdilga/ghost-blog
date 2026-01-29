@@ -19,8 +19,8 @@
         <h1 class="hero__title" data-animate="fade-up">CHRIS DILGER</h1>
         <p class="hero__subtitle" data-animate="fade-up" data-animate-delay="0.1">Makes things work.</p>
         <div class="hero__cta" data-animate="fade-up" data-animate-delay="0.2">
-            <a href="#all-posts" class="btn btn--primary btn--large">View Work</a>
-            <a href="/about/" class="btn btn--secondary btn--large">About Me</a>
+            <a href="#projects" class="btn btn--primary btn--large">View Work</a>
+            <a href="#the-coder" class="btn btn--secondary btn--large">About Me</a>
         </div>
     </div>
 
@@ -42,7 +42,7 @@
 
         <div class="coder__content">
             {{!-- Keyboard visualization --}}
-            <a href="https://x.com/cdilga" target="_blank" rel="noopener noreferrer" class="coder__keyboard" data-animate="fade-up" data-animate-delay="0.1" aria-label="Visit my X.com profile">
+            <a href="https://youtube.com/@cdilga" target="_blank" rel="noopener noreferrer" class="coder__keyboard" data-animate="fade-up" data-animate-delay="0.1" aria-label="Watch me code on YouTube">
                 <div class="keyboard">
                     <div class="keyboard__row">
                         <span class="key" data-key="1">~</span>
@@ -117,7 +117,7 @@
                         <span class="key">→</span>
                     </div>
                 </div>
-                <span class="coder__keyboard-label">Follow on X →</span>
+                <span class="coder__keyboard-label">Watch me code on YouTube →</span>
             </a>
 
             {{!-- Code snippet --}}
@@ -167,9 +167,28 @@
 
 {{!-- Scene: 8 Claude Codes --}}
 <section class="scene scene--claude-codes" id="claude-codes" data-scene="claude-codes">
+    {{!--
+        IMPORTANT: Hidden preload images for PixiJS depth effect
+
+        These images MUST exist for mobile compatibility. Without them, the depth
+        canvas fails to load on real mobile devices (works in Chrome emulation but
+        fails on actual iOS/Android).
+
+        Why this works:
+        1. Ghost's {{asset}} helper generates correct absolute URLs
+        2. Browser preloads images eagerly before JS runs
+        3. claude-codes-depth.js reads .src from these elements (like hero-depth.js)
+        4. This matches the hero section pattern which works reliably on mobile
+
+        DO NOT REMOVE - See claude-codes-depth.js for the JS side of this pattern.
+    --}}
+    <div class="claude-codes__background-preload" aria-hidden="true" style="display:none;">
+        <img src="{{asset "images/desert_ground_from_top_of_big_red.jpg"}}" alt="" loading="eager" class="claude-codes__bg-image">
+        <img src="{{asset "images/desert_ground_from_top_of_big_red_depth_anything_2_greyscale.png"}}" alt="" loading="eager" class="claude-codes__depth-image">
+    </div>
     <div class="container">
         <header class="scene__header" data-animate="fade-up">
-            <span class="scene__label">8 Claude Codes</span>
+            <span class="scene__label">Agentic Cowboy</span>
             <h2 class="scene__title">What I'm Building Right Now</h2>
             <p class="scene__description">One agent writes specs. Three implement. Two research. One reviews. One deploys. It mostly works. I'm figuring out the rest as we go.</p>
         </header>
@@ -362,17 +381,13 @@
 
         <div class="speaker__gallery" data-animate="stagger">
             <figure class="speaker__photo speaker__photo--primary">
-                <img src="{{asset "images/speaker/peter-doherty-awards.jpg"}}" alt="Chris Dilger speaking at Peter Doherty Awards 2023" loading="lazy" data-scroll-parallax data-scroll-parallax-x="35" data-scroll-parallax-y="60">
-                <figcaption>Peter Doherty Awards 2023</figcaption>
+                <img src="{{asset "images/speaker/thought-leadership.jpeg"}}" alt="Chris Dilger thought leadership presentation" loading="lazy" data-scroll-parallax data-scroll-parallax-x="35" data-scroll-parallax-y="60" data-depth-map="{{asset "images/speaker/thought-leadership_depth_anything_2_greyscale.png"}}">
             </figure>
             <figure class="speaker__photo">
-                <img src="{{asset "images/speaker/speaking_awards_ceremony.jpg"}}" alt="Chris Dilger at podium" loading="lazy" data-scroll-parallax data-scroll-parallax-x="-25" data-scroll-parallax-y="45">
+                <img src="{{asset "images/speaker/awards-ceremony.jpg"}}" alt="Chris Dilger at awards ceremony" loading="lazy" data-scroll-parallax data-scroll-parallax-x="-25" data-scroll-parallax-y="45" data-depth-map="{{asset "images/speaker/awards-ceremony_depth_anything_2_greyscale.png"}}">
             </figure>
             <figure class="speaker__photo">
-                <img src="{{asset "images/speaker/presso.jpeg"}}" alt="Chris Dilger giving a presentation" loading="lazy" data-scroll-parallax data-scroll-parallax-x="20" data-scroll-parallax-y="50">
-            </figure>
-            <figure class="speaker__photo">
-                <img src="{{asset "images/speaker/community-day.jpeg"}}" alt="Chris Dilger at AWS Community Day Melbourne" loading="lazy" data-scroll-parallax data-scroll-parallax-x="-30" data-scroll-parallax-y="55">
+                <img src="{{asset "images/speaker/aws-community-day.jpeg"}}" alt="Chris Dilger at AWS Community Day Melbourne" loading="lazy" data-scroll-parallax data-scroll-parallax-x="-30" data-scroll-parallax-y="55" data-depth-map="{{asset "images/speaker/aws-community-day_depth_anything_2_greyscale.png"}}">
                 <figcaption>AWS Community Day Melbourne</figcaption>
             </figure>
         </div>
@@ -426,7 +441,7 @@
         <header class="scene__header" data-animate="fade-up">
             <span class="scene__label">The Builder</span>
             <h2 class="scene__title">Enterprise-Scale, Startup-Speed</h2>
-            <p class="scene__description">Banks, hospitals, schools, government. Big migrations, bigger architectures. Built systems that onboard millions. Moved on to weirder things.</p>
+            <p class="scene__description">Banks, hospitals, schools, government. Big migrations, bigger architectures. Built systems that onboard millions. Moved on to more energetic things.</p>
         </header>
 
         <div class="consultant__content">
@@ -484,7 +499,7 @@
             {{!-- Visual/Photo --}}
             <div class="consultant__visual" data-animate="fade-up" data-animate-delay="0.4">
                 <figure class="consultant__image">
-                    <img src="{{asset "images/consultant/laptop_in_bag.jpg"}}" alt="Ready for consulting work" loading="lazy" data-scroll-parallax data-scroll-parallax-x="25" data-scroll-parallax-y="45">
+                    <img src="{{asset "images/consultant/benchtop_problem_solving.jpg"}}" alt="Problem solving at the workbench" loading="lazy" data-scroll-parallax data-scroll-parallax-x="25" data-scroll-parallax-y="45" data-depth-map="{{asset "images/consultant/benchtop_problem_solving_depth_anything_2_greyscale.png"}}">
                 </figure>
             </div>
         </div>
@@ -502,7 +517,7 @@
         <header class="scene__header" data-animate="fade-up">
             <span class="scene__label">The Teacher</span>
             <h2 class="scene__title">Grows Engineers</h2>
-            <p class="scene__description">Instructor at Data Engineer Camp. The modern data stack: dbt, Snowflake, Airflow. Turns beginners into people who ship pipelines.</p>
+            <p class="scene__description">Experience as an Instructor at an online school. The modern data stack: dbt, Snowflake, Airflow. Turns beginners into people who ship pipelines.</p>
         </header>
 
         <div class="teacher__content">

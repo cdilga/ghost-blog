@@ -15,7 +15,25 @@ env:
   SITE_URL: https://chris.dilger.me
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      themes: ${{ steps.filter.outputs.themes }}
+      adapters: ${{ steps.filter.outputs.adapters }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            themes:
+              - 'themes/**'
+            adapters:
+              - 'ghost/adapters/**'
+              - 'scripts/configure-storage.py'
+
   test:
+    needs: detect-changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,9 +53,9 @@ jobs:
         run: npx playwright test tests/storage-adapter.spec.js
 
   deploy-theme:
-    needs: test
+    needs: [detect-changes, test]
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'themes/') || github.event_name == 'workflow_dispatch'
+    if: needs.detect-changes.outputs.themes == 'true' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
@@ -83,14 +101,14 @@ jobs:
 
   deploy-storage-adapter:
     # Run after deploy-theme to avoid parallel SSH connections hitting MaxStartups
-    needs: [test, deploy-theme]
+    needs: [detect-changes, test, deploy-theme]
     runs-on: ubuntu-latest
-    # Run if adapter changed, OR on workflow_dispatch, but skip if deploy-theme was skipped (not just failed)
+    # Run if adapter changed, OR on workflow_dispatch
     if: |
       always() &&
       (needs.test.result == 'success') &&
       (needs.deploy-theme.result == 'success' || needs.deploy-theme.result == 'skipped') &&
-      (contains(github.event.head_commit.modified, 'ghost/adapters/') || github.event_name == 'workflow_dispatch')
+      (needs.detect-changes.outputs.adapters == 'true' || github.event_name == 'workflow_dispatch')
     steps:
       - uses: actions/checkout@v4
 
