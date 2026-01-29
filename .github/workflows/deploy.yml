@@ -99,6 +99,20 @@ jobs:
             chown -R ghost:ghost ${{ env.GHOST_PATH }}/content/themes/${{ env.THEME_NAME }}
           "
 
+      - name: Activate theme
+        run: |
+          ssh -i ~/.ssh/deploy_key root@${{ secrets.VPS_HOST }} "
+            # Get database credentials from Ghost config
+            CONFIG_FILE=${{ env.GHOST_PATH }}/config.production.json
+            DB_USER=\$(python3 -c \"import json; print(json.load(open('\$CONFIG_FILE'))['database']['connection']['user'])\")
+            DB_PASS=\$(python3 -c \"import json; print(json.load(open('\$CONFIG_FILE'))['database']['connection']['password'])\")
+            DB_NAME=\$(python3 -c \"import json; print(json.load(open('\$CONFIG_FILE'))['database']['connection']['database'])\")
+
+            # Activate the theme in Ghost's database
+            mysql -u \"\$DB_USER\" -p\"\$DB_PASS\" \"\$DB_NAME\" -e \"UPDATE settings SET \\\`value\\\`='${{ env.THEME_NAME }}' WHERE \\\`key\\\`='active_theme';\"
+            echo 'Theme ${{ env.THEME_NAME }} activated'
+          "
+
   deploy-storage-adapter:
     # Run after deploy-theme to avoid parallel SSH connections hitting MaxStartups
     needs: [detect-changes, test, deploy-theme]
