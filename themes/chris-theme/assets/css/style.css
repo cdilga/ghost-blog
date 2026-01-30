@@ -3406,6 +3406,7 @@ pre code {
 .contact-method--primary:hover {
     background: var(--color-accent-hover);
     border-color: var(--color-accent-hover);
+    color: white;
     box-shadow: var(--shadow-lg), 0 0 30px rgba(247, 147, 26, 0.3);
 }
 
