@@ -24,7 +24,15 @@
         showHeroContent();
         // Still provide scroll parallax at full intensity
         // IMPORTANT: Do NOT reduce intensity - parallax should be consistent everywhere
-        document.addEventListener('DOMContentLoaded', () => initScrollParallax());
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                initScrollParallax();
+                initAnchorNavigation();
+            });
+        } else {
+            initScrollParallax();
+            initAnchorNavigation();
+        }
         return;
     }
 
@@ -1264,6 +1272,68 @@
         return num.toString();
     }
 
+    // Lenis-aware hash navigation for in-page links
+    function initAnchorNavigation() {
+        const links = document.querySelectorAll('a[href^="#"]');
+
+        function scrollToHash(hash, immediate = false) {
+            if (!hash || hash === '#') return false;
+
+            let target;
+            try {
+                target = document.querySelector(hash);
+            } catch (error) {
+                return false;
+            }
+
+            if (!target) return false;
+
+            const persistentHeader = document.querySelector('.site-header--persistent');
+            const offset = persistentHeader ? -(persistentHeader.offsetHeight + 8) : 0;
+            const top = target.getBoundingClientRect().top + window.pageYOffset + offset;
+
+            // Lenis + pinned ScrollTrigger sections can under-scroll when using lenis.scrollTo(element).
+            // Native scrollTo(top) reliably lands on deep anchors like #projects and #all-posts.
+            if (window.ChrisTheme?.lenis) {
+                window.scrollTo({ top, behavior: 'auto' });
+                if (typeof ScrollTrigger !== 'undefined') {
+                    ScrollTrigger.update();
+                }
+            } else {
+                window.scrollTo({
+                    top,
+                    behavior: immediate ? 'auto' : 'smooth',
+                });
+            }
+
+            if (history.replaceState) {
+                history.replaceState(null, '', hash);
+            } else {
+                window.location.hash = hash;
+            }
+
+            return true;
+        }
+
+        links.forEach((link) => {
+            link.addEventListener('click', (event) => {
+                const hash = link.getAttribute('href');
+                const immediate = link.dataset.anchorInstant === 'true';
+                const didScroll = scrollToHash(hash, immediate);
+                if (!didScroll) return;
+                event.preventDefault();
+            });
+        });
+
+        if (window.location.hash) {
+            window.requestAnimationFrame(() => {
+                window.setTimeout(() => {
+                    scrollToHash(window.location.hash, true);
+                }, 120);
+            });
+        }
+    }
+
     // Initialize reel navigator - circular article wheel
     function initReelNavigator() {
         const section = document.querySelector('.reel-navigator');
@@ -1480,6 +1550,9 @@
 
         // Initialize mobile accelerometer tilt
         initAccelerometerTilt();
+
+        // Initialize in-page hash link scrolling
+        initAnchorNavigation();
 
         // Reel navigator (circular article wheel) is now handled by projection-carousel.js
         // initReelNavigator();
