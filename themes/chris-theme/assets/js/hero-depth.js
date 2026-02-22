@@ -164,6 +164,7 @@
         } catch (error) {
             console.error('Hero Depth: Failed to initialize', error);
             heroImage.style.visibility = 'visible';
+            heroLayer.style.opacity = '1';
             container.remove();
         }
     }
