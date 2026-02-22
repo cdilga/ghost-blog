@@ -1274,7 +1274,32 @@
 
     // Lenis-aware hash navigation for in-page links
     function initAnchorNavigation() {
-        const links = document.querySelectorAll('a[href^="#"]');
+        const links = document.querySelectorAll('a[href*="#"]');
+
+        function normalizePath(pathname) {
+            if (!pathname) return '/';
+            const normalized = pathname.replace(/\/+$/, '');
+            return normalized || '/';
+        }
+
+        function getSamePageHash(href) {
+            if (!href || href === '#') return null;
+
+            let parsed;
+            try {
+                parsed = new URL(href, window.location.href);
+            } catch (error) {
+                return null;
+            }
+
+            if (!parsed.hash || parsed.hash === '#') return null;
+
+            const sameOrigin = parsed.origin === window.location.origin;
+            const samePath = normalizePath(parsed.pathname) === normalizePath(window.location.pathname);
+            if (!sameOrigin || !samePath) return null;
+
+            return parsed.hash;
+        }
 
         function scrollToHash(hash, immediate = false) {
             if (!hash || hash === '#') return false;
@@ -1288,14 +1313,19 @@
 
             if (!target) return false;
 
+            if (typeof ScrollTrigger !== 'undefined') {
+                ScrollTrigger.refresh();
+            }
+
             const persistentHeader = document.querySelector('.site-header--persistent');
             const offset = persistentHeader ? -(persistentHeader.offsetHeight + 8) : 0;
             const top = target.getBoundingClientRect().top + window.pageYOffset + offset;
 
             // Lenis + pinned ScrollTrigger sections can under-scroll when using lenis.scrollTo(element).
             // Native scrollTo(top) reliably lands on deep anchors like #projects and #all-posts.
-            if (window.ChrisTheme?.lenis) {
+            if (window.ChrisTheme?.lenis?.scrollTo) {
                 window.scrollTo({ top, behavior: 'auto' });
+                window.ChrisTheme.lenis.scrollTo(top, { immediate: true });
                 if (typeof ScrollTrigger !== 'undefined') {
                     ScrollTrigger.update();
                 }
@@ -1317,7 +1347,20 @@
 
         links.forEach((link) => {
             link.addEventListener('click', (event) => {
-                const hash = link.getAttribute('href');
+                if (
+                    event.defaultPrevented ||
+                    event.button !== 0 ||
+                    event.metaKey ||
+                    event.ctrlKey ||
+                    event.shiftKey ||
+                    event.altKey
+                ) {
+                    return;
+                }
+
+                const hash = getSamePageHash(link.getAttribute('href'));
+                if (!hash) return;
+
                 const immediate = link.dataset.anchorInstant === 'true';
                 const didScroll = scrollToHash(hash, immediate);
                 if (!didScroll) return;
@@ -1329,7 +1372,10 @@
             window.requestAnimationFrame(() => {
                 window.setTimeout(() => {
                     scrollToHash(window.location.hash, true);
-                }, 120);
+                }, 160);
+                window.setTimeout(() => {
+                    scrollToHash(window.location.hash, true);
+                }, 520);
             });
         }
     }
