@@ -245,22 +245,6 @@
             edgeX = viewportWidth + eased * viewportWidth * 0.3;
         }
 
-        // During enter (from right): animate in from right
-        if (isEntering) {
-            const enterTime = time - enterStartTime;
-            const enterProgress = Math.min(1, enterTime / (CONFIG.enterDuration / 1000));
-            // Ease out
-            const eased = 1 - Math.pow(1 - enterProgress, 2);
-            // Start from right edge, animate to current progress position
-            const startX = viewportWidth * 1.2;
-            const endX = progress * viewportWidth;
-            edgeX = startX + (endX - startX) * eased;
-
-            if (enterProgress >= 1) {
-                isEntering = false;
-            }
-        }
-
         const pathData = generateMaskPath(edgeX, time);
         maskPath.setAttribute('d', pathData);
     }
@@ -314,9 +298,14 @@
         exitStartTime = (performance.now() - animationStartTime) / 1000;
     }
 
+    // Manual/debug helper to restart the mask in an "entering" state.
+    // This keeps the debug API complete and avoids runtime ReferenceError.
     function startEnterAnimation() {
+        if (isEntering) return;
         isEntering = true;
+        isExiting = false;
         enterStartTime = (performance.now() - animationStartTime) / 1000;
+        startAnimation();
     }
 
     function updateMaskPosition(progress) {
@@ -439,7 +428,7 @@
                 if (!isAnimating) {
                     startAnimation();
                 }
-                startEnterAnimation();
+                // Rely on scrub (currentProgress) instead of forced animation
             },
             onLeaveBack: () => {
                 claudeCodesCanvas.style.opacity = '0';

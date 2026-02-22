@@ -291,7 +291,7 @@
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (app) {
+            if (app && app.ticker && typeof app.ticker.start === 'function') {
                 if (entry.isIntersecting) {
                     app.ticker.start();
                     // Show canvas when section enters - opacity controlled here on entry

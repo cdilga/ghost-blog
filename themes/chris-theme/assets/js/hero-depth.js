@@ -294,7 +294,7 @@
     let coderVisible = false;
 
     function updateCanvasVisibility() {
-        if (!app) return;
+        if (!app || !app.ticker || typeof app.ticker.start !== 'function') return;
 
         const shouldBeActive = heroVisible || coderVisible;
 
