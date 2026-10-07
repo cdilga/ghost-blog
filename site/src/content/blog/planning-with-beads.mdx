@@ -1,0 +1,52 @@
+---
+title: "Planning with beads, building with a herd"
+description: "How I turn ideas into dependency-aware tasks and let several agents work them in parallel, with real numbers from the 99 beads that built the previous version of this site."
+date: 2026-10-01
+tags: [workflow, agents, beads]
+---
+import Chart from '../../components/Chart.astro';
+
+export const created = [[19, 1], [20, 1], [21, 1], [22, 17], [23, 22], [24, 48], [25, 77], [26, 91], [27, 99], [28, 99], [29, 99]];
+export const closed = [[19, 0], [20, 0], [21, 0], [22, 3], [23, 22], [24, 24], [25, 57], [26, 68], [27, 80], [28, 81], [29, 85]];
+export const open = created.map(([d, c], i) => [d, c - closed[i][1]]);
+export const ttc = [['< 1 h', 27], ['1 to 6 h', 6], ['6 to 24 h', 24], ['1 to 3 days', 22], ['> 3 days', 6]];
+
+My loop for new projects is deliberately boring.
+
+1. **Capture as beads.** Every idea, bug and chore becomes an issue in [beads](https://github.com/steveyegge/beads), which stores issues in the repo itself, next to the code, with real dependencies between them.
+2. **Let the graph decide.** `bd ready` lists only the tasks with no open blockers. That is the whole scheduler.
+3. **Run a herd.** With herdr and ntm I keep several agent panes open side by side, each claiming one ready bead, so the work fans out and the dependency graph keeps it honest.
+4. **Review and merge.** My job is steering and taste: reading diffs, playtesting builds, and writing the next beads.
+
+## What it looks like in practice
+
+These are real beads from this repository:
+
+```bash
+bd create "Terminal dock-spawn animation from navbar" --type feature --priority 2
+bd dep add ghost-blog-0tt ghost-blog-cog   # sequenced after the particle mask transition
+bd ready                                   # what can an agent pick up right now?
+bd update ghost-blog-0tt --status in_progress
+bd close ghost-blog-0tt --reason "Terminals spawn from navbar with elastic easing."
+bd sync                                    # issues travel with git
+```
+
+Each agent session starts with `bd ready`, claims one bead, and ends by closing it with the evidence. No re-briefing. The plan is in the repo, so a fresh session picks up exactly where the last one stopped.
+
+## Real numbers: the site before this one
+
+The previous Ghost theme for this site was planned and built this way over about ten days in January 2026. The beads database is still in the repository, so here is what that looked like.
+
+- **99 beads**: 62 tasks, 28 features, 5 bugs and 4 epics.
+- **133 dependency links** between them. 42 beads were blocked by at least one other, and one waited on ten.
+- **85 closed** by the end; the 14 still open were deliberately parked ideas, not forgotten work.
+
+<Chart type="line" title="Beads created vs closed, January 2026" series={[{ name: 'created (total)', data: created }, { name: 'closed (total)', data: closed }, { name: 'open right now', data: open }]} xLabel="day of January 2026" yLabel="beads" caption="Planning came in bursts (the 24th and 25th added 55 beads), and closing followed close behind. The open count never ran away: it hovered around 20, which is roughly what a herd of agents plus one reviewer can keep in flight." />
+
+<Chart type="bar" title="How long a bead stayed open" series={[{ name: 'beads', data: ttc }]} yLabel="beads closed" caption="Bimodal. A third closed within the hour: small, well-specified tasks an agent took straight off the ready queue. The rest waited on a dependency or on me, which is exactly what the graph is for. Median: about 17 hours." />
+
+## Why the graph matters more than the agents
+
+The part that surprised me is how much the graph helps *me*. Writing the plan down as small, dependent pieces forces the thinking up front, and it makes the agents interchangeable: any of them can take the next ready bead. When something goes wrong, the fix is usually a better bead (clearer acceptance criteria, a missing dependency), not a better prompt. I wrote about that shift in [Your Prompts Do Not Matter (Anymore)](/blog/your-prompts-do-not-matter-anymore/).
+
+Next up: the same numbers for Joystick Jammers and Physical Soccer, which have far bigger graphs.

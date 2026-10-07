@@ -201,3 +201,5 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .prose table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; } .prose th, .prose td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
 /* wide figures break out of the prose column (must beat .prose figure) */
 .prose .wide { margin-left: 50%; margin-right: 0; transform: translateX(-50%); }
+/* full-bleed backgrounds also cover the strip revealed below the svh frame when the mobile toolbar hides */
+.scene .bg { bottom: calc(-4% - (100lvh - 100svh)); }
