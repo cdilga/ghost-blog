@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile, rm, stat } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { optimiseImages } from './scripts/optimise-images.mjs';
@@ -17,6 +17,14 @@ function cloudflarePages() {
         const log = { info: (m) => logger.info(m), warn: (m) => logger.warn(m) };
         await optimiseImages(root, base.replace(/\/$/, ''), log);
         await buildSearch(root, log);
+        // Vite copies onnxruntime's own WASM builds into _astro, but the search worker loads the smaller
+        // self-hosted /ort copy, and the asyncify build is over Pages' 25 MiB file limit
+        for (const f of await readdir(join(root, '_astro'))) if (/^ort-wasm.*\.wasm$/.test(f)) await rm(join(root, '_astro', f));
+        // fail loudly here rather than at Cloudflare's upload step
+        const big = [];
+        const scan = async (d) => { for (const e of await readdir(d, { withFileTypes: true })) { const f = join(d, e.name); if (e.isDirectory()) await scan(f); else if ((await stat(f)).size > 25 * 1024 * 1024) big.push(relative(root, f)); } };
+        await scan(root);
+        if (big.length) throw new Error(`files over Cloudflare Pages' 25 MiB limit: ${big.join(', ')}`);
         const lines = ['/feed /rss.xml 301', '/feed/ /rss.xml 301', '/rss /rss.xml 301'];
         const walk = async (d) => {
           for (const e of await readdir(d, { withFileTypes: true })) {
