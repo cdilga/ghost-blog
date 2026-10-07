@@ -1,0 +1,133 @@
+---
+/**
+ * Interactive round-jet explorer for blog posts. Self-contained: one canvas, two sliders, live numbers.
+ * Physics (far field of a turbulent round jet, see Pope, Turbulent Flows ch. 5):
+ *   centreline speed  u_c(x) = U                 for x < x0 = B·d (potential core)
+ *                     u_c(x) = B·d·U / x         beyond it
+ *   profile           u(x, r) = u_c · exp(-ln2 · (r / r½)²), half-width r½ = S·x, S ≈ 0.094
+ *   thrust            T = ρ · π/4 · d² · U²
+ * Noise is a rough relative figure from a U⁶ scaling (60·log10 of the speed ratio).
+ * <JetExplorer d={0.12} U={5} refD={0.12} refU={5} />
+ */
+const { d = 0.12, U = 5, refD = 0.12, refU = 5, feel = 0.5, caption = '' } = Astro.props;
+const id = 'jet-' + Math.random().toString(36).slice(2, 8);
+---
+<figure class="chart wide jetx" id={id} data-d={d} data-u={U} data-refd={refD} data-refu={refU} data-feel={feel}>
+  <h3 style="margin:0 0 6px;font-size:1rem">Try it: outlet size vs outlet speed</h3>
+  <canvas aria-label="Animated side view of the air jet leaving a fan, coloured by speed" role="img"></canvas>
+  <div class="jetx-controls">
+    <label>Outlet diameter <output data-o="d"></output><input type="range" min="6" max="40" step="1" data-i="d" /></label>
+    <label>Exit speed <output data-o="u"></output><input type="range" min="1" max="12" step="0.5" data-i="u" /></label>
+    <label class="jetx-lock"><input type="checkbox" data-i="lock" /> hold thrust constant</label>
+  </div>
+  <dl class="jetx-stats">
+    <div><dt>Throw to {feel} m/s</dt><dd data-o="throw"></dd></div>
+    <div><dt>Thrust</dt><dd data-o="thrust"></dd></div>
+    <div><dt>Airflow</dt><dd data-o="flow"></dd></div>
+    <div><dt>Reynolds number</dt><dd data-o="re"></dd></div>
+    <div><dt>Noise vs reference</dt><dd data-o="noise"></dd></div>
+  </dl>
+  <figcaption>{caption || `Dashed outline: reference outlet (${refD * 100} cm at ${refU} m/s). Particles move at the local mean speed, slowed down 2x. Tick "hold thrust constant" and drag the diameter to see the same push delivered by a bigger, slower, quieter outlet.`}</figcaption>
+</figure>
+<style>
+  .jetx canvas { width: 100%; height: clamp(180px, 34vw, 300px); display: block; border-radius: 10px; background: #0b0806; }
+  .jetx-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 22px; margin: 14px 0 6px; font-size: .9rem; color: var(--sand-dim); }
+  .jetx-controls label { display: grid; grid-template-columns: 1fr auto; gap: 4px; align-items: center; }
+  .jetx-controls input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--orange); }
+  .jetx-controls output { font-family: var(--mono); color: var(--sand); }
+  .jetx-lock { display: flex !important; gap: 8px; align-items: center; }
+  .jetx-lock input { accent-color: var(--orange); }
+  .jetx-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 10px 0 4px; }
+  .jetx-stats div { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .jetx-stats dt { font-size: .72rem; color: var(--sand-dim); text-transform: uppercase; letter-spacing: .06em; }
+  .jetx-stats dd { margin: 2px 0 0; font-family: var(--mono); font-size: 1.05rem; color: var(--sand); }
+</style>
+<script>
+  const RHO = 1.2, NU = 1.5e-5, B = 6.2, S = 0.094, LN2 = Math.LN2, XMAX = 8;
+  for (const fig of document.querySelectorAll<HTMLElement>('.jetx')) {
+    const cv = fig.querySelector('canvas')!;
+    const ctx = cv.getContext('2d')!;
+    const $ = (s: string) => fig.querySelector<HTMLElement>(s)!;
+    const inD = $('[data-i="d"]') as HTMLInputElement, inU = $('[data-i="u"]') as HTMLInputElement, lock = $('[data-i="lock"]') as HTMLInputElement;
+    const refD = +fig.dataset.refd!, refU = +fig.dataset.refu!, feel = +fig.dataset.feel!;
+    inD.value = String(+fig.dataset.d! * 100); inU.value = fig.dataset.u!;
+    let d = 0, U = 0, T = 0;
+    const thrust = (dd: number, uu: number) => RHO * Math.PI / 4 * dd * dd * uu * uu;
+    const uc = (x: number, dd: number, uu: number) => (x < B * dd ? uu : (B * dd * uu) / x);
+    const rHalf = (x: number, dd: number) => Math.max(dd / 2, S * x);
+    function read() {
+      d = +inD.value / 100;
+      if (lock.checked && T) { U = Math.sqrt(T / (RHO * Math.PI / 4 * d * d)); inU.value = String(Math.min(12, Math.max(1, U))); U = +inU.value; }
+      else U = +inU.value;
+      if (!lock.checked) T = thrust(d, U);
+      const throwX = Math.max(B * d, (B * d * U) / feel);
+      const set = (k: string, v: string) => { $(`[data-o="${k}"]`).textContent = v; };
+      set('d', `${(d * 100).toFixed(0)} cm`); set('u', `${U.toFixed(1)} m/s`);
+      set('throw', U <= feel ? 'never' : `${throwX.toFixed(1)} m`);
+      set('thrust', `${thrust(d, U).toFixed(2)} N`);
+      const q = Math.PI / 4 * d * d * U;
+      set('flow', `${(q * 3600).toFixed(0)} m³/h · ${(q * 2118.88).toFixed(0)} CFM`);
+      set('re', Math.round((U * d) / NU).toLocaleString('en-AU'));
+      const db = 60 * Math.log10(U / refU);
+      set('noise', `${db >= 0 ? '+' : ''}${db.toFixed(1)} dB`);
+    }
+    lock.addEventListener('change', () => { T = thrust(d, U); read(); });
+    inD.addEventListener('input', read); inU.addEventListener('input', () => { if (lock.checked) lock.checked = false; read(); });
+    read();
+
+    // particles carry a self-similar radial coordinate eta = r / r½, so they spread with the jet
+    type P = { x: number; eta: number };
+    const ps: P[] = [];
+    const spawn = (): P => ({ x: 0, eta: (Math.random() * 2 - 1) * 1.3 });
+    for (let i = 0; i < 1400; i++) { const p = spawn(); p.x = Math.random() * XMAX; ps.push(p); }
+    let W = 0, H = 0, dpr = 1;
+    function size() { dpr = Math.min(2, devicePixelRatio || 1); W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    size(); addEventListener('resize', size);
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let visible = false, last = performance.now();
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) { last = performance.now(); requestAnimationFrame(tick); } }).observe(cv);
+
+    function draw() {
+      const pad = 34, sx = (x: number) => pad + (x / XMAX) * (W - pad - 10), my = H / 2 - 6, sr = (W - pad - 10) / XMAX;
+      const k = Math.min(2, (H / 2 - 16) / (S * XMAX * 1.3 * sr)) * sr; // radial px per metre (exaggerated up to 2x so the spread reads)
+      ctx.clearRect(0, 0, W, H);
+      // distance ticks
+      ctx.fillStyle = 'rgba(185,166,143,.7)'; ctx.font = '10px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+      for (let m = 0; m <= XMAX; m += 1) { ctx.fillRect(sx(m), H - 14, 1, 4); ctx.fillText(`${m} m`, sx(m), H - 2); }
+      // reference envelope (dashed) and current envelope (r½ lines)
+      const env = (dd: number, style: string, dash: number[]) => {
+        ctx.strokeStyle = style; ctx.setLineDash(dash); ctx.lineWidth = 1;
+        for (const s of [-1, 1]) { ctx.beginPath(); for (let x = 0; x <= XMAX; x += 0.1) { const y = my + s * rHalf(x, dd) * k; x ? ctx.lineTo(sx(x), y) : ctx.moveTo(sx(x), y); } ctx.stroke(); }
+        ctx.setLineDash([]);
+      };
+      env(refD, 'rgba(242,230,211,.25)', [4, 4]);
+      env(d, 'rgba(255,122,26,.35)', []);
+      // feel line: where centreline speed drops to the "can feel it" threshold
+      const throwX = (B * d * U) / feel;
+      if (U > feel && throwX < XMAX) { ctx.strokeStyle = '#ffd166'; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(sx(throwX), 8); ctx.lineTo(sx(throwX), H - 18); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#ffd166'; ctx.textAlign = 'left'; ctx.fillText(`${feel} m/s`, sx(throwX) + 4, 16); }
+      // particles coloured by local speed (relative to the exit speed)
+      for (const p of ps) {
+        const r = p.eta * rHalf(p.x, d);
+        const u = uc(p.x, d, U) * Math.exp(-LN2 * p.eta * p.eta);
+        const t = Math.min(1, u / Math.max(2, U * 0.8));
+        ctx.fillStyle = `rgba(${255},${Math.round(122 + (1 - t) * 110)},${Math.round(26 + (1 - t) * 190)},${0.45 + t * 0.55})`;
+        ctx.fillRect(sx(p.x), my + r * k, 2.4, 2.4);
+      }
+      // the fan
+      ctx.fillStyle = '#3a2e26'; ctx.fillRect(pad - 12, my - (d / 2) * k - 6, 10, d * k + 12);
+      ctx.fillStyle = '#ff7a1a'; ctx.fillRect(pad - 3, my - (d / 2) * k, 3, d * k);
+    }
+    function tick(now: number) {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      for (const p of ps) {
+        const u = uc(p.x, d, U) * Math.exp(-LN2 * p.eta * p.eta);
+        p.x += Math.max(0.05, u) * dt * 0.5;
+        if (p.x > XMAX) Object.assign(p, spawn());
+      }
+      draw();
+      if (visible && !reduce) requestAnimationFrame(tick);
+    }
+    for (const el of [inD, inU, lock]) el.addEventListener('input', () => reduce && draw());
+    draw();
+  }
+</script>

@@ -5,6 +5,7 @@ date: 2026-10-07
 tags: [physics, hardware, working-draft]
 ---
 import Chart from '../../components/Chart.astro';
+import JetExplorer from '../../components/JetExplorer.astro';
 
 export const rho = 1.2, nu = 1.5e-5, B = 6.2;
 export const d = 0.12;
@@ -43,6 +44,10 @@ so what matters is the product of outlet diameter and outlet speed, i.e. the mom
 Thrust (momentum flux) is `T = ρ·(π/4)·d²·U²`. Hold it fixed and the throw, which scales as `d·U`, **does not change with diameter at all**: a bigger, slower outlet delivers the same punch down the room. Noise, however, rises steeply with speed. Using a rough `U⁶` scaling for broadband fan and jet noise as a stand-in:
 
 <Chart type="line" title="Same thrust (0.5 N), different outlet diameters" series={trade} logY xLabel="outlet diameter (cm)" yLabel="value" caption="Doubling the diameter from 12 cm to 25 cm drops the required exit speed by half and the relative noise by roughly two orders of magnitude, for the same far-field push. The exponent is a rule of thumb; real blade and motor noise add tonal components on top." />
+
+Here is the same idea as something you can play with. The particle jet is the far-field model above, with the spreading rate of a real turbulent round jet. Hold the thrust constant and drag the diameter: the yellow line (where the breeze drops to a just-noticeable 0.5 m/s) barely moves, while the noise figure falls away.
+
+<JetExplorer d={0.12} U={5} />
 
 So the shopping heuristic is: **maximise outlet area for the thrust you need**, then check the motor and blades are not adding their own whine.
 

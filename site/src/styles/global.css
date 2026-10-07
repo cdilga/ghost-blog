@@ -132,7 +132,7 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .prose blockquote { border-left: 3px solid var(--orange); margin: 1.4em 0; padding: .1em 1.1em; color: var(--sand-dim); }
 .prose .katex-block, .prose .eq { font-family: var(--mono); text-align: center; padding: 14px; background: rgba(255,255,255,.04); border-radius: 10px; overflow-x: auto; }
 .wide { max-width: 1000px; margin-left: 50%; transform: translateX(-50%); width: min(1000px, 100vw - 32px); }
-.chart { margin: 2em 0; padding: 18px 18px 10px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.02); }
+.chart { margin-top: 2em; margin-bottom: 2em; padding: 18px 18px 10px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.02); }
 .chart figcaption { color: var(--sand-dim); font-size: .88rem; margin-top: 8px; }
 .chart svg { width: 100%; height: auto; overflow: visible; } .chart text { fill: var(--sand-dim); font: 11px var(--mono); } .chart .axis { stroke: var(--line); } .chart .grid { stroke: rgba(242,230,211,.07); }
 .chart .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .8rem; color: var(--sand-dim); margin: 0 0 8px; } .chart .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
@@ -199,3 +199,5 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .prose .ghost-embed video { width: 100%; border-radius: 10px; }
 .prose hr { border: 0; border-top: 1px solid var(--line); margin: 2.4em 0; }
 .prose table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; } .prose th, .prose td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+/* wide figures break out of the prose column (must beat .prose figure) */
+.prose .wide { margin-left: 50%; margin-right: 0; transform: translateX(-50%); }
