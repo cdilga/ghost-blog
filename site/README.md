@@ -15,11 +15,23 @@ node scripts/import-ghost.mjs export.json [--download-images]   # port old Ghost
 ```
 
 ## How the scroll story works
-`src/scripts/story.js`. Native scroll only. The track and sticky stage are sized in `lvh` and content lives in an `svh` frame, so Chrome's collapsing toolbar never changes layout. Progress = scrollY / track range, smoothed by a damped follower. Scenes are `<section class="scene" data-len="1.2">` (length in viewport heights); elements use `data-fx="words|rise|fade|tilt|pan"` with `data-a` (start) and `data-d` (duration) in scene-local progress. Add scene-specific animation as a hook function of local progress.
+`src/scripts/story.js`. Native scroll only. The track and sticky stage are sized in `lvh` and content lives in an `svh` frame, so Chrome's collapsing toolbar never changes layout. Progress = scrollY / track range, smoothed by a damped follower.
+
+- Scenes are `<section class="scene" data-len="1.2">` (base length in viewport heights).
+- **Content always fits.** On every width change the engine measures each scene's `.content` against the frame. Taller content gets extra scroll length and pans through the frame (masked under the header) instead of being clipped, so phones, landscape and zoomed desktops keep all the copy.
+- Every scene enters (drifts up), holds, and exits (lifts away) while crossfading with its neighbours.
+- Element effects: `data-fx="words|reveal|rise|fade|out|tilt|pan|bgzoom|count|drift"` with `data-a` (start) and `data-d` (duration) in scene-local progress. `reveal` is the read-along body-copy effect (words light up as you scroll, inline markup kept).
+- Scene hooks (`data-hook="beads|terms|rack|house|timeline"`) are stateless functions of local progress; give a hook a `relayout` method if it needs measurements.
+
 Append `?static` (or use reduced motion) for the stacked, no-animation layout.
 
+## Harness
+`npm run harness` writes `harness/out/report.html`: contact sheets per device/zoom, a scene opacity timeline (dead air), a clipping check (every key element must be fully on screen at some point while its scene is active), per-scene readable hold (share of the scene where it is fully opaque and all text revealed), resize stability and frame timing.
+
 ## Blog
-Markdown or MDX in `src/content/blog`. In MDX use `<Chart type="line|bar|scatter" series={[{name, data:[[x,y]]}]} />` (build-time SVG, no JS).
+Markdown or MDX in `src/content/blog`. In MDX use `<Chart type="line|bar|scatter" series={[{name, data:[[x,y]]}]} />` (build-time SVG; line charts get a small hover/touch readout). `<JetExplorer />` is an example of a fully interactive figure. Tags get pages at `/blog/tag/<tag>/`.
+
+Old Ghost content was ported with `node scripts/port-live-ghost.mjs` (scrapes the live site, downloads images to `public/img/ghost/`). Old URLs (`/<slug>/`, `/tag/<tag>/`, `/rss/`) redirect to the new ones.
 
 ## Notes
 - `books.dilger.au` is still "coming soon"; the story uses `test.books.dilger.au` shots. Re-run `npm run shots` after launch.
