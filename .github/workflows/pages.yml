@@ -20,9 +20,14 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: site/package-lock.json }
       - run: npm ci
+      # configure-pages reports the real Pages URL: https://cdilga.github.io/ghost-blog until a
+      # custom domain is set, then https://chris.dilger.me with an empty base path.
+      - id: pages
+        uses: actions/configure-pages@v5
       - run: npm run build
         env:
-          SITE: https://chris.dilger.me
+          SITE: ${{ steps.pages.outputs.origin }}
+          BASE: ${{ steps.pages.outputs.base_path }}/
       - uses: actions/upload-pages-artifact@v3
         with: { path: site/dist }
   deploy:
