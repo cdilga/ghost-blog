@@ -2,7 +2,7 @@
 // Usage: node harness/project-shots.mjs [name-filter]
 // Desktop: 1440x900 @1.5x, phone: 390x844 @2x (isMobile, hasTouch).
 // Output is JPEG, resized to max 1600px wide and squeezed under ~250 KB with sharp.
-// home.dilger.dev is not captured: it sits behind Cloudflare Access (authentik sign-in).
+// The house twin is private (behind a sign-in) and is never captured or linked from the site.
 import { chromium } from 'playwright';
 import sharp from 'sharp';
 import fs from 'node:fs';

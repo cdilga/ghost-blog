@@ -1,5 +1,5 @@
 ---
-title: "home.dilger.dev: a digital twin of a real house, built from the drawings"
+title: "A digital twin of our house, built from the drawings"
 description: "Walk a full 3D model of a new-build home and its street, switch construction stages, and mark up where things go. Generated from code, in the browser, on desktop or phone."
 date: 2026-10-06
 tags: [projects, 3d, rust, bevy]
@@ -7,7 +7,9 @@ image: /shots/home-d.jpg
 ---
 import CompareWipe from '../../components/CompareWipe.astro';
 
-Walk through a full 3D model of a new-build home and its street, switch between construction stages (slab, frame, finished), and mark up where you want things to go. It runs in the browser, on desktop or phone, with nothing to install. It is not public yet, but here is what it is and why I built it.
+Walk through a full 3D model of a new-build home and its street, switch between construction stages (slab, frame, finished), and mark up where you want things to go. It runs in the browser, on desktop or phone, with nothing to install.
+
+> **This one is private, and it is staying that way.** A model this complete (the house, the street, the estate around it) would make our address trivial to work out, so I am not sharing the model or its link. What you see here are screenshots and a top-down floor plan, which is as far as I am comfortable going. The *ideas* are the interesting part anyway, and they transfer to any house.
 
 ## Generated, not drawn
 
@@ -32,7 +34,7 @@ Every element has a stable ID. A change shows up as a diff, and the model rebuil
 
 **Decisions become visible before they are expensive.** Where the outlets, lights, furniture and fences go, and whether a car and trailer actually fit, are much cheaper to argue about in a model than on site.
 
-**Collaboration is a link.** The family opens it on a phone and comments. Nobody installs anything.
+**Collaboration is a link.** The family opens it on a phone and comments. Nobody installs anything. (The link sits behind a sign-in; it is for us, not the internet.)
 
 **Trust is explicit.** The project separates *planned*, *observed*, *measured* and *verified as built*, and keeps evidence status separate from review status. A thing being in the model does not mean anyone has checked it.
 
