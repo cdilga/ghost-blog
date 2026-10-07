@@ -1,0 +1,11 @@
+---
+// Old Ghost tag archives (/tag/<slug>/) point at the new tag pages.
+import Redirect from '../../components/Redirect.astro';
+import { getCollection } from 'astro:content';
+export async function getStaticPaths() {
+  const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const posts = await getCollection('blog', (p) => !p.data.draft);
+  return [...new Set(posts.flatMap((p) => p.data.tags.map(slug)))].map((tag) => ({ params: { tag } }));
+}
+---
+<Redirect to={`/blog/tag/${Astro.params.tag}/`} />

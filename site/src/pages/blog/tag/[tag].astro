@@ -1,0 +1,30 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+export async function getStaticPaths() {
+  const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const posts = await getCollection('blog', (p) => !p.data.draft);
+  const tags = new Map();
+  for (const p of posts) for (const t of p.data.tags) tags.set(slug(t), { name: t, posts: [...(tags.get(slug(t))?.posts ?? []), p] });
+  return [...tags].map(([tag, v]) => ({ params: { tag }, props: { name: v.name, posts: v.posts.sort((a, b) => +b.data.date - +a.data.date) } }));
+}
+const { name, posts } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<Base title={`${name} | Chris Dilger`} description={`Posts tagged ${name}.`}>
+  <div class="list">
+    <p class="meta mono"><a href={`${base}/blog/`}>← All writing</a></p>
+    <h1>#{name}</h1>
+    <div class="cards" style="grid-template-columns:1fr">
+      {posts.map((p) => (
+        <a class="card" href={`${base}/blog/${p.id}/`}>
+          <small>{p.data.date.toISOString().slice(0, 10)}</small>
+          <h3>{p.data.title}</h3>
+          <p>{p.data.description}</p>
+        </a>
+      ))}
+    </div>
+  </div>
+  <footer class="foot">© Chris Dilger</footer>
+</Base>

@@ -1,0 +1,16 @@
+---
+const { to, title = 'Moved' } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const href = `${base}${to}`;
+---
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8" />
+  <title>{title} | Chris Dilger</title>
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href={new URL(href, Astro.site)} />
+  <meta http-equiv="refresh" content={`0;url=${href}`} />
+</head>
+<body><p>This page has moved to <a href={href}>{href}</a>.</p></body>
+</html>

@@ -2,11 +2,12 @@
 import Base from './Base.astro';
 const { title, description, date, tags = [], image, legacy = false } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 const src = (p) => (p && p.startsWith('/') ? `${base}${p}` : p);
 ---
-<Base title={`${title} | Chris Dilger`} description={description}>
+<Base title={`${title} | Chris Dilger`} description={description} image={image ?? '/desert.jpg'}>
   <article class="prose">
-    <p class="meta"><a href={`${base}/blog/`}>← Writing</a>{date && <> · {date.toISOString().slice(0, 10)}</>}{tags.length ? ' · ' + tags.join(', ') : ''}{legacy && <> · <span class="archive-flag">Archive</span></>}</p>
+    <p class="meta"><a href={`${base}/blog/`}>← Writing</a>{date && <> · {date.toISOString().slice(0, 10)}</>}{tags.map((t, i) => <>{i ? ', ' : ' · '}<a href={`${base}/blog/tag/${slug(t)}/`}>{t}</a></>)}{legacy && <> · <span class="archive-flag">Archive</span></>}</p>
     <h1>{title}</h1>
     {image && <figure class="feature"><img src={src(image)} alt="" loading="eager" decoding="async" /></figure>}
     <slot />
