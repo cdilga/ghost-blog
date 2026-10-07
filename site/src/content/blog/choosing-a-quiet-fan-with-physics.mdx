@@ -23,10 +23,8 @@ export const trade = [
 ];
 
 export const dreo = {
-  m353: { U: 7.92, Q: 0.472, rotor: 0.178 },
-  m512: { U: 7.62, Q: 0.519, rotor: 0.229 },
-  m513S: { U: 8.0, Q: 1699 / 3600 },
-  m765S: { U: 9.0, Q: 2549 / 3600 },
+  m353: { U: 7.92, Q: 1000 / 2118.88, rotor: 0.178 },
+  m512: { U: 7.62, Q: 1100 / 2118.88, rotor: 0.229 },
 };
 export const r2 = (v) => Math.round(v * 100) / 100;
 export const dEff = (f) => Math.sqrt((4 * f.Q) / (Math.PI * f.U));
@@ -38,12 +36,14 @@ export const crossover = [
   { name: '353, momentum estimate', data: xsD.map((x) => [x, r2(ucl(dreo.m353.U, dEff(dreo.m353), x))]) },
   { name: '512, momentum estimate', data: xsD.map((x) => [x, r2(ucl(dreo.m512.U, dEff(dreo.m512), x))]) },
 ];
-export const at7 = (u1, f) => r2(u1 * Math.min(1, (B * dEff(f)) / 7));
+export const at7 = (U, dOut) => r2(U * Math.min(1, (B * dOut) / 7));
+export const r765 = [[27.8, 2.2], [54.6, 5.5], [56, 5.8]];
+export const r513 = [[32.1, 2.14], [33.7, 2.61], [37.1, 3.25], [41.3, 3.73], [45.1, 4.21], [48.8, 5.0], [51.8, 5.31], [55.5, 5.94], [57.9, 6.56]];
 export const quiet = [
-  { name: '765S (Expert Reviews)', data: [[27.8, 2.2], [35, 3.7], [54.6, 5.5], [56, 5.8]].map(([db, u]) => [db, at7(u, dreo.m765S)]) },
-  { name: '513S (Notebookcheck, ends measured)', data: [[34, 2.2], [53, 6.8]].map(([db, u]) => [db, at7(u, dreo.m513S)]) },
-  { name: '513S settings, noise interpolated', data: [2.2, 2.8, 3.4, 4.0, 4.4, 5.2, 5.8, 6.2, 6.8].map((u) => [Math.round(10 * (34 + (19 * Math.log(u / 2.2)) / Math.log(6.8 / 2.2))) / 10, at7(u, dreo.m513S)]) },
+  { name: 'Smart TurboPoly 765S (Expert Reviews, 1 m)', data: r765.map(([db, u]) => [db, at7(u, 0.3)]) },
+  { name: '513S (LanOC, grille velocity, 0.91 m)', data: r513.map(([db, u]) => [db, at7(u, 0.229)]) },
 ];
+export const power513 = [{ name: '513S noise (LanOC)', data: [[3.2, 32.1], [4.6, 33.7], [6.1, 37.1], [8.0, 41.3], [10.9, 45.1], [14.6, 48.8], [18.6, 51.8], [24.7, 55.5], [30.2, 57.9]] }];
 
 > **Working draft.** The physics below is real, and the Dreo figures come from Dreo's catalogue and independent reviews. None of it is my own measurement yet, and the long-range numbers are model extrapolations, not data. I would rather publish the method early than polish it in private.
 
@@ -101,41 +101,51 @@ This is a 2D, depth-averaged slice, so it is honest about *where* air can go but
 
 ## Which Dreo? Separating data from extrapolation
 
-Here is what is actually published for the fans on my shortlist. Nobody publishes a standard velocity-at-1/3/5/7/10 m table, so everything past the measured 1 m point is the jet model above.
+Here is what is actually published for the fans on my shortlist, after a proper search. Nobody publishes a standard velocity-at-1/3/5/7/10 m table, so everything past the first metre is the jet model above. Dreo's model numbers also mean different products in different countries, which trips up a lot of reviews.
 
-| Model | Catalogue max outlet | Catalogue airflow | Rotor | Measured at 1 m | Measured noise |
-|---|---|---|---|---|---|
-| 353 | 7.92 m/s | 1000 CFM (0.47 m³/s) | ~7 in | 3.47 m/s at 3.05 m on speed 6 (informal) | n/a |
-| 512 | 7.62 m/s | 1100 CFM (0.52 m³/s) | ~9 in | n/a | n/a |
-| 513S | ~8 m/s | 1699 m³/h | n/a | 2.2 to 6.8 m/s (Notebookcheck) | ~34 to ~53 dBA |
-| 765S | ~9 m/s | 2549 m³/h | n/a | 2.2 to 5.8 m/s (Expert Reviews) | 27.8 to >56 dBA |
-| 704S / 714S | n/a | n/a | n/a | owner reports only | owner reports only |
+| Model | Dreo's claims | Rotor / head | Independent measurements |
+|---|---|---|---|
+| 353 | 26 ft/s (7.9 m/s), 1000 CFM, 90 ft, US$79.99 | ~7 in | none found |
+| 512 | 25 ft/s (7.6 m/s), 1100 CFM, 93 ft, US$99.99 | ~9 in | none found |
+| 513S | 882 CFM, 100 ft, 25 to 51 dB, US$139.99 | 9 in rotor, 11 in head | [LanOC](https://lanoc.org/review/smart-home/dreo-polyfan-513s-air-circulator-fan?showall=1): power, airflow and noise at every speed; [Notebookcheck](https://www.notebookcheck.net/A-fresh-breeze-on-hot-days-Smart-Dreo-TurboPoly-Fan-513S-review.1087865.0.html): just over 30 dB low, ~53 dB turbo at 1 m |
+| 704S | 26 ft/s, 882 CFM (2024 PolyFan); now listed at 1400 CFM | 9 in head | [TechRadar](https://www.techradar.com/home/small-appliances/dreo-polyfan-704s-review): ~56 dB average on turbo, no air speed |
+| 714S (US table fan) | 970 CFM, 110 ft, 25 to 51 dB, US$99.99 | 9 in blade, 11 in head | one owner: ~28 dBA at 1 m on speed 1 |
+| 765S (Smart TurboPoly) | 1500 CFM, 120 ft, US$159.99 | ~30 cm head | [Expert Reviews](https://www.expertreviews.co.uk/beauty-wellness/air-treatment/dreo-smart-turbopoly-765s-review): 2.2 to 5.8 m/s and 27.8 to >56 dBA at 1 m |
 
-The catalogue "reach" figures (90 ft, 93 ft, 37 m) do not say what air speed counts as reached, so I ignore them.
+Two warnings from the research. First, Dreo's ft/s figures sit well above anything measured at 1 m (independent readings top out around 4 to 6 m/s), so treat them as nozzle or peak values. Second, the UK "714S" is a bladeless tower fan (and there is also a 714S heater), and the "TurboCool Misting Fan 765S" is a different product from the Smart TurboPoly 765S. Reviews of those do not transfer. I could not find Australian pricing for any of these.
 
 ### 353 vs 512: who wins, and where?
 
-The 353 has the faster outlet (7.92 vs 7.62 m/s), so it wins right at the fan. Far away, though, the jet model says centreline speed scales with *outlet speed times outlet diameter*, which is set by momentum flux, so the bigger 512 should catch up. By how much depends on what you take the outlet diameter to be, and the two honest ways of estimating it disagree:
+There are no independent measurements of either, so this is the jet model on Dreo's claims. The 353 has the faster claimed outlet (7.92 vs 7.62 m/s), so it wins right at the fan. Far away, centreline speed scales with *outlet speed times outlet diameter*, so the bigger 512 should catch up. By how much depends on what you take the outlet diameter to be, and the two honest estimates disagree:
 
-- **Rotor estimate.** Treat the rotor as the outlet. Then U·d is 1.41 for the 353 and 1.74 for the 512, so the 512 carries **about 24% more** speed in the far field.
-- **Momentum estimate.** Use the catalogue airflow and speed instead: momentum flux ρQU is 4.5 N for the 353 and 4.7 N for the 512, which is **only about 2% more**. (The implied outlet is bigger than either rotor, which tells you the catalogue CFM includes air the jet has already entrained.)
+- **Rotor estimate.** Treat the rotor as the outlet. U·d is 1.41 for the 353 and 1.74 for the 512, so the 512 carries **about 24% more** speed in the far field.
+- **Momentum estimate.** Use the catalogue airflow and speed: momentum flux ρQU is 4.5 N for the 353 and 4.7 N for the 512, **only about 2% more**. (The implied outlet is bigger than either rotor, which suggests the catalogue CFM includes entrained air.)
 
-<Chart type="line" title="353 vs 512: modelled centreline speed (not measured)" series={crossover} xLabel="distance from fan (m)" yLabel="centreline speed (m/s)" logX caption="Both estimates agree on the shape: the 353 leads inside about 1.2 to 1.8 m, then the 512 leads from there on. They disagree on the size of the lead at 7 m (1.55 vs 1.25 m/s by rotor, 1.99 vs 1.93 m/s by momentum). The crossover is a model prediction, not a measurement." />
+<Chart type="line" title="353 vs 512: modelled centreline speed (not measured)" series={crossover} xLabel="distance from fan (m)" yLabel="centreline speed (m/s)" logX caption="Both estimates agree on the shape: the 353 leads inside about 1.2 to 1.8 m, then the 512 leads. They disagree on the size of the lead at 7 m (1.55 vs 1.25 m/s by rotor, 1.99 vs 1.93 m/s by momentum). A model prediction on manufacturer claims, not a measurement." />
 
-So the 512 does beat the 353 down a long hallway, but the confident version of that claim ("24% more push") rests on an assumption the catalogue's own airflow figure contradicts. The cautious version is: **the 512 is at least as good past 2 m, and the 353 is the better value for a short throw.** At A$159.99 the 353 is also a cheap experiment.
+So the cautious claim is: **the 512 is at least as good past 2 m, and the 353 is the value pick for a short throw.**
 
-### The graph that actually matters: air speed at 7 m vs noise
+### The graph that matters: air speed at 7 m vs noise
 
-What I care about is how much breeze reaches the far bedroom for a given amount of noise. Two models have independent 1 m speed and noise measurements at several settings. Treat 1 m as still inside the jet's core (true for any outlet over ~16 cm), and project to 7 m with the momentum estimate:
+What I care about is how much breeze reaches the far bedroom for a given amount of noise. Only two fans have independent speed *and* noise measurements across their settings. I project each measured speed to 7 m with the jet model, treating the measurement as the outlet speed (both fans' cores reach past 1 m):
 
-<Chart type="line" title="Estimated air speed 7 m away vs measured noise" series={quiet} xLabel="noise at the reviewer's mic (dBA)" yLabel="speed at 7 m (m/s, modelled)" caption="At about 35 dBA, the 765S's 3.7 m/s at 1 m projects to roughly 1.0 m/s at 7 m, against about 0.6 m/s for the 513S at the same noise: nearly twice the useful breeze for the same sound. At full power they converge (~1.6 m/s), with the 765S being louder. Only the 513S's lowest and highest settings have measured noise, so the purple points in between are interpolated. The two reviews used different rooms and microphones, so treat cross-review dBA comparisons as rough." />
+<Chart type="line" title="Modelled air speed 7 m away vs measured noise" series={quiet} xLabel="noise (dBA, reviewer's meter)" yLabel="speed at 7 m (m/s, modelled)" caption="Only the 765S settings with both a speed and a noise reading are plotted (1, 12 and turbo); the straight line between 28 and 55 dB is a join, not data. The 513S speeds are LanOC's peak readings at the grille, which flatter it, and its noise was measured with the fan angled away from the microphone, which flatters it again. Even so, the bigger 765S delivers somewhat more air at 7 m for the same noise: about 1.5 m/s at 55 dB against about 1.2 m/s." />
 
-That points to an answer that looks nothing like the spec-sheet ranking. **The 765S buys its extra size as quiet headroom**: at bedroom-acceptable noise it delivers far more air at 7 m than a smaller fan run hard. The 704S/714S may be the sweet spot (owners consistently report them as quieter, and good at pushing air down hallways), but until there are measurements I cannot put them on the chart.
+The 513S data does have one very useful property: it is a complete curve. That matters because the 714S table fan uses the same 9 in rotor in the same 11 in head, so the 513S is the best available proxy for it. Noise climbs about 26 dB from speed 1 to turbo, while power goes up roughly tenfold:
+
+<Chart type="line" title="513S: noise vs power draw (LanOC, measured)" series={power513} xLabel="power (W)" yLabel="noise (dB at 0.91 m)" caption="Every speed setting measured with a plug-in power meter and a sound meter at 0.91 m. The low settings (3 to 8 W) stay in the low to high 30s of dB, which is bedroom-quiet." />
+
+**Where that leaves the choice.** The honest ranking is weaker than the spec sheets suggest:
+
+- **Most air at 7 m for a given noise:** the 765S, by a modest margin over a 9 in fan, not the 2x I first estimated from mismatched settings.
+- **Best measured quiet envelope:** the 513S, with the 714S very likely similar (same rotor and head), and the 704S somewhere near.
+- **Short throw on a budget:** the 353.
+- **Still unmeasured:** the 704S and 714S. The cheapest way to close this is an anemometer and a sound meter in our own hallway, which also gives the airflow simulation real numbers to check against.
 
 ## What is next
 
 1. Measure the candidate Dreo's outlet area and real exit speed with an anemometer.
 2. Replace the placeholder `B` and the `U⁶` rule with measured decay and a dB(A) reading at 1 m, 3 m.
 3. Add a small CFD sanity check of the near field, where the 1/x law does not yet hold.
-4. Put the 704S/714S on the noise chart: measure 1 m speed and dBA per setting, the same way the reviews did.
+4. Put the 704S/714S on the noise chart: measure air speed at 1, 3 and 7 m and dBA per setting, with the meter in the same place for every fan.
 5. Measure air speed in the hall with the AC alone and with the fan in each spot, and put the measurements next to the simulation.
