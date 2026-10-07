@@ -1,0 +1,53 @@
+---
+title: "Choosing a quiet fan with jet physics"
+description: "A working draft: why momentum, not viscosity, decides how far a fan's air punches into a room, and what that means for picking a quiet one."
+date: 2026-10-07
+tags: [physics, hardware, working-draft]
+---
+import Chart from '../../components/Chart.astro';
+
+export const rho = 1.2, nu = 1.5e-5, B = 6.2;
+export const d = 0.12;
+export const speeds = [3, 5, 8];
+export const xs = [0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 8];
+export const decay = speeds.map((U) => ({ name: `exit ${U} m/s`, data: xs.map((x) => [x, +Math.min(U, (B * d * U) / x).toFixed(3)]) }));
+export const reData = [1, 2, 3, 5, 8].map((U) => [`${U} m/s`, Math.round((U * d) / nu)]);
+export const T = 0.5;
+export const diams = [0.08, 0.1, 0.12, 0.16, 0.2, 0.25, 0.3];
+export const exitU = (dia) => Math.sqrt((4 * T) / (Math.PI * rho * dia * dia));
+export const trade = [
+  { name: 'exit speed (m/s)', data: diams.map((dia) => [dia * 100, +exitU(dia).toFixed(2)]) },
+  { name: 'relative noise, U^6, 12 cm = 1', data: diams.map((dia) => [dia * 100, +Math.pow(exitU(dia) / exitU(0.12), 6).toFixed(3)]) },
+];
+
+> **Working draft.** The numbers below are real calculations, but the fan figures are placeholders until I have measured the Dreo I am actually looking at. I would rather publish the method early than polish it in private.
+
+I want a fan that moves air across a room without sounding like one. The marketing numbers (CFM, dB at some unspecified distance) do not say much about how it will *feel* three metres away. A cleaner way to think about it is to treat the fan outlet as a **turbulent jet** and ask what physics sets how far it carries.
+
+## Momentum wins, viscosity barely matters
+
+Compare the two effects with the jet Reynolds number, `Re = U·d/ν`. For a 12 cm outlet and air with ν ≈ 1.5×10⁻⁵ m²/s:
+
+<Chart type="bar" title="Jet Reynolds number for a 12 cm outlet" series={[{ name: 'Re', data: reData }]} yLabel="Re" logY yMin={3} caption="Laminar pipe flow breaks down near Re ≈ 2,000. Even a gentle 1 m/s outlet is already far past it, so the jet is turbulent and its spreading is set by momentum, not by the air's viscosity." />
+
+In that regime the far field of a round jet is self-similar and, usefully, **independent of Reynolds number**. The centreline speed falls as
+
+<p class="eq">u_c(x) ≈ B·d·U / x, with B ≈ 6.2</p>
+
+so what matters is the product of outlet diameter and outlet speed, i.e. the momentum flux.
+
+<Chart type="line" title="Centreline speed vs distance (12 cm outlet)" series={decay} xLabel="distance from fan (m)" yLabel="air speed (m/s)" caption="Beyond about six diameters the jet decays as 1/x. A 5 m/s outlet is already down to ≈0.6 m/s at 6 m." xMarks={[{ x: 0.72, label: '6 d' }]} />
+
+## The trade that makes a fan quiet
+
+Thrust (momentum flux) is `T = ρ·(π/4)·d²·U²`. Hold it fixed and the throw, which scales as `d·U`, **does not change with diameter at all**: a bigger, slower outlet delivers the same punch down the room. Noise, however, rises steeply with speed. Using a rough `U⁶` scaling for broadband fan and jet noise as a stand-in:
+
+<Chart type="line" title="Same thrust (0.5 N), different outlet diameters" series={trade} logY xLabel="outlet diameter (cm)" yLabel="value" caption="Doubling the diameter from 12 cm to 25 cm drops the required exit speed by half and the relative noise by roughly two orders of magnitude, for the same far-field push. The exponent is a rule of thumb; real blade and motor noise add tonal components on top." />
+
+So the shopping heuristic is: **maximise outlet area for the thrust you need**, then check the motor and blades are not adding their own whine.
+
+## What is next
+
+1. Measure the candidate Dreo's outlet area and real exit speed with an anemometer.
+2. Replace the placeholder `B` and the `U⁶` rule with measured decay and a dB(A) reading at 1 m, 3 m.
+3. Add a small CFD sanity check of the near field, where the 1/x law does not yet hold.

@@ -1,0 +1,20 @@
+{
+  "name": "chris-dilger-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host",
+    "build": "astro build",
+    "preview": "astro preview --host --port 4321",
+    "harness": "node harness/run.mjs",
+    "shots": "node harness/project-shots.mjs"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4",
+    "astro": "^5"
+  },
+  "devDependencies": {
+    "playwright": "^1.50.0",
+    "sharp": "^0.33.0"
+  }
+}

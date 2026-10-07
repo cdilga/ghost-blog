@@ -1,0 +1,13 @@
+---
+import Base from './Base.astro';
+const { title, description, date, tags = [] } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<Base title={`${title} | Chris Dilger`} description={description}>
+  <article class="prose">
+    <p class="meta"><a href={`${base}/blog/`}>← Writing</a> · {date.toISOString().slice(0, 10)}{tags.length ? ' · ' + tags.join(', ') : ''}</p>
+    <h1>{title}</h1>
+    <slot />
+  </article>
+  <footer class="foot">© Chris Dilger</footer>
+</Base>
