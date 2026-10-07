@@ -8,61 +8,113 @@
 import house from '../data/house-3d.json';
 const { preset = 'hall', caption = '' } = Astro.props;
 ---
-<figure class="chart wide h3d" data-preset={preset}>
-  <h3 style="margin:0 0 6px;font-size:1rem">Live in 3D: getting the split system's air into the bedrooms</h3>
-  <div class="h3d-stage">
-    <canvas class="h3d-plan" aria-label="Top-down floor plan cut at the chosen height, with the simulated airflow drawn as a heat map and glowing streaks" role="img"></canvas>
-    <div class="h3d-hud mono"><span data-o="clock">0.0 s</span><span data-o="rate"></span><span data-o="grid"></span></div>
-    <button type="button" class="h3d-start" hidden>Start the simulation</button>
-  </div>
-  <div class="h3d-secwrap">
-    <div class="h3d-sechead mono">Section through the door of <span class="h3d-doors" role="group" aria-label="Section through which door"></span></div>
-    <canvas class="h3d-sec" aria-label="Vertical section through the chosen bedroom door and the hall, showing air crossing the doorway above and below" role="img"></canvas>
-  </div>
-  <div class="h3d-presets" role="group" aria-label="Scenarios">
-    <button type="button" data-preset="ac">AC only</button>
-    <button type="button" data-preset="hall">Fan in the hall, into Bed 2</button>
-    <button type="button" data-preset="two">Two fans: kitchen gap + hall</button>
-    <button type="button" data-preset="custom" class="h3d-place">Place your own fans</button>
-  </div>
-  <div class="h3d-colour" role="group" aria-label="Colour by">
-    <span class="mono">Colour</span>
-    <button type="button" data-colour="speed">air speed</button>
-    <button type="button" data-colour="ac">AC air</button>
-    <span class="h3d-legend mono" data-mode="speed"><i></i><em class="sp">0 to 1.5 m/s</em><em class="ac">0 to 50% AC air</em></span>
-  </div>
-  <div class="h3d-controls">
-    <label>Plan cut height <output data-o="z"></output><input type="range" min="0.3" max="2.5" step="0.1" value="1.2" data-i="z" /></label>
-    <label>AC fan <output data-o="ac"></output><input type="range" min="0" max="350" step="25" value="300" data-i="ac" /></label>
-    <label>AC louvres <output data-o="louvre"></output><input type="range" min="-30" max="40" step="5" value="15" data-i="louvre" /></label>
-    <label>Fan speed <output data-o="fan"></output><input type="range" min="1" max="6" step="0.5" value="4.5" data-i="fan" /></label>
-    <label>Your fans' height <output data-o="fanz"></output><input type="range" min="0.3" max="2" step="0.1" value="0.9" data-i="fanz" /></label>
-    <label>Fan tilt <output data-o="tilt"></output><input type="range" min="-30" max="45" step="5" value="0" data-i="tilt" /></label>
-    <div class="h3d-toggles">
-      <label><input type="checkbox" data-i="doors" checked /> bedroom doors open</label>
-      <label><input type="checkbox" data-i="cold" checked /> AC air is 8 °C colder</label>
-      <button type="button" data-i="reset">Restart</button>
+<figure class="chart wide h3d" data-preset={preset} data-view="slices">
+  <div class="h3d-top">
+    <h3>Live in 3D: getting the split system's air into the bedrooms</h3>
+    <div class="h3d-viewbar" role="group" aria-label="View">
+      <span class="mono">View</span>
+      <button type="button" data-view="slices">slices</button>
+      <button type="button" data-view="volume">3D volume</button>
+      <button type="button" class="h3d-fs" aria-pressed="false">Full screen</button>
     </div>
   </div>
-  <div class="h3d-rooms" aria-live="off"></div>
-  <figcaption>{caption || 'A 3D simulation of the whole house from its model, with the default furniture as solid blocks. The plan is a horizontal cut at the chosen height; the strip below is a vertical cut through the chosen bedroom door (dashed line on the plan), so you can see air crossing the doorway under the 2.1 m door head. "AC air" is the share of the air that has come through the split system since the start: the number that says whether cooled air is actually getting into a room. Room figures are averaged over the occupied zone, 0.1 to 1.8 m above the floor. To place your own fans (up to three), press where a fan stands and drag the way it points; press the button again to clear them. The clock is simulated time.'}</figcaption>
+  <p class="h3d-note mono" hidden></p>
+  <div class="h3d-body">
+    <div class="h3d-main">
+      <div class="h3d-stage">
+        <canvas class="h3d-plan" tabindex="0" aria-label="Top-down floor plan cut at the chosen height, with the simulated airflow drawn as a heat map and glowing streaks. Fans can be dragged to move them; arrow keys move the selected fan, shift and arrow keys turn it, Delete removes it." role="img"></canvas>
+        <canvas class="h3d-vol" tabindex="0" aria-label="Orbitable 3D view of the house with the simulated air drawn through its volume. Drag to orbit, scroll or pinch to zoom." role="img"></canvas>
+        <canvas class="h3d-vlab" aria-hidden="true"></canvas>
+        <div class="h3d-orbit" role="group" aria-label="3D view">
+          <button type="button" data-orbit="in" aria-label="Zoom in">+</button>
+          <button type="button" data-orbit="out" aria-label="Zoom out">&minus;</button>
+          <button type="button" data-orbit="home">Reset view</button>
+        </div>
+        <div class="h3d-vhint mono">drag to orbit, scroll or pinch to zoom</div>
+        <div class="h3d-hud mono"><span data-o="clock">0.0 s</span><span data-o="rate"></span><span data-o="grid"></span></div>
+        <button type="button" class="h3d-start" hidden>Start the simulation</button>
+      </div>
+      <div class="h3d-secwrap">
+        <div class="h3d-sechead mono">Section through the door of <span class="h3d-doors" role="group" aria-label="Section through which door"></span></div>
+        <canvas class="h3d-sec" aria-label="Vertical section through the chosen bedroom door and the hall, showing air crossing the doorway above and below" role="img"></canvas>
+      </div>
+    </div>
+    <div class="h3d-side">
+      <div class="h3d-presets" role="group" aria-label="Scenarios">
+        <button type="button" data-preset="ac">AC only</button>
+        <button type="button" data-preset="hall">Fan in the hall, into Bed 2</button>
+        <button type="button" data-preset="two">Two fans: kitchen gap + hall</button>
+        <button type="button" data-preset="custom">Your own fans</button>
+      </div>
+      <div class="h3d-fanbar" role="group" aria-label="Fans">
+        <button type="button" data-fan="add">+ Add fan</button>
+        <button type="button" data-fan="remove">Remove fan</button>
+        <button type="button" data-fan="clear">Clear fans</button>
+        <span class="h3d-fanhint mono" aria-live="polite"></span>
+      </div>
+      <div class="h3d-colour" role="group" aria-label="Colour by">
+        <span class="mono">Colour</span>
+        <button type="button" data-colour="speed">air speed</button>
+        <button type="button" data-colour="ac">AC air</button>
+        <span class="h3d-legend mono" data-mode="speed"><i></i><em class="sp">0 to 1.5 m/s</em><em class="ac">0 to 50% AC air</em></span>
+      </div>
+      <div class="h3d-controls">
+        <label class="vol-only">Show air above <output data-o="thr"></output><input type="range" min="0" max="0.7" step="0.02" value="0.16" data-i="thr" /></label>
+        <label class="vol-only">Air opacity <output data-o="den"></output><input type="range" min="0.2" max="4" step="0.1" value="1.4" data-i="den" /></label>
+        <label class="vol-only">Walls cut at <output data-o="cut"></output><input type="range" min="0" max="2.6" step="0.1" value="1" data-i="cut" /></label>
+        <label class="slice-only">Plan cut height <output data-o="z"></output><input type="range" min="0.3" max="2.5" step="0.1" value="1.2" data-i="z" /></label>
+        <label>AC fan <output data-o="ac"></output><input type="range" min="0" max="350" step="25" value="300" data-i="ac" /></label>
+        <label>AC louvres <output data-o="louvre"></output><input type="range" min="-30" max="40" step="5" value="15" data-i="louvre" /></label>
+        <label>Fan speed <output data-o="fan"></output><input type="range" min="1" max="6" step="0.5" value="4.5" data-i="fan" /></label>
+        <label>Your fans' height <output data-o="fanz"></output><input type="range" min="0.3" max="2" step="0.1" value="0.9" data-i="fanz" /></label>
+        <label>Fan tilt <output data-o="tilt"></output><input type="range" min="-30" max="45" step="5" value="0" data-i="tilt" /></label>
+        <div class="h3d-toggles">
+          <label><input type="checkbox" data-i="doors" checked /> bedroom doors open</label>
+          <label><input type="checkbox" data-i="cold" checked /> AC air is 8 °C colder</label>
+          <button type="button" data-i="reset">Restart</button>
+        </div>
+      </div>
+      <div class="h3d-rooms" aria-live="off"></div>
+    </div>
+  </div>
+  <figcaption>{caption || 'A 3D simulation of the whole house from its model, with the default furniture as solid blocks. In the slices view, the plan is a horizontal cut at the chosen height and the strip below is a vertical cut through the chosen bedroom door (dashed line on the plan), so you can see air crossing the doorway under the 2.1 m door head. The 3D volume view draws the air through the whole house at once: drag to orbit, scroll or pinch to zoom, raise "show air above" to see only the faster air (or, coloured by AC air, only the air that came through the split system), and lower the walls to look into the rooms. "AC air" is the share of the air that has come through the split system since the start: the number that says whether cooled air is actually getting into a room. Room figures are averaged over the occupied zone, 0.1 to 1.8 m above the floor. To change the fans, drag any fan on the plan to move it and drag the dot at the tip of its arrow to aim it (a preset scenario becomes your own layout when you do). Add fan puts a new one in the hall, up to four; click a fan to select it, then Remove fan or the Delete key takes it away, and Clear fans removes them all. The clock is simulated time.'}</figcaption>
   <script type="application/json" class="h3d-house" set:html={JSON.stringify(house)} />
 </figure>
 <style>
-  .h3d-stage { position: relative; border-radius: 10px 10px 0 0; overflow: hidden; background: #0b0806; touch-action: pan-y; }
-  .h3d-plan { width: 100%; display: block; aspect-ratio: 19.91 / 11.09; cursor: default; }
-  .h3d.placing .h3d-plan { cursor: crosshair; touch-action: none; }
+  .h3d-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin: 0 0 8px; }
+  .h3d-top h3 { margin: 0; font-size: 1rem; }
+  .h3d-viewbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .78rem; color: var(--sand-dim); }
+  .h3d-fs { margin-left: 6px; }
+  .h3d-note { font-size: .74rem; color: var(--orange-hot); margin: 0 0 8px; }
+  .h3d-stage { position: relative; border-radius: 10px 10px 0 0; overflow: hidden; background: #0b0806; touch-action: pan-y; margin: 0 auto; }
+  .h3d-plan { width: 100%; display: block; aspect-ratio: 19.91 / 11.09; cursor: default; outline: none; }
+  .h3d-plan:focus-visible, .h3d-vol:focus-visible { box-shadow: inset 0 0 0 2px var(--orange); }
+  .h3d-vol { width: 100%; display: block; aspect-ratio: 16 / 9; touch-action: none; cursor: grab; outline: none; }
+  .h3d-vol:active { cursor: grabbing; }
+  .h3d-vlab { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+  .h3d-orbit { position: absolute; right: 8px; top: 8px; display: flex; gap: 4px; }
+  .h3d-orbit button { font: 500 .78rem var(--font); min-width: 30px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line); background: rgba(11, 8, 6, .7); color: var(--sand); cursor: pointer; }
+  .h3d-vhint { position: absolute; left: 10px; bottom: 6px; font-size: .68rem; color: var(--sand-dim); opacity: .7; pointer-events: none; }
+  .h3d[data-view="volume"] .h3d-plan, .h3d[data-view="volume"] .h3d-secwrap, .h3d[data-view="volume"] .slice-only { display: none; }
+  .h3d:not([data-view="volume"]) .h3d-vol, .h3d:not([data-view="volume"]) .h3d-vlab, .h3d:not([data-view="volume"]) .h3d-orbit, .h3d:not([data-view="volume"]) .h3d-vhint, .h3d:not([data-view="volume"]) .vol-only { display: none; }
+  .h3d[data-view="volume"] .h3d-stage { border-radius: 10px; }
   .h3d-hud { position: absolute; left: 10px; top: 8px; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .72rem; color: var(--sand-dim); pointer-events: none; }
   .h3d-hud span:first-child { color: var(--sand); }
   .h3d-start { position: absolute; inset: 0; margin: auto; width: max-content; height: max-content; padding: 10px 18px; border-radius: 99px; border: 0; background: var(--orange); color: #1a0d00; font: 600 .95rem var(--font); cursor: pointer; }
-  .h3d-secwrap { background: #0b0806; border-radius: 0 0 10px 10px; border-top: 1px solid var(--line); padding: 6px 0 0; }
+  .h3d-secwrap { background: #0b0806; border-radius: 0 0 10px 10px; border-top: 1px solid var(--line); padding: 6px 0 0; margin: 0 auto; }
   .h3d-sechead { font-size: .72rem; color: var(--sand-dim); padding: 0 10px 4px; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
   .h3d-sec { width: 100%; display: block; }
   .h3d-doors { display: inline-flex; flex-wrap: wrap; gap: 4px; }
-  .h3d-doors :global(button), .h3d-presets button, .h3d-colour button, .h3d-toggles button { font: 500 .8rem var(--font); padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--sand); cursor: pointer; }
+  .h3d-doors :global(button), .h3d-presets button, .h3d-fanbar button, .h3d-colour button, .h3d-toggles button, .h3d-viewbar button { font: 500 .8rem var(--font); padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--sand); cursor: pointer; }
+  .h3d-viewbar button { padding: 4px 11px; }
   .h3d-doors :global(button) { padding: 2px 9px; font-size: .72rem; }
-  .h3d-doors :global(button[aria-pressed="true"]), .h3d-presets button[aria-pressed="true"], .h3d-colour button[aria-pressed="true"] { background: var(--orange); color: #1a0d00; border-color: var(--orange); }
+  .h3d-doors :global(button[aria-pressed="true"]), .h3d-presets button[aria-pressed="true"], .h3d-colour button[aria-pressed="true"], .h3d-viewbar button[aria-pressed="true"] { background: var(--orange); color: #1a0d00; border-color: var(--orange); }
+  .h3d button:disabled { opacity: .4; cursor: default; }
+  .h3d button:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
   .h3d-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+  .h3d-fanbar { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin: 8px 0 4px; }
+  .h3d-fanbar [data-fan="add"] { border-color: rgba(255, 122, 26, .6); }
+  .h3d-fanhint { font-size: .72rem; color: var(--sand-dim); }
   .h3d-colour { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin: 8px 0 4px; font-size: .78rem; color: var(--sand-dim); }
   .h3d-legend { display: inline-flex; align-items: center; gap: 8px; margin-left: 6px; }
   .h3d-legend i { width: 90px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #0b0806, #ff7a1a 55%, #ffe6c8); }
@@ -83,6 +135,22 @@ const { preset = 'hall', caption = '' } = Astro.props;
   .h3d-rooms :global(i) { position: absolute; left: 0; height: 3px; transition: width .4s; }
   .h3d-rooms :global(i.ac) { bottom: 3px; background: #5ec8ff; }
   .h3d-rooms :global(i.sp) { bottom: 0; background: var(--orange); }
+  /* full screen: the Fullscreen API where there is one, else a fixed overlay (iPhone Safari); the figure scrolls if needed */
+  .h3d.h3d-full { position: fixed; inset: 0; z-index: 1000; width: 100%; height: 100%; max-width: none; margin: 0; transform: none; border: 0; border-radius: 0; background: var(--ink); overflow: auto; overscroll-behavior: contain; padding: 12px 16px; box-sizing: border-box; display: flex; flex-direction: column; }
+  .h3d.h3d-full::backdrop { background: var(--ink); }
+  .h3d-full .h3d-body { flex: 1 0 auto; }
+  .h3d-full figcaption { display: none; }
+  .h3d-full .h3d-presets { margin-top: 10px; }
+  @media (min-width: 900px) and (min-aspect-ratio: 5/4) {
+    .h3d-full { overflow: hidden; }
+    .h3d-full .h3d-body { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); grid-template-rows: minmax(0, 1fr); gap: 18px; }
+    .h3d-full .h3d-main { min-height: 0; overflow: hidden; }
+    .h3d-full .h3d-side { min-height: 0; overflow: auto; padding-right: 4px; }
+    .h3d-full .h3d-presets { margin-top: 0; }
+    .h3d-full .h3d-controls { grid-template-columns: 1fr 1fr; }
+    .h3d-full .h3d-rooms { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  }
+  @media (max-width: 600px) { .h3d-vol { aspect-ratio: 4 / 3; } .h3d-orbit { top: auto; bottom: 8px; } .h3d-vhint { display: none; } }
 </style>
 <script>
   import { startHouseAirflow3D } from '../scripts/airflow3d-ui.js';

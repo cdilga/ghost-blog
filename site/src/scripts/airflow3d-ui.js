@@ -1,12 +1,17 @@
-// Main-thread side of the 3D house airflow figure: plan slice, vertical section, streaks, controls, room read-outs.
-// The solver (airflow3d.js) runs in airflow3d-worker.js.
+// Main-thread side of the 3D house airflow figure: plan slice, vertical section, streaks, the 3D volume view
+// (airflow3d-volume.js), fan editing, full screen, controls and room read-outs. The solver (airflow3d.js) runs in
+// airflow3d-worker.js.
 import { PRESETS3D } from './airflow3d.js';
+import { createVolumeView } from './airflow3d-volume.js';
 
 const ROOMS_SHOWN = ['Bed 1', 'Bed 2', 'Bed 3', 'Bed 4', 'Media', 'Hall', 'Living', 'Dining'];
 const SLOT_AREA = 0.3 / 3.5;  // m^2: 300 L/s leaves the louvre at 3.5 m/s
 const SPEED_MAX = 1.5;        // m/s at full heat colour
 const AC_MAX = 0.5;           // AC-air share at full colour
 const SECTION_LEN = { default: 6.3, Media: 4.9 };
+const MAX_FANS = 4, HIT_PX = 14;
+// where Add fan puts a new fan: in the hall, blowing into a bedroom (the first spot not already taken)
+const SPOTS = [{ x: 7.36, y: 4.2, yaw: -90 }, { x: 14.17, y: 4.1, yaw: -90 }, { x: 3.7, y: 4.2, yaw: -90 }, { x: 9.4, y: 5.6, yaw: -90 }, { x: 16.7, y: 3.9, yaw: -90 }, { x: 12.4, y: 4.1, yaw: 180 }];
 
 export function startHouseAirflow3D(fig) {
   const house = JSON.parse(fig.querySelector('.h3d-house').textContent);
@@ -19,7 +24,7 @@ export function startHouseAirflow3D(fig) {
   const state = {
     preset: fig.dataset.preset || 'hall', custom: [], fanSpeed: 4.5, fanZ: 0.9, fanTilt: 0,
     acFlow: 0.3, louvre: 15, doorsOpen: true, cold: true, z: 1.2, colour: 'speed', door: 'Bed 2',
-    layers: small ? 10 : 12,
+    layers: small ? 10 : 12, view: 'slices', thr: 0.16, den: 1.4, cut: 1,
   };
   const pad = 0.15, [ex0, ey0, ex1, ey1] = house.extent, CEIL = house.ceiling_z;
   let W = 0, H = 0, S = 1, dpr = 1;
@@ -42,7 +47,8 @@ export function startHouseAirflow3D(fig) {
     worker = new Worker(new URL('./airflow3d-worker.js', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => {
       const m = e.data;
-      if (m.type === 'grid') { grid = m; field = null; lastSim = 0; lastMsgT = 0; buildBase(); buildSecBase(); resetTracers(); out('grid', `${m.NX}×${m.NY}×${m.NZ} cells, ${(m.h * 100).toFixed(0)} cm`); }
+      if (m.type === 'grid') { grid = m; field = null; lastSim = 0; lastMsgT = 0; buildBase(); buildSecBase(); resetTracers(); vol?.setGrid(m); out('grid', `${m.NX}×${m.NY}×${m.NZ} cells, ${(m.h * 100).toFixed(0)} cm`); }
+      else if (m.type === 'volume') vol?.setData(m.sc, m.vel);
       else if (m.type === 'field') {
         const now = performance.now();
         if (lastMsgT && m.simTime > lastSim && now - lastMsgT > 4) simRate = simRate * 0.85 + 0.15 * ((m.simTime - lastSim) / ((now - lastMsgT) / 1000));
@@ -54,6 +60,7 @@ export function startHouseAirflow3D(fig) {
       }
     };
     worker.postMessage({ type: 'init', house, cfg: cfg() });
+    if (state.view === 'volume') worker.postMessage({ type: 'volume', on: true });
     $('.h3d-start').hidden = true;
     kick();
   }
@@ -73,6 +80,9 @@ export function startHouseAirflow3D(fig) {
   const spx = (y) => (y + 0.1) * SS, spz = (z) => SH - (z + 0.12) * SS;
 
   function size() {
+    layout();
+    if (state.view === 'volume') { vol?.resize(); return; }
+    if (!cv.clientWidth) return;
     dpr = Math.min(2, devicePixelRatio || 1);
     W = cv.clientWidth; S = W / (ex1 - ex0 + 2 * pad); H = Math.round((ey1 - ey0 + 2 * pad) * S);
     for (const c of [cv, base, trails]) { c.width = W * dpr; c.height = H * dpr; }
@@ -217,6 +227,10 @@ export function startHouseAirflow3D(fig) {
     const dtReal = Math.min(0.05, (now - last) / 1000); last = now;
     if (!visible) return;
     const dtSim = dtReal * Math.max(0.25, simRate || 1);
+    if (state.view === 'volume') {
+      if (vol) vol.frame(field ? dtSim : 0, fanList(), state.preset === 'custom' ? sel : -1);
+      kick(); return;
+    }
     ctx.clearRect(0, 0, W, H); ctx.drawImage(base, 0, 0, W, H);
     sctx.clearRect(0, 0, SW, SH); sctx.drawImage(sbase, 0, 0, SW, SH);
     if (!field) sctx.drawImage(ssol, 0, 0, SW, SH);
@@ -290,13 +304,16 @@ export function startHouseAirflow3D(fig) {
     const a = house.ac;
     ctx.font = `600 ${Math.max(9, Math.round(S * 0.22))}px JetBrains Mono, monospace`; ctx.textAlign = 'center'; ctx.fillStyle = state.acFlow > 0 ? '#f2e6d3' : '#5a4c40';
     ctx.fillText('AC', px(a.centre_x), py(a.b[1]) + Math.max(14, 0.45 * S));
-    for (const f of fanList()) {
-      const yaw = (f.yaw * Math.PI) / 180, near = Math.abs(f.z - state.z) < 0.35;
-      ctx.beginPath(); ctx.arc(px(f.x), py(f.y), Math.max(6, 0.15 * S), 0, Math.PI * 2);
+    fanList().forEach((f, i) => {
+      const near = Math.abs(f.z - state.z) < 0.35, p = fanPx(f), on = state.preset === 'custom' && i === sel;
+      if (on) { ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(6, 0.15 * S) + 5, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,209,102,.18)'; ctx.fill(); ctx.strokeStyle = '#f2e6d3'; ctx.lineWidth = 2; ctx.stroke(); }
+      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(6, 0.15 * S), 0, Math.PI * 2);
       ctx.fillStyle = near ? '#ff7a1a' : 'rgba(255,122,26,.55)'; ctx.fill();
-      arrow(ctx, px(f.x), py(f.y), px(f.x + Math.cos(yaw) * 0.75), py(f.y + Math.sin(yaw) * 0.75), '#ffd166');
-    }
-    if (drag) arrow(ctx, px(drag.x), py(drag.y), px(drag.x + drag.dx), py(drag.y + drag.dy), '#ffd166');
+      arrow(ctx, p.x, p.y, p.tx, p.ty, '#ffd166');
+      // aim handle at the arrow tip
+      ctx.beginPath(); ctx.arc(p.tx, p.ty, on ? 5.5 : 4, 0, Math.PI * 2); ctx.fillStyle = on ? '#f2e6d3' : '#ffd166'; ctx.fill();
+      ctx.strokeStyle = '#0b0806'; ctx.lineWidth = 1.5; ctx.stroke();
+    });
     // fans that sit on the section line (within 0.4 m)
     const x = secAt();
     for (const f of fanList()) if (Math.abs(f.x - x) < 0.4 && f.y < secLen()) {
@@ -332,67 +349,255 @@ export function startHouseAirflow3D(fig) {
   const pressed = (sel, attr, v) => fig.querySelectorAll(sel).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset[attr] === v)));
   function setPreset(p) {
     state.preset = p;
+    if (p !== 'custom') sel = -1;
     pressed('.h3d-presets button', 'preset', p);
-    fig.classList.toggle('placing', p === 'custom');
-    send(true); resetTracers();
+    send(true); resetTracers(); fanUi();
   }
   fig.querySelectorAll('.h3d-presets button').forEach((b) => b.addEventListener('click', () => {
     start();
-    if (b.dataset.preset === 'custom' && state.preset === 'custom') state.custom = []; // press again to clear
+    if (b.dataset.preset === 'custom' && state.preset !== 'custom' && !state.custom.length) state.custom = copyPreset(); // start from the scene on show
     setPreset(b.dataset.preset);
   }));
-  fig.querySelectorAll('.h3d-colour button').forEach((b) => b.addEventListener('click', () => { state.colour = b.dataset.colour; pressed('.h3d-colour button', 'colour', state.colour); $('.h3d-legend').dataset.mode = state.colour; }));
+  fig.querySelectorAll('.h3d-colour button').forEach((b) => b.addEventListener('click', () => { state.colour = b.dataset.colour; pressed('.h3d-colour button', 'colour', state.colour); $('.h3d-legend').dataset.mode = state.colour; volOpts(); }));
   const doorsEl = $('.h3d-doors');
   doorsEl.innerHTML = sectionDoors.map((d) => `<button type="button" data-door="${d.label}">${d.label}</button>`).join('');
   doorsEl.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { state.door = b.dataset.door; pressed('.h3d-doors button', 'door', state.door); size(); send(false); stctx.clearRect(0, 0, SW, SH); for (let n = 0; n < NS; n++) spawnS(n); }));
   const bind = (k, fn, reset = false) => $(`[data-i="${k}"]`).addEventListener('input', (e) => { fn(+e.target.value); send(reset); });
   const fmtLouvre = (v) => (v === 0 ? 'level' : v > 0 ? `${v}° down` : `${-v}° up`);
   bind('z', (v) => { state.z = v; out('z', `${v.toFixed(1)} m`); buildBase(); tctx.clearRect(0, 0, W, H); for (let n = 0; n < NT; n++) spawn(n); });
-  bind('ac', (v) => { state.acFlow = v / 1000; out('ac', v ? `${v} L/s` : 'off'); });
+  bind('ac', (v) => { state.acFlow = v / 1000; out('ac', v ? `${v} L/s` : 'off'); volOpts(); });
   bind('louvre', (v) => { state.louvre = v; out('louvre', fmtLouvre(v)); });
   bind('fan', (v) => { state.fanSpeed = v; out('fan', `${v.toFixed(1)} m/s`); });
   bind('fanz', (v) => { state.fanZ = v; out('fanz', `${v.toFixed(1)} m`); });
   bind('tilt', (v) => { state.fanTilt = v; out('tilt', v === 0 ? 'level' : v > 0 ? `${v}° up` : `${-v}° down`); });
-  $('[data-i="doors"]').addEventListener('change', (e) => { state.doorsOpen = e.target.checked; buildBase(); buildSecBase(); send(true); resetTracers(); });
+  bind('thr', (v) => { state.thr = v; volOpts(); });
+  bind('den', (v) => { state.den = v; volOpts(); });
+  bind('cut', (v) => { state.cut = v; volOpts(); });
+  $('[data-i="doors"]').addEventListener('change', (e) => { state.doorsOpen = e.target.checked; buildBase(); buildSecBase(); send(true); resetTracers(); volOpts(); });
   $('[data-i="cold"]').addEventListener('change', (e) => { state.cold = e.target.checked; send(false); });
   $('[data-i="reset"]').addEventListener('click', () => { send(true); resetTracers(); });
   out('z', `${state.z.toFixed(1)} m`); out('ac', `${Math.round(state.acFlow * 1000)} L/s`); out('louvre', fmtLouvre(state.louvre));
   out('fan', `${state.fanSpeed.toFixed(1)} m/s`); out('fanz', `${state.fanZ.toFixed(1)} m`); out('tilt', 'level');
   pressed('.h3d-presets button', 'preset', state.preset); pressed('.h3d-colour button', 'colour', state.colour); pressed('.h3d-doors button', 'door', state.door);
-  fig.classList.toggle('placing', state.preset === 'custom');
 
-  // place your own: press where the fan stands, drag the way it points (up to 3 fans)
-  let drag = null;
+  // ---------- fans: click to select, drag to move, drag the arrow tip to aim; a preset becomes your own layout ----------
+  let sel = -1, grab = null, lastSend = 0;
+  const arrowLen = () => Math.max(0.75, 30 / S); // m: the aim handle stays clear of the fan body at phone width
+  function fanPx(f) {
+    const yaw = (f.yaw * Math.PI) / 180, L = arrowLen();
+    return { x: px(f.x), y: py(f.y), tx: px(f.x + Math.cos(yaw) * L), ty: py(f.y + Math.sin(yaw) * L) };
+  }
+  function hitFan(cx, cy) {
+    let best = null;
+    fanList().forEach((f, i) => {
+      const p = fanPx(f), db = Math.hypot(cx - p.x, cy - p.y), dt = Math.hypot(cx - p.tx, cy - p.ty);
+      if (dt <= HIT_PX && (!best || dt < best.d)) best = { i, mode: 'aim', d: dt };
+      if (db <= Math.max(HIT_PX, 0.15 * S + 4) && (!best || db < best.d)) best = { i, mode: 'move', d: db };
+    });
+    return best;
+  }
+  const copyPreset = () => (PRESETS3D[state.preset]?.fans || []).map((f) => ({ x: f.x, y: f.y, z: f.z, yaw: f.yaw }));
+  function toCustom() {
+    if (state.preset === 'custom') return;
+    state.custom = copyPreset();
+    setPreset('custom');
+  }
+  const hintEl = $('.h3d-fanhint');
+  function fanUi() {
+    const n = fanList().length, custom = state.preset === 'custom';
+    $('[data-fan="add"]').disabled = custom && n >= MAX_FANS;
+    $('[data-fan="remove"]').disabled = !(custom && sel >= 0);
+    $('[data-fan="clear"]').disabled = n === 0;
+    hintEl.textContent = state.view === 'volume' ? 'switch to slices to move fans'
+      : custom && sel >= 0 ? `fan ${sel + 1} of ${n} selected: drag to move, drag the dot to aim`
+      : n ? 'drag a fan to move it, drag the dot on its arrow to aim it' : '';
+  }
+  function addFan() {
+    start(); toCustom();
+    if (state.custom.length >= MAX_FANS) return;
+    const spot = SPOTS.find((p) => !state.custom.some((f) => Math.hypot(f.x - p.x, f.y - p.y) < 0.8)) || SPOTS[0];
+    state.custom.push({ x: spot.x, y: spot.y, z: state.fanZ, yaw: spot.yaw });
+    sel = state.custom.length - 1; send(false); fanUi();
+  }
+  function removeFan() {
+    if (state.preset !== 'custom' || sel < 0) return;
+    state.custom.splice(sel, 1); sel = -1; send(false); fanUi();
+  }
+  $('[data-fan="add"]').addEventListener('click', addFan);
+  $('[data-fan="remove"]').addEventListener('click', removeFan);
+  $('[data-fan="clear"]').addEventListener('click', () => { start(); toCustom(); state.custom = []; sel = -1; send(false); fanUi(); });
+  const at = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   cv.addEventListener('pointerdown', (e) => {
-    if (state.preset !== 'custom') return;
-    const r = cv.getBoundingClientRect();
-    drag = { x: mx(e.clientX - r.left), y: my(e.clientY - r.top), dx: 0, dy: -0.75 };
-    cv.setPointerCapture(e.pointerId);
+    const [cx, cy] = at(e), hit = hitFan(cx, cy);
+    if (!hit) { if (sel >= 0) { sel = -1; fanUi(); } return; }
+    e.preventDefault();
+    start(); toCustom();
+    sel = hit.i;
+    const f = state.custom[sel];
+    grab = { mode: hit.mode, ox: mx(cx) - f.x, oy: my(cy) - f.y };
+    cv.setPointerCapture(e.pointerId); cv.focus({ preventScroll: true }); cv.style.cursor = hit.mode === 'move' ? 'grabbing' : 'crosshair';
+    fanUi();
   });
   cv.addEventListener('pointermove', (e) => {
-    if (!drag) return;
-    const r = cv.getBoundingClientRect(), x = mx(e.clientX - r.left), y = my(e.clientY - r.top);
-    if (Math.hypot(x - drag.x, y - drag.y) > 0.15) { drag.dx = x - drag.x; drag.dy = y - drag.y; }
+    const [cx, cy] = at(e);
+    if (!grab) { const h = hitFan(cx, cy); cv.style.cursor = h ? (h.mode === 'aim' ? 'crosshair' : 'grab') : ''; return; }
+    const f = state.custom[sel]; if (!f) return;
+    const x = mx(cx), y = my(cy);
+    if (grab.mode === 'move') { f.x = Math.min(ex1 - 0.1, Math.max(ex0 + 0.1, x - grab.ox)); f.y = Math.min(ey1 - 0.1, Math.max(ey0 + 0.1, y - grab.oy)); }
+    else if (Math.hypot(x - f.x, y - f.y) > 0.1) f.yaw = Math.round((Math.atan2(y - f.y, x - f.x) * 180) / Math.PI);
+    // live update while dragging, a few times a second (the solver rebuilds the fan's disc each time)
+    const now = performance.now();
+    if (now - lastSend > 150) { lastSend = now; send(false); }
   });
-  const drop = () => {
-    if (!drag) return;
-    state.custom = [...state.custom.slice(-2), { x: drag.x, y: drag.y, z: state.fanZ, yaw: (Math.atan2(drag.dy, drag.dx) * 180) / Math.PI }];
-    drag = null; start(); send(false);
-  };
+  const drop = () => { if (!grab) return; grab = null; cv.style.cursor = ''; send(false); fanUi(); };
   cv.addEventListener('pointerup', drop);
-  cv.addEventListener('pointercancel', () => { drag = null; });
+  cv.addEventListener('pointercancel', drop);
+  // touch: a press on a fan must not start a page scroll (the plan otherwise scrolls the page vertically)
+  cv.addEventListener('touchstart', (e) => {
+    const t = e.touches[0], r = cv.getBoundingClientRect();
+    if (e.touches.length === 1 && hitFan(t.clientX - r.left, t.clientY - r.top)) e.preventDefault();
+  }, { passive: false });
+  // keys: Delete removes the selected fan; on the plan, arrows move it (shift + arrows turn it)
+  fig.addEventListener('keydown', (e) => {
+    if (state.preset !== 'custom' || sel < 0 || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+    const f = state.custom[sel];
+    if (e.key === 'Delete' || e.key === 'Backspace') removeFan();
+    else if (e.target === cv && e.key.startsWith('Arrow')) {
+      const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+      if (e.shiftKey) f.yaw += (d[0] || -d[1]) * -15;
+      else { f.x = Math.min(ex1 - 0.1, Math.max(ex0 + 0.1, f.x + d[0] * 0.1)); f.y = Math.min(ey1 - 0.1, Math.max(ey0 + 0.1, f.y + d[1] * 0.1)); }
+      send(false);
+    } else if (e.key === 'Escape' && !fig.classList.contains('h3d-full')) { sel = -1; fanUi(); }
+    else return;
+    e.preventDefault();
+  });
+
+  // ---------- view: slices or the 3D volume ----------
+  const vcv = $('.h3d-vol'), note = $('.h3d-note');
+  let vol = null, volTried = false;
+  function ensureVol() {
+    if (volTried) return vol;
+    volTried = true;
+    try { vol = createVolumeView({ canvas: vcv, labels: $('.h3d-vlab'), house, small }); } catch (err) { console.warn(err); vol = null; }
+    if (!vol) {
+      note.hidden = false; note.textContent = 'This browser has no WebGL2, so the 3D volume view is not available here: showing the slices.';
+      $('[data-view="volume"]').disabled = true;
+      return null;
+    }
+    vcv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); setView('slices'); note.hidden = false; note.textContent = 'The 3D view lost its graphics context: showing the slices.'; });
+    if (grid) vol.setGrid(grid);
+    volOpts();
+    return vol;
+  }
+  function volOpts() {
+    out('thr', state.colour === 'ac' ? `${Math.round(state.thr * AC_MAX * 100)}% AC air` : `${(state.thr * SPEED_MAX).toFixed(2)} m/s`);
+    out('den', `${state.den.toFixed(1)}`);
+    out('cut', state.cut >= 2.59 ? 'full height' : `${state.cut.toFixed(1)} m`);
+    vol?.setOptions({ mode: state.colour, thr: state.thr, den: state.den, cut: state.cut, doorsOpen: state.doorsOpen, acOn: state.acFlow > 0 });
+  }
+  function setView(v) {
+    if (v === 'volume' && !ensureVol()) v = 'slices';
+    state.view = v; fig.dataset.view = v;
+    pressed('.h3d-viewbar [data-view]', 'view', v);
+    worker?.postMessage({ type: 'volume', on: v === 'volume' });
+    if (v === 'volume' && !reduce) start();
+    fanUi(); refit(true);
+  }
+  fig.querySelectorAll('.h3d-viewbar [data-view]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+  pressed('.h3d-viewbar [data-view]', 'view', state.view);
+  volOpts();
+
+  // orbit: drag to turn, wheel or pinch to zoom (the wheel only zooms in full screen or once the view has focus,
+  // so it does not hijack the page scroll)
+  const ptrs = new Map();
+  let pinch0 = 0;
+  vcv.addEventListener('pointerdown', (e) => { ptrs.set(e.pointerId, [e.clientX, e.clientY]); vcv.setPointerCapture(e.pointerId); vcv.focus({ preventScroll: true }); if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); } });
+  vcv.addEventListener('pointermove', (e) => {
+    const p = ptrs.get(e.pointerId); if (!p || !vol) return;
+    if (ptrs.size === 1) vol.orbit(-(e.clientX - p[0]) * 0.008, (e.clientY - p[1]) * 0.006);
+    ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch0) vol.zoom(pinch0 / d); pinch0 = d; }
+  });
+  const lift = (e) => { ptrs.delete(e.pointerId); pinch0 = 0; };
+  vcv.addEventListener('pointerup', lift); vcv.addEventListener('pointercancel', lift);
+  vcv.addEventListener('wheel', (e) => {
+    if (!vol || !(fig.classList.contains('h3d-full') || document.activeElement === vcv)) return;
+    e.preventDefault(); vol.zoom(Math.exp(Math.max(-1, Math.min(1, e.deltaY * (e.deltaMode ? 0.05 : 0.0015)))));
+  }, { passive: false });
+  vcv.addEventListener('keydown', (e) => {
+    if (!vol) return;
+    const k = { ArrowLeft: () => vol.orbit(0.1, 0), ArrowRight: () => vol.orbit(-0.1, 0), ArrowUp: () => vol.orbit(0, 0.08), ArrowDown: () => vol.orbit(0, -0.08), '+': () => vol.zoom(0.9), '=': () => vol.zoom(0.9), '-': () => vol.zoom(1.1) }[e.key];
+    if (k) { k(); e.preventDefault(); }
+  });
+  fig.querySelectorAll('[data-orbit]').forEach((b) => b.addEventListener('click', () => { if (!vol) return; const o = b.dataset.orbit; if (o === 'home') vol.resetView(); else vol.zoom(o === 'in' ? 0.85 : 1.18); }));
+
+  // ---------- full screen: the Fullscreen API on the figure, else a fixed overlay (iPhone Safari); Esc leaves ----------
+  const fsBtn = $('.h3d-fs'), main = $('.h3d-main'), side = $('.h3d-side'), stage = $('.h3d-stage'), secw = $('.h3d-secwrap');
+  const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+  function setFull(on) {
+    fig.classList.toggle('h3d-full', on);
+    fsBtn.setAttribute('aria-pressed', String(on)); fsBtn.textContent = on ? 'Exit full screen' : 'Full screen';
+    refit(true);
+  }
+  function leaveExpanded() { fig.classList.remove('h3d-expanded'); document.documentElement.style.overflow = ''; setFull(false); }
+  fsBtn.addEventListener('click', async () => {
+    if (fig.classList.contains('h3d-full')) {
+      if (fsEl() === fig) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      else leaveExpanded();
+      return;
+    }
+    const req = fig.requestFullscreen || fig.webkitRequestFullscreen;
+    // the prefixed API returns nothing, so wait for the change event (or a refusal) before falling back
+    if (req && await new Promise((res) => {
+      const evs = ['fullscreenchange', 'webkitfullscreenchange'];
+      const done = (v) => { clearTimeout(t); evs.forEach((ev) => document.removeEventListener(ev, on)); res(v); };
+      const on = () => done(fsEl() === fig), t = setTimeout(on, 700);
+      evs.forEach((ev) => document.addEventListener(ev, on));
+      try { req.call(fig)?.catch?.(() => done(false)); } catch { done(false); }
+    })) return;
+    fig.classList.add('h3d-expanded'); document.documentElement.style.overflow = 'hidden'; setFull(true);
+  });
+  for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(ev, () => { if (!fig.classList.contains('h3d-expanded')) setFull(fsEl() === fig); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && fig.classList.contains('h3d-expanded') && !fsEl()) leaveExpanded(); });
+  // in full screen the plan and section (or the 3D view) take the room left beside or above the controls
+  function layout() {
+    let w = '', vh = '';
+    if (fig.classList.contains('h3d-full')) {
+      const two = side.offsetLeft > main.offsetLeft + 20;
+      const aw = main.clientWidth, ah = two ? main.clientHeight : Math.round(fig.clientHeight * 0.62);
+      if (state.view === 'volume') vh = `${Math.max(220, ah)}px`;
+      else {
+        const pa = (ey1 - ey0 + 2 * pad) / (ex1 - ex0 + 2 * pad), sa = (CEIL + 0.24) / (secLen() + 0.2);
+        w = `${Math.max(240, Math.floor(Math.min(aw, (ah - 44) / (pa + sa))))}px`;
+      }
+    }
+    stage.style.width = secw.style.width = w;
+    vcv.style.height = vh; vcv.style.aspectRatio = vh ? 'auto' : '';
+  }
 
   // ---------- lifecycle ----------
   size();
-  let resizeW = cv.clientWidth;
-  addEventListener('resize', () => { if (cv.clientWidth !== resizeW) { resizeW = cv.clientWidth; size(); tctx.clearRect(0, 0, W, H); stctx.clearRect(0, 0, SW, SH); } });
+  // re-fit on any size change (window, full screen, view switch); a change in the plan's width rebuilds the layers
+  let fitKey = '', fitRaf = 0;
+  function refit(force) {
+    fitRaf = 0;
+    const key = `${fig.clientWidth}x${fig.clientHeight}:${state.view}:${fig.classList.contains('h3d-full')}`;
+    if (key === fitKey && !force) return;
+    fitKey = key;
+    const w0 = W; size();
+    if (state.view === 'slices' && W !== w0) { tctx.clearRect(0, 0, W, H); stctx.clearRect(0, 0, SW, SH); }
+    kick();
+  }
+  const queueFit = () => { if (!fitRaf) fitRaf = requestAnimationFrame(() => refit(false)); };
+  if ('ResizeObserver' in window) new ResizeObserver(queueFit).observe(fig);
+  addEventListener('resize', queueFit);
   new IntersectionObserver(([e]) => {
     visible = e.isIntersecting;
     worker?.postMessage({ type: 'pause', paused: !visible });
     if (visible && !reduce) start();
     if (visible) { last = performance.now(); kick(); }
   }, { rootMargin: '100px' }).observe(fig);
-  ctx.drawImage(base, 0, 0, W, H); sctx.drawImage(sbase, 0, 0, SW, SH); sctx.drawImage(ssol, 0, 0, SW, SH); drawFans();
+  ctx.drawImage(base, 0, 0, W, H); sctx.drawImage(sbase, 0, 0, SW, SH); sctx.drawImage(ssol, 0, 0, SW, SH); drawFans(); fanUi();
   if (reduce) { const b = $('.h3d-start'); b.hidden = false; b.addEventListener('click', () => { visible = true; start(); }); }
 }
 

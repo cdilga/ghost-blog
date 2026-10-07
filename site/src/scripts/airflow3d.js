@@ -27,6 +27,7 @@ const OPP = [0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17];
 const MIRZ = CX.map((_, q) => CX.findIndex((x, p) => x === CX[q] && CY[p] === CY[q] && CZ[p] === -CZ[q]));
 const WQ = CX.map((_, q) => (q === 0 ? 1 / 3 : q < 7 ? 1 / 18 : 1 / 36));
 const C13 = 1 / 3;
+export const VOL_SMAX = 2;     // m/s at byte 255 in volume()
 export const BEDROOMS = ['Bed 1', 'Bed 2', 'Bed 3', 'Bed 4', 'Media'];
 const PUBLIC = new Set(['Hall', 'Retreat', 'Living', 'Dining', 'Kitchen', 'Entry']);
 
@@ -471,6 +472,18 @@ export function createSim3D(house, opts = {}) {
     }
     return o;
   }
+  // the whole grid for the volume view: speed (0 to VOL_SMAX m/s) and tracer as interleaved bytes, and the velocity
+  // (m/s), all zero in solids
+  function volume() {
+    const sc = new Uint8Array(N * 2), vel = new Float32Array(N * 3);
+    for (let t = 0; t < nF; t++) {
+      const k = cellOf[t], u = U[t] * toMs, v = V[t] * toMs, w = Wz[t] * toMs, s = Math.sqrt(u * u + v * v + w * w);
+      if (s !== s) continue;
+      sc[2 * k] = s >= VOL_SMAX ? 255 : (s / VOL_SMAX) * 255 + 0.5; sc[2 * k + 1] = c[t] * 255 + 0.5;
+      vel[3 * k] = u; vel[3 * k + 1] = v; vel[3 * k + 2] = w;
+    }
+    return { sc, vel };
+  }
   function solidSlice(z) {
     const l = layerOf(z), o = new Uint8Array(NXY);
     for (let k2 = 0; k2 < NXY; k2++) o[k2] = solid[k2 + l * NXY];
@@ -484,7 +497,7 @@ export function createSim3D(house, opts = {}) {
     get nF() { return nF; }, get steps() { return steps; }, get time() { return steps * dt; },
     get acInfo() { return acInfo; }, get fanInfo() { return fanInfo; }, get leakK() { return leakK; },
     get fields() { return { U, V, Wz, R, c, idx, cellOf }; },
-    solid, step, reset, setSources, stats, sliceZ, section, solidSlice, mass, layerOf,
+    solid, step, reset, setSources, stats, sliceZ, section, volume, solidSlice, mass, layerOf,
     setOptions(o) {
       let geom = false;
       if ('doorsOpen' in o && o.doorsOpen !== doorsOpen) { doorsOpen = o.doorsOpen; geom = true; }
