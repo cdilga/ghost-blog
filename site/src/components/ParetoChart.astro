@@ -1,0 +1,55 @@
+---
+/**
+ * Noise vs performance scatter with the Pareto frontier drawn and every point labelled.
+ * points: [{ label, x (noise dBA), y (performance), group, sub? (e.g. price) }], series curves optional:
+ * curves: [{ name, group, data: [[x, y], ...] }] for per-setting lines.
+ * Frontier = points (and curve vertices) not beaten by anything both quieter and stronger.
+ */
+const { points = [], curves = [], title = '', caption = '', xLabel = 'noise (dBA)', yLabel = '', groups = {}, height = 380, labelCurves = true } = Astro.props;
+const W = 760, H = height, m = { l: 52, r: 16, t: 16, b: 44 };
+const iw = W - m.l - m.r, ih = H - m.t - m.b;
+const all = [...points.map((p) => [p.x, p.y]), ...curves.flatMap((c) => c.data)];
+const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
+const x0 = Math.floor((Math.min(...xs) - 2) / 5) * 5, x1 = Math.ceil((Math.max(...xs) + 2) / 5) * 5;
+const y0 = 0, y1 = Math.ceil(Math.max(...ys) * 1.12 * 2) / 2;
+const sx = (v) => m.l + ((v - x0) / (x1 - x0)) * iw, sy = (v) => m.t + ih - ((v - y0) / (y1 - y0)) * ih;
+const xt = []; for (let v = x0; v <= x1; v += 5) xt.push(v);
+const ystep = y1 > 4 ? 1 : 0.5; const yt = []; for (let v = 0; v <= y1 + 1e-9; v += ystep) yt.push(+v.toFixed(2));
+// frontier: sort by noise, keep running maximum of performance
+const cand = [...points.map((p) => ({ x: p.x, y: p.y, label: p.label })), ...curves.flatMap((c) => c.data.map(([x, y]) => ({ x, y, label: c.name })))].sort((a, b) => a.x - b.x || b.y - a.y);
+const front = []; let best = -Infinity;
+for (const p of cand) if (p.y > best + 1e-9) { front.push(p); best = p.y; }
+const stairs = front.map((p, i) => `${i ? `L${sx(p.x).toFixed(1)},${sy(front[i - 1].y).toFixed(1)} ` : 'M'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ') + ` L${sx(x1).toFixed(1)},${sy(best).toFixed(1)}`;
+const col = (g) => groups[g]?.colour ?? '#f2e6d3';
+const onFront = (p) => front.some((f) => f.x === p.x && f.y === p.y);
+---
+<figure class="chart wide pareto">
+  {title && <h3 style="margin:0 0 6px;font-size:1rem">{title}</h3>}
+  <div class="legend">
+    {Object.entries(groups).map(([g, v]) => <span><i style={`background:${v.colour}`}></i>{v.label}</span>)}
+    <span><i style="background:transparent;border-top:2px dashed #ffd166;height:0;border-radius:0;margin-top:5px"></i>Pareto frontier</span>
+  </div>
+  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={title}>
+    {yt.map((v) => <g><line class="grid" x1={m.l} x2={W - m.r} y1={sy(v)} y2={sy(v)} /><text x={m.l - 8} y={sy(v) + 4} text-anchor="end">{v}</text></g>)}
+    {xt.map((v) => <g><line class="grid" x1={sx(v)} x2={sx(v)} y1={m.t} y2={m.t + ih} /><text x={sx(v)} y={H - m.b + 18} text-anchor="middle">{v}</text></g>)}
+    <line class="axis" x1={m.l} x2={W - m.r} y1={m.t + ih} y2={m.t + ih} /><line class="axis" x1={m.l} x2={m.l} y1={m.t} y2={m.t + ih} />
+    <path d={stairs} fill="none" stroke="#ffd166" stroke-width="1.6" stroke-dasharray="5 4" opacity=".85" />
+    <text x={sx(x0) + 6} y={m.t + 12} style="fill:#ffd166">better: quieter and stronger</text>
+    {curves.map((c) => (
+      <g>
+        <path d={c.data.map(([x, y], i) => `${i ? 'L' : 'M'}${sx(x).toFixed(1)},${sy(y).toFixed(1)}`).join(' ')} fill="none" stroke={col(c.group)} stroke-width="2" opacity=".85" />
+        {c.data.map(([x, y]) => <circle cx={sx(x)} cy={sy(y)} r="3" fill={col(c.group)}><title>{`${c.name}: ${y} at ${x} dB`}</title></circle>)}
+        {labelCurves && <text x={sx(c.data[c.data.length - 1][0]) + 5} y={sy(c.data[c.data.length - 1][1]) + 4} style={`fill:${col(c.group)}`}>{c.name}</text>}
+      </g>
+    ))}
+    {points.map((p) => (
+      <g>
+        <circle cx={sx(p.x)} cy={sy(p.y)} r={onFront(p) ? 6 : 4.5} fill={col(p.group)} stroke={onFront(p) ? '#ffd166' : '#120d0a'} stroke-width="2"><title>{`${p.label}: ${p.y} at ${p.x} dB${p.sub ? ' · ' + p.sub : ''}`}</title></circle>
+        <text x={sx(p.x) + (p.dx ?? 8)} y={sy(p.y) + (p.dy ?? -7)} text-anchor={p.anchor ?? 'start'} style="fill:#f2e6d3">{p.label}{p.sub && <tspan style="fill:#b9a68f"> {p.sub}</tspan>}</text>
+      </g>
+    ))}
+    <text x={m.l + iw / 2} y={H - 6} text-anchor="middle">{xLabel}</text>
+    <text transform={`translate(14 ${m.t + ih / 2}) rotate(-90)`} text-anchor="middle">{yLabel}</text>
+  </svg>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>

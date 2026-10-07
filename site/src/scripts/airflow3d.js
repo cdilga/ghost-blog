@@ -37,50 +37,49 @@ function inPoly(x, y, poly) {
 }
 
 
-// One fused stream + collide pass over the fluid cells (pull scheme: nb holds, for each cell and direction, the index
-// of the population to read, already resolved to the cell's own opposite population at a wall = half-way bounce-back).
+// One fused stream + collide pass over the fluid cells. Populations are stored cell by cell (19 per cell), which keeps
+// the reads to a handful of memory streams. Pull scheme: nb holds, for each cell and direction, the index of the
+// population to read, already resolved to the cell's own opposite population at a wall = half-way bounce-back).
 // Generated and unrolled for speed.
 function collideKernel(f, g, nb, flag, fanF, c, U, V, Wz, R, NU, n, gb, cref, leakK, tau0, smag) {
   for (let t = 0; t < n; t++) {
-      const o = t * 18;
-      const a0 = f[t];
-      const a1 = f[nb[o + 0]];
-      const a2 = f[nb[o + 1]];
-      const a3 = f[nb[o + 2]];
-      const a4 = f[nb[o + 3]];
-      const a5 = f[nb[o + 4]];
-      const a6 = f[nb[o + 5]];
-      const a7 = f[nb[o + 6]];
-      const a8 = f[nb[o + 7]];
-      const a9 = f[nb[o + 8]];
-      const a10 = f[nb[o + 9]];
-      const a11 = f[nb[o + 10]];
-      const a12 = f[nb[o + 11]];
-      const a13 = f[nb[o + 12]];
-      const a14 = f[nb[o + 13]];
-      const a15 = f[nb[o + 14]];
-      const a16 = f[nb[o + 15]];
-      const a17 = f[nb[o + 16]];
-      const a18 = f[nb[o + 17]];
-      const r = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11 + a12 + a13 + a14 + a15 + a16 + a17 + a18;
-      const jx = a1 - a2 + a7 - a8 + a9 - a10 + a11 - a12 + a13 - a14;
-      const jy = a3 - a4 + a7 - a8 - a9 + a10 + a15 - a16 + a17 - a18;
-      const jz = a5 - a6 + a11 - a12 - a13 + a14 + a15 - a16 - a17 + a18;
+      const o = t * 18, b = t * 19;
+      let a = f[b];
+      let r = a, jx = 0, jy = 0, jz = 0, sxx = 0, syy = 0, szz = 0, sxy = 0, sxz = 0, syz = 0;
+      a = f[nb[o + 0]]; r += a; jx += a; sxx += a;
+      a = f[nb[o + 1]]; r += a; jx -= a; sxx += a;
+      a = f[nb[o + 2]]; r += a; jy += a; syy += a;
+      a = f[nb[o + 3]]; r += a; jy -= a; syy += a;
+      a = f[nb[o + 4]]; r += a; jz += a; szz += a;
+      a = f[nb[o + 5]]; r += a; jz -= a; szz += a;
+      a = f[nb[o + 6]]; r += a; jx += a; jy += a; sxx += a; syy += a; sxy += a;
+      a = f[nb[o + 7]]; r += a; jx -= a; jy -= a; sxx += a; syy += a; sxy += a;
+      a = f[nb[o + 8]]; r += a; jx += a; jy -= a; sxx += a; syy += a; sxy -= a;
+      a = f[nb[o + 9]]; r += a; jx -= a; jy += a; sxx += a; syy += a; sxy -= a;
+      a = f[nb[o + 10]]; r += a; jx += a; jz += a; sxx += a; szz += a; sxz += a;
+      a = f[nb[o + 11]]; r += a; jx -= a; jz -= a; sxx += a; szz += a; sxz += a;
+      a = f[nb[o + 12]]; r += a; jx += a; jz -= a; sxx += a; szz += a; sxz -= a;
+      a = f[nb[o + 13]]; r += a; jx -= a; jz += a; sxx += a; szz += a; sxz -= a;
+      a = f[nb[o + 14]]; r += a; jy += a; jz += a; syy += a; szz += a; syz += a;
+      a = f[nb[o + 15]]; r += a; jy -= a; jz -= a; syy += a; szz += a; syz += a;
+      a = f[nb[o + 16]]; r += a; jy += a; jz -= a; syy += a; szz += a; syz -= a;
+      a = f[nb[o + 17]]; r += a; jy -= a; jz += a; syy += a; szz += a; syz -= a;
       const ir = 1 / r;
-      // forces: buoyancy of AC air (cold air sinks), fan thrust, door-undercut drag
+      // forces: buoyancy of AC air (cold air sinks), fan thrust, door-undercut drag, louvre steering
       let Fx = 0, Fy = 0, Fz = gb * (cref - c[t]) * r;
       const fl = flag[t];
       if (fl !== 0) {
         if (fl & 1) { Fx += fanF[3 * t]; Fy += fanF[3 * t + 1]; Fz += fanF[3 * t + 2]; }
         if (fl & 2) { Fx -= leakK * jx; Fy -= leakK * jy; Fz -= leakK * jz; }
+        if (fl & 4) { Fx += 0.3 * (fanF[3 * t] * r - jx); Fy += 0.3 * (fanF[3 * t + 1] * r - jy); Fz += 0.3 * (fanF[3 * t + 2] * r - jz); }
       }
       const ux = (jx + 0.5 * Fx) * ir, uy = (jy + 0.5 * Fy) * ir, uz = (jz + 0.5 * Fz) * ir;
-      const pxx = a1 + a2 + a7 + a8 + a9 + a10 + a11 + a12 + a13 + a14 - r * (ux * ux + C13);
-      const pyy = a3 + a4 + a7 + a8 + a9 + a10 + a15 + a16 + a17 + a18 - r * (uy * uy + C13);
-      const pzz = a5 + a6 + a11 + a12 + a13 + a14 + a15 + a16 + a17 + a18 - r * (uz * uz + C13);
-      const pxy = a7 + a8 - a9 - a10 - r * ux * uy;
-      const pxz = a11 + a12 - a13 - a14 - r * ux * uz;
-      const pyz = a15 + a16 - a17 - a18 - r * uy * uz;
+      const pxx = sxx - r * (ux * ux + C13);
+      const pyy = syy - r * (uy * uy + C13);
+      const pzz = szz - r * (uz * uz + C13);
+      const pxy = sxy - r * ux * uy;
+      const pxz = sxz - r * ux * uz;
+      const pyz = syz - r * uy * uz;
       const Q = Math.sqrt(pxx * pxx + pyy * pyy + pzz * pzz + 2 * (pxy * pxy + pxz * pxz + pyz * pyz));
       const tau = 0.5 * (tau0 + Math.sqrt(tau0 * tau0 + smag * Q * ir));
       const k1 = 1 - 1 / tau;
@@ -89,25 +88,25 @@ function collideKernel(f, g, nb, flag, fanF, c, U, V, Wz, R, NU, n, gb, cref, le
       const fx = 3 * Fx, fy = 3 * Fy, fz = 3 * Fz;
       const qa = 4.5 * k1;
       const nxx = qa * pxx, nyy = qa * pyy, nzz = qa * pzz, nxy = qa * pxy, nxz = qa * pxz, nyz = qa * pyz, ntr = (nxx + nyy + nzz) / 3;
-      g[t] = 0.333333333 * (r * (1 - usq) - ntr);
-      { const e = ux; g[1 * n + t] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx - ntr + fx); }
-      { const e = -ux; g[2 * n + t] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx - ntr - fx); }
-      { const e = uy; g[3 * n + t] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy - ntr + fy); }
-      { const e = -uy; g[4 * n + t] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy - ntr - fy); }
-      { const e = uz; g[5 * n + t] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nzz - ntr + fz); }
-      { const e = -uz; g[6 * n + t] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nzz - ntr - fz); }
-      { const e = ux + uy; g[7 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nyy - ntr + 2 * nxy + fx + fy); }
-      { const e = -ux - uy; g[8 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nyy - ntr + 2 * nxy - fx - fy); }
-      { const e = ux - uy; g[9 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nyy - ntr - 2 * nxy + fx - fy); }
-      { const e = -ux + uy; g[10 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nyy - ntr - 2 * nxy - fx + fy); }
-      { const e = ux + uz; g[11 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nzz - ntr + 2 * nxz + fx + fz); }
-      { const e = -ux - uz; g[12 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nzz - ntr + 2 * nxz - fx - fz); }
-      { const e = ux - uz; g[13 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nzz - ntr - 2 * nxz + fx - fz); }
-      { const e = -ux + uz; g[14 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nzz - ntr - 2 * nxz - fx + fz); }
-      { const e = uy + uz; g[15 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy + nzz - ntr + 2 * nyz + fy + fz); }
-      { const e = -uy - uz; g[16 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy + nzz - ntr + 2 * nyz - fy - fz); }
-      { const e = uy - uz; g[17 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy + nzz - ntr - 2 * nyz + fy - fz); }
-      { const e = -uy + uz; g[18 * n + t] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy + nzz - ntr - 2 * nyz - fy + fz); }
+      g[b] = 0.333333333 * (r * (1 - usq) - ntr);
+      { const e = ux; g[b + 1] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx - ntr + fx); }
+      { const e = -ux; g[b + 2] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx - ntr - fx); }
+      { const e = uy; g[b + 3] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy - ntr + fy); }
+      { const e = -uy; g[b + 4] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy - ntr - fy); }
+      { const e = uz; g[b + 5] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nzz - ntr + fz); }
+      { const e = -uz; g[b + 6] = 0.0555555556 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nzz - ntr - fz); }
+      { const e = ux + uy; g[b + 7] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nyy - ntr + 2 * nxy + fx + fy); }
+      { const e = -ux - uy; g[b + 8] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nyy - ntr + 2 * nxy - fx - fy); }
+      { const e = ux - uy; g[b + 9] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nyy - ntr - 2 * nxy + fx - fy); }
+      { const e = -ux + uy; g[b + 10] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nyy - ntr - 2 * nxy - fx + fy); }
+      { const e = ux + uz; g[b + 11] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nzz - ntr + 2 * nxz + fx + fz); }
+      { const e = -ux - uz; g[b + 12] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nzz - ntr + 2 * nxz - fx - fz); }
+      { const e = ux - uz; g[b + 13] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nzz - ntr - 2 * nxz + fx - fz); }
+      { const e = -ux + uz; g[b + 14] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nxx + nzz - ntr - 2 * nxz - fx + fz); }
+      { const e = uy + uz; g[b + 15] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy + nzz - ntr + 2 * nyz + fy + fz); }
+      { const e = -uy - uz; g[b + 16] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy + nzz - ntr + 2 * nyz - fy - fz); }
+      { const e = uy - uz; g[b + 17] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy + nzz - ntr - 2 * nyz + fy - fz); }
+      { const e = -uy + uz; g[b + 18] = 0.0277777778 * (r * (1 + 3 * e + 4.5 * e * e - usq) + nyy + nzz - ntr - 2 * nyz - fy + fz); }
       U[t] = ux; V[t] = uy; Wz[t] = uz; R[t] = r; NU[t] = (tau - 0.5) / 3;
   }
 }
@@ -116,7 +115,7 @@ export function createSim3D(house, opts = {}) {
   const ceil = house.ceiling_z;
   const nz = opts.layers ?? 15;           // cells floor to ceiling
   const h = ceil / nz;                     // cell size (m)
-  const LS = opts.LS ?? 0.025;             // lattice speed per m/s
+  const LS = opts.LS ?? 0.03;              // lattice speed per m/s (3.5 m/s at the louvre is 0.105)
   const dt = LS * h;                       // seconds per step
   const nu0 = opts.nu0 ?? 0.0006;          // base lattice viscosity (molecular air is ~1e-6 here: the LES does the work)
   const cs = opts.cs ?? 0.16;              // Smagorinsky constant
@@ -150,19 +149,22 @@ export function createSim3D(house, opts = {}) {
     const [a, e] = centreRange(b0, b1, o, n);
     if (a <= e) return [a, e];
     const m = Math.min(n - 1, Math.max(0, Math.floor(((b0 + b1) / 2 - o) / h) + 1));
-    return [m, m];
+    return [m, m, (b0 + b1) / 2 > o + (m - 0.5) * h ? m + 1 : m - 1]; // third: the other cell nearest the midline
   };
   const zRange = (z0, z1, hybrid) => {
     const lo = z0 <= 1e-6 ? -1 : z0, hi = z1 >= ceil - 1e-3 ? ceil + 1 : z1;
     return hybrid ? hybridRange(lo, hi, 0, NZ) : centreRange(lo, hi, 0, NZ);
   };
   function fillBox(b, val, hybrid) {
-    const [i0, i1] = hybrid ? hybridRange(b[0], b[3], x0, NX) : centreRange(b[0], b[3], x0, NX);
-    const [j0, j1] = hybrid ? hybridRange(b[1], b[4], y0, NY) : centreRange(b[1], b[4], y0, NY);
+    const [i0, i1, iAlt] = hybrid ? hybridRange(b[0], b[3], x0, NX) : centreRange(b[0], b[3], x0, NX);
+    const [j0, j1, jAlt] = hybrid ? hybridRange(b[1], b[4], y0, NY) : centreRange(b[1], b[4], y0, NY);
     const [l0, l1] = zRange(b[2], b[5], hybrid);
     const out = [];
     for (let l = l0; l <= l1; l++) for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
       const k = i + NX * (j + NY * l);
+      // a thin wall whose other side is already outside the house adds nothing: leave the room its last row
+      if (iAlt !== undefined && room[iAlt + NX * j + NXY] < 0 && room[i + NX * j + NXY] >= 0) continue;
+      if (jAlt !== undefined && room[i + NX * jAlt + NXY] < 0 && room[i + NX * j + NXY] >= 0) continue;
       if (val !== null) solid[k] = val;
       out.push(k);
     }
@@ -223,7 +225,7 @@ export function createSim3D(house, opts = {}) {
       const k = cellOf[t];
       for (let q = 1; q < 19; q++) {
         const s = k - CX[q] - CY[q] * NX - CZ[q] * NXY; // pull from upstream
-        nb[t * 18 + q - 1] = solid[s] ? OPP[q] * nF + t : q * nF + idx[s];
+        nb[t * 18 + q - 1] = solid[s] ? t * 19 + OPP[q] : idx[s] * 19 + q;
       }
       px[t] = solid[k + 1] ? -1 : idx[k + 1];
       py[t] = solid[k + NX] ? -1 : idx[k + NX];
@@ -249,7 +251,7 @@ export function createSim3D(house, opts = {}) {
   let outlet = new Int32Array(0), sinkCells = new Int32Array(0), sinkW = new Float32Array(0);
   let srcMass = 0, srcU = [0, 0, 0], acInfo = null, fanInfo = [];
   function setSources(cfg) {
-    flag.forEach((v, t) => { flag[t] = v & ~1; });
+    flag.forEach((v, t) => { flag[t] = v & ~5; });
     fanF.fill(0);
     fanInfo = [];
     // fans: actuator discs
@@ -302,24 +304,32 @@ export function createSim3D(house, opts = {}) {
           const k = i + NX * (j + NY * lz);
           if (!solid[k]) { out.push(idx[k]); break; }
         }
-        // intake: from the top of the head to the ceiling, over the head and one cell in front
-        for (let l = lTop; l <= nz; l++) for (let st = -2; st <= 1; st++) {
+        // intake: the grille on top of the head (behind its front face), from the top of the head to the ceiling
+        for (let l = lTop; l <= nz; l++) for (let st = -3; st <= -1; st++) {
           const i = nrm[1] !== 0 ? s : Math.floor((front - x0) / h) + 1 + Math.sign(nrm[0]) * st;
           const j = nrm[1] !== 0 ? Math.floor((front - y0) / h) + 1 + Math.sign(nrm[1]) * st : s;
           const k = i + NX * (j + NY * l);
           if (!solid[k] && !out.includes(idx[k]) && !snk.includes(idx[k])) snk.push(idx[k]);
         }
       }
+      if (!snk.length) {
+        // no room over the head at this grid: take the air from the ceiling cells above the louvre
+        for (const t of out) { let k = cellOf[t] + NXY; while (!solid[k + NXY]) k += NXY; if (!solid[k] && !snk.includes(idx[k])) snk.push(idx[k]); }
+      }
       outlet = Int32Array.from(out); sinkCells = Int32Array.from(snk);
       srcMass = out.length ? (a.flow * dt) / (out.length * h ** 3) : 0;
       sinkW = new Float32Array(snk.length).fill(snk.length ? (srcMass * out.length) / snk.length : 0);
-      acInfo = { outletCells: out.length, intakeCells: snk.length, flow: a.flow, massPerStep: srcMass * out.length };
+      // the louvre cells are a few times the real slot's area: steer them to the speed that carries the real slot's
+      // momentum flux (rho Q U), so the throw is right; the mass added is still exactly Q
+      const Um = out.length ? Math.sqrt((a.flow * a.speed) / (out.length * h * h)) : 0;
+      for (const t of out) { flag[t] |= 4; fanF[3 * t] = (srcU[0] / a.speed) * Um; fanF[3 * t + 1] = (srcU[1] / a.speed) * Um; fanF[3 * t + 2] = (srcU[2] / a.speed) * Um; }
+      acInfo = { outletCells: out.length, intakeCells: snk.length, flow: a.flow, louvreSpeedModel: +Um.toFixed(2), massPerStep: srcMass * out.length };
     }
   }
 
   let steps = 0, cref = 0, decayF = 1;
   function reset() {
-    for (let q = 0; q < 19; q++) { f.fill(WQ[q], q * nF, (q + 1) * nF); g.fill(WQ[q], q * nF, (q + 1) * nF); }
+    for (let t = 0; t < nF; t++) for (let q = 0; q < 19; q++) { f[t * 19 + q] = WQ[q]; g[t * 19 + q] = WQ[q]; }
     U.fill(0); V.fill(0); Wz.fill(0); R.fill(1); NU.fill(nu0); c.fill(0); dc.fill(0);
     steps = 0; cref = 0;
   }
@@ -336,38 +346,39 @@ export function createSim3D(house, opts = {}) {
       const t = outlet[s];
       for (let q = 0; q < 19; q++) {
         const e = CX[q] * ux + CY[q] * uy + CZ[q] * uz;
-        g[q * n + t] += m * WQ[q] * (1 + 3 * e + 4.5 * e * e - usq);
+        g[t * 19 + q] += m * WQ[q] * (1 + 3 * e + 4.5 * e * e - usq);
       }
     }
     // intake: remove exactly the same mass (each population scaled, so momentum goes with it)
     for (let s = 0; s < sinkCells.length; s++) {
       const t = sinkCells[s];
-      let r = 0; for (let q = 0; q < 19; q++) r += g[q * n + t];
+      let r = 0; for (let q = 0; q < 19; q++) r += g[t * 19 + q];
       const keep = 1 - sinkW[s] / r;
-      for (let q = 0; q < 19; q++) g[q * n + t] *= keep;
+      for (let q = 0; q < 19; q++) g[t * 19 + q] *= keep;
     }
   }
 
+  // runs every other step with a doubled time step (it is cheap to be monotone at these speeds)
   function tracer() {
-    const n = nF;
-    const D0 = 0.002;
+    const n = nF, S = 2;
+    const D0 = 0.002 * S;
     for (let t = 0; t < n; t++) {
       const ct = c[t], ut = U[t], vt = V[t], wt = Wz[t], nt = NU[t];
       let m = px[t];
       if (m >= 0) {
-        const uf = 0.5 * (ut + U[m]), D = Math.min(0.08, D0 + (0.5 * (nt + NU[m]) - nu0) / Sc), cm = c[m];
+        const uf = S * 0.5 * (ut + U[m]), D = Math.min(0.12, D0 + S * (0.5 * (nt + NU[m]) - nu0) / Sc), cm = c[m];
         if (uf > 0) dc[m] += uf * (ct - cm); else dc[t] -= uf * (cm - ct);
         const df = D * (cm - ct); dc[t] += df; dc[m] -= df;
       }
       m = py[t];
       if (m >= 0) {
-        const uf = 0.5 * (vt + V[m]), D = Math.min(0.08, D0 + (0.5 * (nt + NU[m]) - nu0) / Sc), cm = c[m];
+        const uf = S * 0.5 * (vt + V[m]), D = Math.min(0.12, D0 + S * (0.5 * (nt + NU[m]) - nu0) / Sc), cm = c[m];
         if (uf > 0) dc[m] += uf * (ct - cm); else dc[t] -= uf * (cm - ct);
         const df = D * (cm - ct); dc[t] += df; dc[m] -= df;
       }
       m = pz[t];
       if (m >= 0) {
-        const uf = 0.5 * (wt + Wz[m]), D = Math.min(0.08, D0 + (0.5 * (nt + NU[m]) - nu0) / Sc), cm = c[m];
+        const uf = S * 0.5 * (wt + Wz[m]), D = Math.min(0.12, D0 + S * (0.5 * (nt + NU[m]) - nu0) / Sc), cm = c[m];
         if (uf > 0) dc[m] += uf * (ct - cm); else dc[t] -= uf * (cm - ct);
         const df = D * (cm - ct); dc[t] += df; dc[m] -= df;
       }
@@ -383,14 +394,14 @@ export function createSim3D(house, opts = {}) {
   }
 
   function step(count = 1) {
-    decayF = decayS > 0 ? Math.exp(-dt / decayS) : 1;
+    decayF = decayS > 0 ? Math.exp((-2 * dt) / decayS) : 1;
     gb = (9.81 * dT / 300) * dt * dt / h;
     for (let s = 0; s < count; s++) {
       collide();
       sources();
       const tmp = f; f = g; g = tmp;
-      tracer();
       steps++;
+      if ((steps & 1) === 0) tracer();
     }
   }
 

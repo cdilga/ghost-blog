@@ -1,0 +1,2293 @@
+{
+  "updated": "2026-10-07",
+  "sources_note": "Measurements are copied from the named testers; conversions: ft/s x 0.3048 = m/s, mph x 0.447 = m/s, CFM x 1.699 = m3/h. Testers differ in anemometer position, mic distance, weighting and settings; see report caveats. thrust_n (TechGearLab only) is an extra field: measured thrust in newtons, a direct momentum-flux proxy.",
+  "fans": [
+    {
+      "id": "dreo-353",
+      "brand": "Dreo",
+      "model": "TurboPoly Fan 353",
+      "type": "pedestal",
+      "rotor_m": 0.203,
+      "claims": {
+        "air_speed_ms": 7.62,
+        "cfm": 1000,
+        "throw_m": 27.4,
+        "noise_db_min": 20,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": {
+        "amount": 159.99,
+        "how": "amazon.com.au listing, 7 Oct 2026 (ASIN B0H1X9VQ19; title '90ft airflow, 8 speeds, 3 modes, 38-42in, 105 deg manual vertical, DC motor' matches the 353 spec, though the shared listing copy names the 512)",
+        "source": "https://www.amazon.com.au/dp/B0H1X9VQ19",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Claims from ca.dreo.com spec table (1000 CFM, 25 ft/s, 90 ft, 20 dB, 8 in blade, 8 speeds, 90 deg H oscillation, 105 deg manual tilt). The owner's ChatGPT thread quotes 26 ft/s (7.92 m/s) from the US catalogue: conflicting. ChatGPT also cited '3.47 m/s at 3.05 m on speed 6, <48.5 dB at max' for the 353, but I could not locate that test (the cited averagejohnspicks.com page contains no measurements), so it is not recorded. No independent anemometer data found. ChatGPT's jet model assumed a 7 in rotor; Dreo CA lists an 8 in blade."
+    },
+    {
+      "id": "dreo-512",
+      "brand": "Dreo",
+      "model": "TurboPoly Fan 512",
+      "type": "pedestal",
+      "rotor_m": 0.229,
+      "claims": {
+        "air_speed_ms": 7.62,
+        "cfm": 1100,
+        "throw_m": 28.3,
+        "noise_db_min": 20,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": {
+        "amount": 189.99,
+        "how": "amazon.com.au listing, 7 Oct 2026 (ASIN B0H1X5BLCP, the unit the owner bought in Oct 2026; title '100ft airflow, 9 speeds, 4 modes, 120 deg manual vertical tilt, 37-42in' and listing copy 'DREO TurboPoly Fan 512' identify it as the 512, not a 513 variant)",
+        "source": "https://www.amazon.com.au/dp/B0H1X5BLCP",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Claims from dreo.com and ca.dreo.com (1100 CFM, 25 ft/s, 93 ft, 20 dB, 9 in blade, 9 speeds, 4 modes, 120 deg H, 120 deg manual tilt, BLDC, no app). No independent anemometer + noise measurements found. The 513S (app, motorised 105 deg vertical, 8 speeds) is a different product."
+    },
+    {
+      "id": "dreo-513s",
+      "brand": "Dreo",
+      "model": "TurboPoly Fan 513S (PolyFan 513S)",
+      "type": "pedestal",
+      "rotor_m": 0.229,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": 30.5,
+        "noise_db_min": 25,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-polyfan-513s-von-dreo-im-test-2025/",
+          "setting": "1",
+          "distance_m": 1,
+          "air_ms": 2.2,
+          "noise_dba": 34.4,
+          "mic_m": 1,
+          "power_w": 2.9,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-polyfan-513s-von-dreo-im-test-2025/",
+          "setting": "2",
+          "distance_m": 1,
+          "air_ms": 2.8,
+          "noise_dba": 35.6,
+          "mic_m": 1,
+          "power_w": 4.1,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-polyfan-513s-von-dreo-im-test-2025/",
+          "setting": "3",
+          "distance_m": 1,
+          "air_ms": 3.4,
+          "noise_dba": 37.8,
+          "mic_m": 1,
+          "power_w": 5.8,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-polyfan-513s-von-dreo-im-test-2025/",
+          "setting": "4",
+          "distance_m": 1,
+          "air_ms": 4.0,
+          "noise_dba": 41.0,
+          "mic_m": 1,
+          "power_w": 8.0,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-polyfan-513s-von-dreo-im-test-2025/",
+          "setting": "5",
+          "distance_m": 1,
+          "air_ms": 4.4,
+          "noise_dba": 44.2,
+          "mic_m": 1,
+          "power_w": 10.8,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-polyfan-513s-von-dreo-im-test-2025/",
+          "setting": "6",
+          "distance_m": 1,
+          "air_ms": 5.2,
+          "noise_dba": 47.5,
+          "mic_m": 1,
+          "power_w": 14.6,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-polyfan-513s-von-dreo-im-test-2025/",
+          "setting": "7",
+          "distance_m": 1,
+          "air_ms": 5.8,
+          "noise_dba": 50.3,
+          "mic_m": 1,
+          "power_w": 19.3,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-polyfan-513s-von-dreo-im-test-2025/",
+          "setting": "8",
+          "distance_m": 1,
+          "air_ms": 6.2,
+          "noise_dba": 53.1,
+          "mic_m": 1,
+          "power_w": 25.0,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-polyfan-513s-von-dreo-im-test-2025/",
+          "setting": "Turbo",
+          "distance_m": 1,
+          "air_ms": 6.8,
+          "noise_dba": 53.1,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'. ETM reports approx 53.1 dB for Turbo, identical to level 8."
+        },
+        {
+          "source": "Notebookcheck",
+          "url": "https://www.notebookcheck.net/A-fresh-breeze-on-hot-days-Smart-Dreo-TurboPoly-Fan-513S-review.1087865.0.html",
+          "setting": "lowest",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 30,
+          "mic_m": 1,
+          "power_w": 3,
+          "notes": "'just over 30 dB' at 1 m, ~3 W lowest level without oscillation; no air speed measured."
+        },
+        {
+          "source": "Notebookcheck",
+          "url": "https://www.notebookcheck.net/A-fresh-breeze-on-hot-days-Smart-Dreo-TurboPoly-Fan-513S-review.1087865.0.html",
+          "setting": "Turbo (both axes oscillating)",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 53,
+          "mic_m": 1,
+          "power_w": 37,
+          "notes": "'around 53 dB'; 37 W turbo with full oscillation."
+        }
+      ],
+      "notes": "dreo.com: 11 in head / 9 in blade, 100 ft max distance, 8 speeds, 120 deg H + 105 deg motorised V, 120 V US spec. CFM unresolved across markets (ChatGPT thread found 880 to 1300 CFM class figures). 25 dB minimum claim per Notebookcheck. Best paired dataset of any model (ETM, same protocol as 508S and 502S). Not sold in Australia; ETM EU price EUR 169.99."
+    },
+    {
+      "id": "dreo-508s",
+      "brand": "Dreo",
+      "model": "TurboPoly Fan 508S",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 1000,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-fan-508s-von-dreo-im-test-2025/",
+          "setting": "1",
+          "distance_m": 1,
+          "air_ms": 0.9,
+          "noise_dba": 32.6,
+          "mic_m": 1,
+          "power_w": 2.4,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-fan-508s-von-dreo-im-test-2025/",
+          "setting": "2",
+          "distance_m": 1,
+          "air_ms": 1.3,
+          "noise_dba": 34.2,
+          "mic_m": 1,
+          "power_w": 3.5,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-fan-508s-von-dreo-im-test-2025/",
+          "setting": "3",
+          "distance_m": 1,
+          "air_ms": 1.8,
+          "noise_dba": 37.4,
+          "mic_m": 1,
+          "power_w": 4.9,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-fan-508s-von-dreo-im-test-2025/",
+          "setting": "4",
+          "distance_m": 1,
+          "air_ms": 2.5,
+          "noise_dba": 40.6,
+          "mic_m": 1,
+          "power_w": 6.4,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-fan-508s-von-dreo-im-test-2025/",
+          "setting": "5",
+          "distance_m": 1,
+          "air_ms": 3.3,
+          "noise_dba": 43.8,
+          "mic_m": 1,
+          "power_w": 8.4,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-fan-508s-von-dreo-im-test-2025/",
+          "setting": "6",
+          "distance_m": 1,
+          "air_ms": 3.5,
+          "noise_dba": 46.6,
+          "mic_m": 1,
+          "power_w": 10.8,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-fan-508s-von-dreo-im-test-2025/",
+          "setting": "7",
+          "distance_m": 1,
+          "air_ms": 3.7,
+          "noise_dba": 50.0,
+          "mic_m": 1,
+          "power_w": 13.5,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-fan-508s-von-dreo-im-test-2025/",
+          "setting": "8",
+          "distance_m": 1,
+          "air_ms": 4.0,
+          "noise_dba": 51.3,
+          "mic_m": 1,
+          "power_w": 15.4,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-fan-508s-von-dreo-im-test-2025/",
+          "setting": "9",
+          "distance_m": 1,
+          "air_ms": 4.5,
+          "noise_dba": 52.8,
+          "mic_m": 1,
+          "power_w": 19.2,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-fan-508s-von-dreo-im-test-2025/",
+          "setting": "Turbo",
+          "distance_m": 1,
+          "air_ms": 5.0,
+          "noise_dba": 58.5,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        }
+      ],
+      "notes": "Reference model (same tester as 513S). 1000 CFM claim per owner's ChatGPT thread (Dreo catalogue). Not sold in Australia."
+    },
+    {
+      "id": "dreo-502s",
+      "brand": "Dreo",
+      "model": "TurboPoly Fan 502S",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": 24
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-502s-von-dreo-im-test-2026/",
+          "setting": "1",
+          "distance_m": 1,
+          "air_ms": 1.5,
+          "noise_dba": 25.3,
+          "mic_m": 1,
+          "power_w": 2.4,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-502s-von-dreo-im-test-2026/",
+          "setting": "2",
+          "distance_m": 1,
+          "air_ms": 2.4,
+          "noise_dba": 27.8,
+          "mic_m": 1,
+          "power_w": 3.4,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-502s-von-dreo-im-test-2026/",
+          "setting": "3",
+          "distance_m": 1,
+          "air_ms": 2.6,
+          "noise_dba": 29.5,
+          "mic_m": 1,
+          "power_w": 4.0,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-502s-von-dreo-im-test-2026/",
+          "setting": "4",
+          "distance_m": 1,
+          "air_ms": 2.8,
+          "noise_dba": 31.7,
+          "mic_m": 1,
+          "power_w": 4.9,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-502s-von-dreo-im-test-2026/",
+          "setting": "5",
+          "distance_m": 1,
+          "air_ms": 3.2,
+          "noise_dba": 34.6,
+          "mic_m": 1,
+          "power_w": 5.9,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-502s-von-dreo-im-test-2026/",
+          "setting": "6",
+          "distance_m": 1,
+          "air_ms": 3.8,
+          "noise_dba": 43.2,
+          "mic_m": 1,
+          "power_w": 10.4,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-502s-von-dreo-im-test-2026/",
+          "setting": "7",
+          "distance_m": 1,
+          "air_ms": 4.4,
+          "noise_dba": 45.3,
+          "mic_m": 1,
+          "power_w": 12.4,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-502s-von-dreo-im-test-2026/",
+          "setting": "8",
+          "distance_m": 1,
+          "air_ms": 4.8,
+          "noise_dba": 48.1,
+          "mic_m": 1,
+          "power_w": 14.7,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'."
+        },
+        {
+          "source": "ETM Testmagazin",
+          "url": "https://etm-testmagazin.de/tests/der-turbopoly-502s-von-dreo-im-test-2026/",
+          "setting": "Turbo",
+          "distance_m": 1,
+          "air_ms": 5.5,
+          "noise_dba": 52.5,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "ETM Testmagazin (Germany, EU 230 V unit): anemometer approx 1 m in front, sound approx 1 m, wall-plug power; values are 'approx'. Breeze 'still felt at approx 5 m'."
+        }
+      ],
+      "notes": "Reference model (same tester as 513S). 24 W max is the manufacturer figure quoted by ETM. Not sold in Australia."
+    },
+    {
+      "id": "dreo-704s",
+      "brand": "Dreo",
+      "model": "TurboPoly Fan 704S (PolyFan 704S)",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": 7.92,
+        "cfm": 1400,
+        "throw_m": 33.5,
+        "noise_db_min": 25,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "TechRadar (via search summary)",
+          "url": "https://www.techradar.com/home/small-appliances/dreo-polyfan-704s-review",
+          "setting": "low",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 29,
+          "mic_m": null,
+          "power_w": null,
+          "notes": "iPhone sound meter app; distance not stated; no air speed."
+        },
+        {
+          "source": "TechRadar (via search summary)",
+          "url": "https://www.techradar.com/home/small-appliances/dreo-polyfan-704s-review",
+          "setting": "high",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 51,
+          "mic_m": null,
+          "power_w": null,
+          "notes": "iPhone sound meter app; distance not stated; no air speed."
+        }
+      ],
+      "notes": "dreo.com: 1400 CFM (older material says 950 CFM), 110 ft, 9 speeds, 150 deg H + 120 deg V, BLDC. 26 ft/s and 25-51 dB from review/search summaries, not the current spec block. Not sold in Australia by Dreo."
+    },
+    {
+      "id": "dreo-707s",
+      "brand": "Dreo",
+      "model": "TurboPoly Fan 707S",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": 8.53,
+        "cfm": 1450,
+        "throw_m": 33.5,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [],
+      "notes": "dreo.com spec: 1450 CFM, 28 ft/s, 110 ft, 9 speeds, 150 deg H + 120 deg V, millimetre-wave presence tracking. No independent measurements found."
+    },
+    {
+      "id": "dreo-au-intelligent-150x120",
+      "brand": "Dreo",
+      "model": "'Intelligent Fan' with positioning-based 3D oscillation 150+120 deg (amazon.com.au; model number unconfirmed)",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": {
+        "amount": 389.6,
+        "how": "amazon.com.au listing, 7 Oct 2026 (listed by Dreo after the owner contacted them)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Identity not confirmed. 150 deg H + 120 deg V with position-based (presence tracking) oscillation matches the 707S spec best (the 704S is also 150+120 but lacks tracking). Verify model number before treating as a 707S."
+    },
+    {
+      "id": "dreo-714s",
+      "brand": "Dreo",
+      "model": "TurboPoly Table Fan 714S (sold as Smart Air Circulator CF714S / DR-HAF004S)",
+      "type": "desk",
+      "rotor_m": 0.229,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": 33.5,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "Turbo (max)",
+          "distance_m": 6.1,
+          "air_ms": 2.75,
+          "noise_dba": 54.9,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 9.01 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "lowest",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 33.6,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived)."
+        },
+        {
+          "source": "TechGearLab",
+          "url": "https://www.techgearlab.com/topics/home/best-floor-fan",
+          "setting": "average of low/med/high",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 53.0,
+          "mic_m": 0.914,
+          "power_w": 29.0,
+          "notes": "TechGearLab: 'Measured Average Thrust' from a pivot-arm thrust rig (momentum flux proxy); 'Average SPL' is their average of low/medium/high readings at 3 ft (0.91 m); not a velocity measurement. Thrust 1.14 N; box CFM 564.2; 40 dBA at lowest speed; watts by mode 1-9: 3.8, 5.1, 6.0, 6.9, 9.1, 12.3, 16.0, 21.0, 24.0; Turbo 29.0 W.",
+          "thrust_n": 1.14
+        }
+      ],
+      "notes": "dreo.com: 11 in head / 9 in blade, 110 ft, 9 speeds, 120 deg H + 90 deg V (current amazon.com DR-HAF004S title says 120+120), 3.3 kg, 120 V. Not to be confused with the Pilot Max S tower also numbered 714S. The CF714S tested by mybest/TechGearLab is assumed to be this tabletop circulator (ASIN B0BSHBTV4V, DR-HAF004S); the ChatGPT thread quotes 1404 CFM / 26 ft/s for the 714S but the current dreo.com spec block does not list them. mybest's 20 ft figure (2.75 m/s at 6.1 m) is the strongest long-throw result found for any Dreo."
+    },
+    {
+      "id": "dreo-portable-pedestal-mybest",
+      "brand": "Dreo",
+      "model": "'Portable Pedestal Fan' tested by mybest (ASIN B0BSH7YKHT; exact model uncertain)",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 6.1,
+          "air_ms": 2.46,
+          "noise_dba": 48.0,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 8.07 ft/s (22135 page says 8.06). 48 dB 'strongest mode' from https://us.my-best.com/22135."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 1.52,
+          "air_ms": 5.03,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest 5 ft test: strongest of 36 points, 16.5 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "lowest",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 33.6,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived)."
+        }
+      ],
+      "notes": "mybest describes 8 speeds + turbo, 120 deg H + 105 deg V, 6 in deep impeller, US$139.99. That matches a 513S-class unit at time of test; the ASIN now resolves to a 150+120 deg 12-speed RGB model, so identity is uncertain."
+    },
+    {
+      "id": "dreo-765s",
+      "brand": "Dreo",
+      "model": "Smart TurboPoly 765S",
+      "type": "air circulator",
+      "rotor_m": 0.229,
+      "claims": {
+        "air_speed_ms": 8.84,
+        "cfm": 1500,
+        "throw_m": 36.6,
+        "noise_db_min": 20,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": {
+        "amount": 400,
+        "how": "amazon.com delivered to AU incl. shipping + import charges (owner's estimate, 'about A$400+'); not sold by Dreo in Australia",
+        "source": null,
+        "date": "2026-10-07"
+      },
+      "measurements": [
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/dreo-smart-turbopoly-765s-review",
+          "setting": "1 (min)",
+          "distance_m": 1,
+          "air_ms": 2.2,
+          "noise_dba": 27.8,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "Anemometer at 1 m; smartphone sound meter app; plug-in energy meter. Lowest settings drew 2.88 to 5.25 W (per-setting split not given)."
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/dreo-smart-turbopoly-765s-review",
+          "setting": "3",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 35.4,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "Noise only. ChatGPT paired this with 3.7 m/s, but 3.7 m/s is Expert Reviews' half-power (setting 6) figure: do not pair."
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/dreo-smart-turbopoly-765s-review",
+          "setting": "6 (half power)",
+          "distance_m": 1,
+          "air_ms": 3.7,
+          "noise_dba": null,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "Air speed only."
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/dreo-smart-turbopoly-765s-review",
+          "setting": "9",
+          "distance_m": 1,
+          "air_ms": 4.6,
+          "noise_dba": null,
+          "mic_m": 1,
+          "power_w": 19.99,
+          "notes": "Settings 9 to 12 drew 19.99 to 32.04 W; 19.99 W assigned to setting 9 (inferred)."
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/dreo-smart-turbopoly-765s-review",
+          "setting": "12 (max normal)",
+          "distance_m": 1,
+          "air_ms": 5.5,
+          "noise_dba": 54.6,
+          "mic_m": 1,
+          "power_w": 32.04,
+          "notes": "32.04 W assigned to setting 12 (inferred)."
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/dreo-smart-turbopoly-765s-review",
+          "setting": "Turbo",
+          "distance_m": 1,
+          "air_ms": 5.8,
+          "noise_dba": 56.0,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "Noise reported as 'over 56 dBA' (lower bound)."
+        },
+        {
+          "source": "Les Numeriques (reported in owner's ChatGPT thread, not verified: site blocks our crawler)",
+          "url": "https://www.lesnumeriques.com/ventilateur/dreo-turbopoly-fan-765s-p78249/test.html",
+          "setting": "intermediate",
+          "distance_m": 1,
+          "air_ms": 3.2,
+          "noise_dba": 47,
+          "mic_m": null,
+          "power_w": null,
+          "notes": "Also 2.1 m/s at 2 m on the same setting."
+        },
+        {
+          "source": "Les Numeriques (reported in owner's ChatGPT thread, not verified)",
+          "url": "https://www.lesnumeriques.com/ventilateur/dreo-turbopoly-fan-765s-p78249/test.html",
+          "setting": "intermediate",
+          "distance_m": 2,
+          "air_ms": 2.1,
+          "noise_dba": null,
+          "mic_m": null,
+          "power_w": null,
+          "notes": ""
+        },
+        {
+          "source": "Les Numeriques (reported in owner's ChatGPT thread, not verified)",
+          "url": "https://www.lesnumeriques.com/ventilateur/dreo-turbopoly-fan-765s-p78249/test.html",
+          "setting": "Turbo",
+          "distance_m": 1,
+          "air_ms": 4.8,
+          "noise_dba": 59,
+          "mic_m": null,
+          "power_w": null,
+          "notes": "Also 3.2 m/s at 2 m; 0.3 m/s reach about 7 m; at full power 0.6 m/s 30 cm above/below axis, 0.3 left, 0.8 right (distance not stated)."
+        },
+        {
+          "source": "Les Numeriques (reported in owner's ChatGPT thread, not verified)",
+          "url": "https://www.lesnumeriques.com/ventilateur/dreo-turbopoly-fan-765s-p78249/test.html",
+          "setting": "Turbo",
+          "distance_m": 2,
+          "air_ms": 3.2,
+          "noise_dba": null,
+          "mic_m": null,
+          "power_w": null,
+          "notes": ""
+        },
+        {
+          "source": "Les Numeriques (reported in owner's ChatGPT thread, not verified)",
+          "url": "https://www.lesnumeriques.com/ventilateur/dreo-turbopoly-fan-765s-p78249/test.html",
+          "setting": "Turbo",
+          "distance_m": 7,
+          "air_ms": 0.3,
+          "noise_dba": null,
+          "mic_m": null,
+          "power_w": null,
+          "notes": "Their 'useful reach' threshold of 0.3 m/s."
+        }
+      ],
+      "notes": "ca.dreo.com spec: 1500 CFM, 29 ft/s, 120 ft, 20 dB, 9 in blade, 12 speeds + Turbo, 150 deg H + 100 deg V, 6.5 kg, pedestal or 49 cm tabletop. Expert Reviews says head about 30 cm diameter. Not the TurboCool Misting Fan 765S (a different tower product; Trusted Reviews/Notebookcheck figures for it are excluded). TechRadar (Aug 2026): US$159.99 / GBP169.99, 'not available in Australia'. ChatGPT's jet model assumed an 11 in rotor; Dreo lists a 9 in blade."
+    },
+    {
+      "id": "vornado-460",
+      "brand": "Vornado",
+      "model": "460 Small Air Circulator",
+      "type": "air circulator",
+      "rotor_m": 0.186,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 848,
+        "throw_m": null,
+        "noise_db_min": 49,
+        "noise_db_max": 57,
+        "power_w": 66
+      },
+      "price_aud": {
+        "amount": 169.0,
+        "how": "amazon.com.au listing, 7 Oct 2026 (white $164)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Motor: AC (multi-speed induction; Vornado does not publish shaded-pole vs PSC, but tapped multi-speed watts suggest a conventional AC motor). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ. AU site claims 21 sq m coverage."
+    },
+    {
+      "id": "vornado-533dc",
+      "brand": "Vornado",
+      "model": "533DC Energy Smart Small",
+      "type": "air circulator",
+      "rotor_m": 0.183,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 358,
+        "throw_m": 22.5,
+        "noise_db_min": 32,
+        "noise_db_max": 60,
+        "power_w": 34
+      },
+      "price_aud": {
+        "amount": 219.98,
+        "how": "amazon.com.au listing, 7 Oct 2026 (RRP $239)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Motor: DC (brushless, 'Energy Smart'). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ."
+    },
+    {
+      "id": "vornado-560",
+      "brand": "Vornado",
+      "model": "560 Medium Whole Room",
+      "type": "air circulator",
+      "rotor_m": 0.218,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 910,
+        "throw_m": 23,
+        "noise_db_min": 45,
+        "noise_db_max": 56,
+        "power_w": 47
+      },
+      "price_aud": {
+        "amount": 151.0,
+        "how": "amazon.com.au listing, 7 Oct 2026 (white $169)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Motor: AC (multi-speed induction; Vornado does not publish shaded-pole vs PSC, but tapped multi-speed watts suggest a conventional AC motor). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ."
+    },
+    {
+      "id": "vornado-630",
+      "brand": "Vornado",
+      "model": "630 Medium Whole Room",
+      "type": "air circulator",
+      "rotor_m": 0.228,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 1122,
+        "throw_m": null,
+        "noise_db_min": 47,
+        "noise_db_max": 54,
+        "power_w": 50
+      },
+      "price_aud": null,
+      "measurements": [],
+      "notes": "Motor: AC (multi-speed induction; Vornado does not publish shaded-pole vs PSC, but tapped multi-speed watts suggest a conventional AC motor). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ. US claim 'up to 70 feet'. Wirecutter's long-time pick (page not retrievable)."
+    },
+    {
+      "id": "vornado-633",
+      "brand": "Vornado",
+      "model": "633 Medium",
+      "type": "air circulator",
+      "rotor_m": 0.228,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 899,
+        "throw_m": 23,
+        "noise_db_min": 45,
+        "noise_db_max": 56,
+        "power_w": 62
+      },
+      "price_aud": {
+        "amount": 159.0,
+        "how": "amazon.com.au listing, 7 Oct 2026 (RRP $189; Linen $192.87)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Motor: AC (multi-speed induction; Vornado does not publish shaded-pole vs PSC, but tapped multi-speed watts suggest a conventional AC motor). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ."
+    },
+    {
+      "id": "vornado-633dc",
+      "brand": "Vornado",
+      "model": "633DC Energy Smart Medium",
+      "type": "air circulator",
+      "rotor_m": 0.23,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 1008,
+        "throw_m": null,
+        "noise_db_min": 43,
+        "noise_db_max": 62,
+        "power_w": 40
+      },
+      "price_aud": {
+        "amount": 239.0,
+        "how": "amazon.com.au listing, 7 Oct 2026 (RRP $269)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Motor: DC (brushless, 'Energy Smart'). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ. Owner listing: 2 to 40 W. AU site: 'up to 24 sq m'."
+    },
+    {
+      "id": "vornado-660",
+      "brand": "Vornado",
+      "model": "660 Large Whole Room",
+      "type": "air circulator",
+      "rotor_m": 0.258,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 1638,
+        "throw_m": 30.5,
+        "noise_db_min": 43,
+        "noise_db_max": 59,
+        "power_w": 53
+      },
+      "price_aud": {
+        "amount": 195.0,
+        "how": "amazon.com.au listing, 7 Oct 2026 (RRP $279)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "max (660 AE, Alexa variant)",
+          "distance_m": 6.1,
+          "air_ms": 2.21,
+          "noise_dba": 52.2,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 7.25 ft/s. 22136 page gives 52.3 dB."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max (660 AE)",
+          "distance_m": 1.52,
+          "air_ms": 4.94,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest 5 ft test, 16.2 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "lowest (660 AE)",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 35.1,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived)."
+        },
+        {
+          "source": "TechGearLab",
+          "url": "https://www.techgearlab.com/topics/home/best-floor-fan",
+          "setting": "average of low/med/high",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 56.6,
+          "mic_m": 0.914,
+          "power_w": 53.0,
+          "notes": "TechGearLab: 'Measured Average Thrust' from a pivot-arm thrust rig (momentum flux proxy); 'Average SPL' is their average of low/medium/high readings at 3 ft (0.91 m); not a velocity measurement. Thrust 1.15 N; box CFM 703.0; watts by mode 41.7/47.6/53.0 (US unit).",
+          "thrust_n": 1.15
+        }
+      ],
+      "notes": "Motor: AC (multi-speed induction; Vornado does not publish shaded-pole vs PSC, but tapped multi-speed watts suggest a conventional AC motor). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ. mybest tested the 660 AE (Alexa) variant, assumed same fan unit."
+    },
+    {
+      "id": "vornado-683",
+      "brand": "Vornado",
+      "model": "683 Medium Pedestal",
+      "type": "pedestal",
+      "rotor_m": 0.228,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 899,
+        "throw_m": 23,
+        "noise_db_min": 46,
+        "noise_db_max": 56,
+        "power_w": 65
+      },
+      "price_aud": {
+        "amount": 210.0,
+        "how": "amazon.com.au listing, 7 Oct 2026 (RRP $259)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [
+        {
+          "source": "TechGearLab",
+          "url": "https://www.techgearlab.com/topics/home/best-pedestal-fan",
+          "setting": "high",
+          "distance_m": null,
+          "air_ms": 5.99,
+          "noise_dba": null,
+          "mic_m": null,
+          "power_w": null,
+          "notes": "13.4 mph; distance not stated; highest air speed of their pedestal group; no paired dB published."
+        }
+      ],
+      "notes": "Motor: AC (multi-speed induction; Vornado does not publish shaded-pole vs PSC, but tapped multi-speed watts suggest a conventional AC motor). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ."
+    },
+    {
+      "id": "vornado-683dc",
+      "brand": "Vornado",
+      "model": "683DC Energy Smart Medium Pedestal",
+      "type": "pedestal",
+      "rotor_m": 0.23,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 1008,
+        "throw_m": null,
+        "noise_db_min": 40,
+        "noise_db_max": 59,
+        "power_w": 38
+      },
+      "price_aud": {
+        "amount": 259.98,
+        "how": "amazon.com.au listing, 7 Oct 2026 (RRP $339)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Motor: DC (brushless, 'Energy Smart'). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ. CHOICE lists 683DC-AU at $339 and 'Recommended' (test figures paywalled). Vornado AU blog: 30-58 dB. Height 81.5-96 cm."
+    },
+    {
+      "id": "vornado-733",
+      "brand": "Vornado",
+      "model": "733 Large",
+      "type": "air circulator",
+      "rotor_m": 0.286,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": 47,
+        "noise_db_max": 59,
+        "power_w": 66
+      },
+      "price_aud": null,
+      "measurements": [],
+      "notes": "Motor: AC (multi-speed induction; Vornado does not publish shaded-pole vs PSC, but tapped multi-speed watts suggest a conventional AC motor). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ. US claim 100 ft."
+    },
+    {
+      "id": "vornado-783",
+      "brand": "Vornado",
+      "model": "783 Large Stand",
+      "type": "pedestal",
+      "rotor_m": 0.286,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": 49,
+        "noise_db_max": 60,
+        "power_w": 62
+      },
+      "price_aud": null,
+      "measurements": [],
+      "notes": "Motor: AC (multi-speed induction; Vornado does not publish shaded-pole vs PSC, but tapped multi-speed watts suggest a conventional AC motor). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ. US claim 100 ft."
+    },
+    {
+      "id": "vornado-5303dc",
+      "brand": "Vornado",
+      "model": "5303DC Energy Smart Small",
+      "type": "air circulator",
+      "rotor_m": 0.183,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 240,
+        "throw_m": 22.5,
+        "noise_db_min": 38,
+        "noise_db_max": 57,
+        "power_w": 31
+      },
+      "price_aud": {
+        "amount": 199.98,
+        "how": "amazon.com.au listing, 7 Oct 2026 (RRP $299)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Motor: DC (brushless, 'Energy Smart'). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ. 99 speeds."
+    },
+    {
+      "id": "vornado-6303dc",
+      "brand": "Vornado",
+      "model": "6303DC Energy Smart Medium",
+      "type": "air circulator",
+      "rotor_m": 0.226,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 1051,
+        "throw_m": 26,
+        "noise_db_min": 40,
+        "noise_db_max": 59,
+        "power_w": 48
+      },
+      "price_aud": {
+        "amount": 349.0,
+        "how": "vornado.com.au RRP, 7 Oct 2026",
+        "source": "https://vornado.com.au/products/6303dc-energy-smart%E2%84%A2-medium-air-circulator",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Motor: DC (brushless, 'Energy Smart'). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ. 99 speeds."
+    },
+    {
+      "id": "vornado-7503",
+      "brand": "Vornado",
+      "model": "7503 Large (X-Large)",
+      "type": "air circulator",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 722,
+        "throw_m": 31,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": {
+        "amount": 219.98,
+        "how": "amazon.com.au listing, 7 Oct 2026 (RRP $299; listing shows 722 CFM)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Motor: AC (multi-speed induction; Vornado does not publish shaded-pole vs PSC, but tapped multi-speed watts suggest a conventional AC motor). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ. CFM from the owner's amazon.com.au listing; US spec table not retrieved."
+    },
+    {
+      "id": "vornado-7803",
+      "brand": "Vornado",
+      "model": "7803 Large Pedestal",
+      "type": "pedestal",
+      "rotor_m": 0.285,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 721,
+        "throw_m": 31,
+        "noise_db_min": 50,
+        "noise_db_max": 62,
+        "power_w": 125
+      },
+      "price_aud": {
+        "amount": 249.98,
+        "how": "amazon.com.au listing, 7 Oct 2026 (RRP $329)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "max",
+          "distance_m": 6.1,
+          "air_ms": 2.44,
+          "noise_dba": 62.5,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 8.0 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 1.52,
+          "air_ms": 5.64,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest 5 ft test, 18.5 ft/s (strongest fan in their 15-fan test)."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "lowest",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 52.2,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived)."
+        }
+      ],
+      "notes": "Motor: AC (multi-speed induction; Vornado does not publish shaded-pole vs PSC, but tapped multi-speed watts suggest a conventional AC motor). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ. Highest wattage Vornado here (125 W high)."
+    },
+    {
+      "id": "vornado-vfan",
+      "brand": "Vornado",
+      "model": "VFAN Vintage",
+      "type": "air circulator",
+      "rotor_m": 0.189,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 902,
+        "throw_m": 20,
+        "noise_db_min": 43,
+        "noise_db_max": 54,
+        "power_w": 36
+      },
+      "price_aud": {
+        "amount": 179.0,
+        "how": "amazon.com.au listing, 7 Oct 2026",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Motor: AC (multi-speed induction; Vornado does not publish shaded-pole vs PSC, but tapped multi-speed watts suggest a conventional AC motor). Vornado US spec table (120 V/60 Hz) lists per-speed watts, 'Air Volume (CFM)' and 'Sound (dBA)' high to low; Vornado's CFM figures look far higher than independent box tests (e.g. 660: 1638 claimed vs 703 measured by TechGearLab), so treat as non-comparable. AU 230 V units may differ."
+    },
+    {
+      "id": "vornado-silver-swan",
+      "brand": "Vornado",
+      "model": "Silver Swan Alchemy",
+      "type": "air circulator",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "max",
+          "distance_m": 6.1,
+          "air_ms": 1.37,
+          "noise_dba": 60.7,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 4.48 ft/s; metallic blade noise noted."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "lowest",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 50.9,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived)."
+        }
+      ],
+      "notes": "Reference point (all-metal AC circulator)."
+    },
+    {
+      "id": "rowenta-vu5670",
+      "brand": "Rowenta",
+      "model": "Turbo Silence Extreme 16in Stand Fan VU5670",
+      "type": "pedestal",
+      "rotor_m": 0.406,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": 35,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "Turbo Boost",
+          "distance_m": 1.52,
+          "air_ms": 3.84,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest 5 ft test, 12.6 ft/s; 20 ft figure not published."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "Silent Night",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 30.9,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": ""
+        },
+        {
+          "source": "TechGearLab",
+          "url": "https://www.techgearlab.com/topics/home/best-pedestal-fan",
+          "setting": "low",
+          "distance_m": null,
+          "air_ms": 2.1,
+          "noise_dba": null,
+          "mic_m": null,
+          "power_w": null,
+          "notes": "4.7 mph; distance not stated."
+        },
+        {
+          "source": "TechGearLab",
+          "url": "https://www.techgearlab.com/topics/home/best-pedestal-fan",
+          "setting": "high",
+          "distance_m": null,
+          "air_ms": 5.77,
+          "noise_dba": null,
+          "mic_m": null,
+          "power_w": null,
+          "notes": "12.9 mph; distance not stated."
+        }
+      ],
+      "notes": "16 in, 5 blades. Manufacturer 35 dB(A) Silent Night claim (search summary); Turbo Silence Extreme+ marketing claims 2400+ CFM (not adopted). AU retail price not found (Rowenta fans appear not to be ranged by major AU retailers in 2026)."
+    },
+    {
+      "id": "meaco-1056p",
+      "brand": "Meaco",
+      "model": "MeacoFan 1056P Pedestal Air Circulator (shares fan unit with 1056 / 1056AC)",
+      "type": "pedestal",
+      "rotor_m": 0.254,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": 24
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/meaco-meacofan-1056p-review",
+          "setting": "max",
+          "distance_m": 1,
+          "air_ms": 3.8,
+          "noise_dba": 45.9,
+          "mic_m": 1,
+          "power_w": 18.3,
+          "notes": "Smartphone app sound meter in a living room."
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/meaco-meacofan-1056p-review",
+          "setting": "medium",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 37,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "Noise only."
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/meaco-meacofan-1056p-review",
+          "setting": "low",
+          "distance_m": 1,
+          "air_ms": null,
+          "noise_dba": 31,
+          "mic_m": 1,
+          "power_w": 3.3,
+          "notes": "Air 'just under 2 m/s' (not recorded as a number)."
+        },
+        {
+          "source": "Trusted Reviews",
+          "url": "https://www.trustedreviews.com/reviews/meacofan-1056-pedestal-air-circulator",
+          "setting": "max",
+          "distance_m": 1.5,
+          "air_ms": 3.1,
+          "noise_dba": 57.2,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "Also 4.0 m/s at 15 cm. Trusted Reviews' dB readings run high versus other testers (43.5 dB at minimum)."
+        },
+        {
+          "source": "Trusted Reviews",
+          "url": "https://www.trustedreviews.com/reviews/meacofan-1056-pedestal-air-circulator",
+          "setting": "min",
+          "distance_m": 1.5,
+          "air_ms": 1.2,
+          "noise_dba": 43.5,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "Also 1.6 m/s at 15 cm."
+        }
+      ],
+      "notes": "10 in DC air circulator, 12 speeds. 24 W per UK retailer listing (airconcentre). Expert Reviews says the 1056AC table version measured 4.0 m/s at 1 m. TechRadar (Aug 2026) quotes 1056P at US$189.99 / GBP149.99 (about AU$270) but not sold by AU retailers; no AU price found."
+    },
+    {
+      "id": "meaco-sefte-pro-10-pedestal",
+      "brand": "Meaco",
+      "model": "MeacoFan Sefte Pro 10in Pedestal Air Circulator",
+      "type": "pedestal",
+      "rotor_m": 0.254,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": 26
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/best-fans-heatwave",
+          "setting": "max",
+          "distance_m": 1,
+          "air_ms": 4.6,
+          "noise_dba": 35.5,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "Expert Reviews best-fan roundup; anemometer at 1 m, smartphone dB app."
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/best-fans-heatwave",
+          "setting": "mid",
+          "distance_m": 1,
+          "air_ms": 3.1,
+          "noise_dba": null,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": ""
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/best-fans-heatwave",
+          "setting": "1 (min)",
+          "distance_m": 1,
+          "air_ms": 2.2,
+          "noise_dba": 24.5,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": ""
+        }
+      ],
+      "notes": "Expert Reviews' overall pick (GBP200). Remarkably low max noise for 4.6 m/s; single smartphone-app reading. UK only."
+    },
+    {
+      "id": "meaco-sefte-pro-10-table",
+      "brand": "Meaco",
+      "model": "MeacoFan Sefte Pro 10in Table Air Circulator",
+      "type": "desk",
+      "rotor_m": 0.254,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": 26
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/best-fans-heatwave",
+          "setting": "max",
+          "distance_m": 1,
+          "air_ms": 4.6,
+          "noise_dba": 45.2,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": ""
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/best-fans-heatwave",
+          "setting": "min",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 26.4,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": ""
+        }
+      ],
+      "notes": "UK only (GBP120)."
+    },
+    {
+      "id": "dyson-am07",
+      "brand": "Dyson",
+      "model": "Cool AM07 Tower Fan",
+      "type": "bladeless",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": 56
+      },
+      "price_aud": {
+        "amount": 399.0,
+        "how": "JB Hi-Fi online price (was $499), 7 Oct 2026",
+        "source": "https://www.jbhifi.com.au/products/dyson-am07-cool-tower-fan-white-silver",
+        "date": "2026-10-07"
+      },
+      "measurements": [
+        {
+          "source": "Ideal Home",
+          "url": "https://www.idealhome.co.uk/house-manual/air-quality/dyson-cool-am07-tower-fan-review",
+          "setting": "lowest",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 30,
+          "mic_m": null,
+          "power_w": null,
+          "notes": "'Right up close' (distance unspecified); headline 27-50 dB measured at home."
+        },
+        {
+          "source": "Ideal Home",
+          "url": "https://www.idealhome.co.uk/house-manual/air-quality/dyson-cool-am07-tower-fan-review",
+          "setting": "max",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 50,
+          "mic_m": null,
+          "power_w": null,
+          "notes": "'Right up close'; 56 W on highest setting."
+        }
+      ],
+      "notes": "No independent air speed found. CHOICE lists AM07 at $499. Bladeless/tower: expect weak throw (see Dyson TP01 at 20 ft)."
+    },
+    {
+      "id": "dyson-tp01",
+      "brand": "Dyson",
+      "model": "Pure Cool TP01 (purifier fan)",
+      "type": "bladeless",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 6.1,
+          "air_ms": 1.27,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 4.18 ft/s; max-mode dB not published."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 1.52,
+          "air_ms": 3.02,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "9.9 ft/s at 5 ft: weakest of mybest's 15 fans."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "lowest",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 30.9,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": ""
+        }
+      ],
+      "notes": "Reference for Dyson bladeless throw."
+    },
+    {
+      "id": "levoit-classic-pro-42",
+      "brand": "Levoit",
+      "model": "Classic Pro 42in Smart Tower Fan",
+      "type": "tower",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": 7.9,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/levoit-classic-pro-smart-tower-fan-review",
+          "setting": "max",
+          "distance_m": 1,
+          "air_ms": 3.4,
+          "noise_dba": 54.6,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "Turbo 3.5 m/s."
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/levoit-classic-pro-smart-tower-fan-review",
+          "setting": "6",
+          "distance_m": 1,
+          "air_ms": 2.4,
+          "noise_dba": 36.7,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": ""
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/levoit-classic-pro-smart-tower-fan-review",
+          "setting": "lowest",
+          "distance_m": 1,
+          "air_ms": null,
+          "noise_dba": 29.8,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "Lowest settings 1.5 to 1.9 m/s."
+        }
+      ],
+      "notes": "Claimed 7.9 m/s vs 3.4 m/s measured at 1 m. No verified AU price (an AU-looking listing at georgecriminallawyers.com.au is an unrelated/hijacked domain: ignore)."
+    },
+    {
+      "id": "levoit-classic-36",
+      "brand": "Levoit",
+      "model": "Classic 36in Tower Fan",
+      "type": "tower",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "TechGearLab",
+          "url": "https://www.techgearlab.com/topics/home/best-tower-fan",
+          "setting": "average of modes",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 47.5,
+          "mic_m": 0.914,
+          "power_w": 33.1,
+          "notes": "TechGearLab: 'Measured Average Thrust' from a pivot-arm thrust rig (momentum flux proxy); 'Average SPL' is their average of low/medium/high readings at 3 ft (0.91 m); not a velocity measurement. Thrust 0.66 N; box CFM 268.3; watts by mode 22.0/24.5/25.8/27.3/33.1; felt at 40 ft.",
+          "thrust_n": 0.66
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/best-fans-heatwave",
+          "setting": "max",
+          "distance_m": 1,
+          "air_ms": 3.2,
+          "noise_dba": 45.2,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "ER roundup 'Levoit 36in Tower Fan': 3.2 m/s top, 3.3 Turbo; 44.4-45.2 dB at max; next-to-lowest 2.1 m/s at ~32 dB; ~20 W low, 39 W max."
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "honeywell-ht900",
+      "brand": "Honeywell",
+      "model": "HT-900 / HT900E TurboForce",
+      "type": "desk",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": 40
+      },
+      "price_aud": {
+        "amount": 74.8,
+        "how": "amazon.com.au listing, 7 Oct 2026 (ships from UK)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/best-fans-heatwave",
+          "setting": "high",
+          "distance_m": 1,
+          "air_ms": 2.7,
+          "noise_dba": 47.5,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": "HT 900E (UK)."
+        },
+        {
+          "source": "Expert Reviews",
+          "url": "https://www.expertreviews.co.uk/beauty-wellness/air-treatment/best-fans-heatwave",
+          "setting": "low",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 40,
+          "mic_m": 1,
+          "power_w": null,
+          "notes": ""
+        },
+        {
+          "source": "TechGearLab",
+          "url": "https://www.techgearlab.com/topics/home/best-floor-fan",
+          "setting": "average of 3 speeds",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 49.5,
+          "mic_m": 0.914,
+          "power_w": 25.5,
+          "notes": "TechGearLab: 'Measured Average Thrust' from a pivot-arm thrust rig (momentum flux proxy); 'Average SPL' is their average of low/medium/high readings at 3 ft (0.91 m); not a velocity measurement. Thrust 0.36 N; box CFM 222.0; watts 20.9/22.8/25.5 (US HT-900).",
+          "thrust_n": 0.36
+        }
+      ],
+      "notes": "AC motor. Cheap reference point."
+    },
+    {
+      "id": "honeywell-ht908",
+      "brand": "Honeywell",
+      "model": "HT-908 Whole Room Air Circulator",
+      "type": "desk",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "max",
+          "distance_m": 6.1,
+          "air_ms": 1.62,
+          "noise_dba": 51.4,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 5.3 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "lowest",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 43.2,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": ""
+        }
+      ],
+      "notes": "US model."
+    },
+    {
+      "id": "lasko-3300",
+      "brand": "Lasko",
+      "model": "20in Pivoting Wind Machine 3300",
+      "type": "air circulator",
+      "rotor_m": 0.508,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "high",
+          "distance_m": 6.1,
+          "air_ms": 2.22,
+          "noise_dba": 64.7,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 7.28 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "high",
+          "distance_m": 1.52,
+          "air_ms": 4.45,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "5 ft test."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22135",
+          "setting": "low",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 53.2,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": ""
+        },
+        {
+          "source": "TechGearLab",
+          "url": "https://www.techgearlab.com/topics/home/best-floor-fan",
+          "setting": "average of 3 speeds",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 60.5,
+          "mic_m": 0.914,
+          "power_w": 103,
+          "notes": "TechGearLab: 'Measured Average Thrust' from a pivot-arm thrust rig (momentum flux proxy); 'Average SPL' is their average of low/medium/high readings at 3 ft (0.91 m); not a velocity measurement. Thrust 1.51 N; box CFM 906.5; watts 77.8/90.8/103 (US unit).",
+          "thrust_n": 1.51
+        }
+      ],
+      "notes": "AC, 20 in, US only (not ranged in AU). Shows that a big AC fan matches DC circulators' throw only at 10+ dB more noise."
+    },
+    {
+      "id": "xiaomi-smart-standing-fan-2-pro",
+      "brand": "Xiaomi",
+      "model": "Smart Standing Fan 2 Pro",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": 716.0,
+        "throw_m": 14,
+        "noise_db_min": 28.1,
+        "noise_db_max": 56.3,
+        "power_w": 24
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "Xingyue Research Laboratory (manufacturer-commissioned, report XYYF-20-0417-5)",
+          "url": "https://www.mi.com/global/product/xiaomi-smart-standing-fan-2-pro/",
+          "setting": "4 (standard mode)",
+          "distance_m": 14,
+          "air_ms": 0.24,
+          "noise_dba": null,
+          "mic_m": null,
+          "power_w": null,
+          "notes": "Manufacturer footnote defining its 14 m 'long-range ventilation' claim: 0.24 m/s at 14 m. Not independent."
+        }
+      ],
+      "notes": "Claims from mi.com: 20.28 m3/min at setting 4 (TUV Rheinland) = 1216.8 m3/h = approx 716 CFM (derived: m3/h / 1.699); 28.1 / 56.3 dB(A) (CTIHEA, distance not stated); rated power as low as 24 W; 7+5 double-layer blades; 140 deg oscillation; battery. A rare manufacturer throw claim with a stated velocity threshold. Not officially ranged in AU (PB Tech AU lists only the non-Pro Fan 2 at $118.18)."
+    },
+    {
+      "id": "breville-airdynamic-3d",
+      "brand": "Breville",
+      "model": "the AirDynamic 3D Connect Air Circulator LPF308/BPF308",
+      "type": "pedestal",
+      "rotor_m": 0.305,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": 55,
+        "power_w": 26
+      },
+      "price_aud": {
+        "amount": 299.0,
+        "how": "JB Hi-Fi online, 7 Oct 2026",
+        "source": "https://www.jbhifi.com.au/products/breville-the-airdynamic-3d-connect-circulator-pedestal-fan",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "12 in, 9 blades, DC, 8 speeds, 100 deg horizontal sweep, 94 cm max height, Wi-Fi. 55 dB max per Better Homes & Gardens AU summary. CHOICE has tested it (results paywalled)."
+    },
+    {
+      "id": "philips-cx2550",
+      "brand": "Philips",
+      "model": "2000 Series pedestal fan CX2550",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": 19,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": {
+        "amount": 122.0,
+        "how": "amazon.com.au listing, 7 Oct 2026",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "19 dB minimum claim (owner listing). No measured data found."
+    },
+    {
+      "id": "philips-cx2050",
+      "brand": "Philips",
+      "model": "2000 Series table fan CX2050",
+      "type": "desk",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": 23,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": {
+        "amount": 79.0,
+        "how": "amazon.com.au listing, 7 Oct 2026",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "23 dB claim. No measured data found."
+    },
+    {
+      "id": "philips-cx3050",
+      "brand": "Philips",
+      "model": "3000 Series table fan CX3050",
+      "type": "desk",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": {
+        "amount": 99.0,
+        "how": "amazon.com.au listing, 7 Oct 2026",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "No measured data found."
+    },
+    {
+      "id": "shark-tf202",
+      "brand": "Shark",
+      "model": "TurboBlade TF202SWHANZ",
+      "type": "bladeless",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": {
+        "amount": 399.0,
+        "how": "amazon.com.au listing, 7 Oct 2026 (RRP $499.99)",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "No measured data found."
+    },
+    {
+      "id": "goldair-40cm-pedestal",
+      "brand": "Goldair",
+      "model": "40cm pedestal fan",
+      "type": "pedestal",
+      "rotor_m": 0.4,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": {
+        "amount": 59.0,
+        "how": "amazon.com.au listing, 7 Oct 2026",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Budget AC baseline; exact model not specified. rotor_m is the nominal 40 cm size."
+    },
+    {
+      "id": "devanti-pedestal",
+      "brand": "Devanti",
+      "model": "pedestal fan",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": {
+        "amount": 74.95,
+        "how": "amazon.com.au listing, 7 Oct 2026",
+        "source": "owner-supplied amazon.com.au search result (7 Oct 2026)",
+        "date": "2026-10-07"
+      },
+      "measurements": [],
+      "notes": "Exact model not specified."
+    },
+    {
+      "id": "pelonis-fs40-19prd",
+      "brand": "Pelonis",
+      "model": "16in DC Pedestal FS40-19PRD",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 6.1,
+          "air_ms": 1.64,
+          "noise_dba": 50.1,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 5.37 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 1.52,
+          "air_ms": 4.15,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "5 ft test, 13.6 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "min",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 31.2,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": ""
+        }
+      ],
+      "notes": "US reference point from mybest. DC motor, 12 speeds."
+    },
+    {
+      "id": "pelonis-pfs40m2abb",
+      "brand": "Pelonis",
+      "model": "16in Oscillating Pedestal PFS40M2ABB",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 6.1,
+          "air_ms": 1.22,
+          "noise_dba": 42.1,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 4.0 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 1.52,
+          "air_ms": 3.87,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "5 ft test, 12.7 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "min",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 38.7,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": ""
+        }
+      ],
+      "notes": "US reference point from mybest. AC."
+    },
+    {
+      "id": "lasko-1827",
+      "brand": "Lasko",
+      "model": "18in Oscillating Pedestal 1827",
+      "type": "pedestal",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 6.1,
+          "air_ms": 1.54,
+          "noise_dba": 60.7,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 5.05 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 1.52,
+          "air_ms": 3.78,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "5 ft test, 12.4 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "min",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 57.1,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": ""
+        }
+      ],
+      "notes": "US reference point from mybest. AC."
+    },
+    {
+      "id": "lasko-t42951",
+      "brand": "Lasko",
+      "model": "Wind Curve Tower T42951",
+      "type": "tower",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 6.1,
+          "air_ms": 1.19,
+          "noise_dba": 44.7,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 3.9 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 1.52,
+          "air_ms": 3.2,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "5 ft test, 10.5 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "min",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 38.8,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": ""
+        }
+      ],
+      "notes": "US reference point from mybest. Tower."
+    },
+    {
+      "id": "pelonis-box-20",
+      "brand": "Pelonis",
+      "model": "20in Box Fan",
+      "type": "air circulator",
+      "rotor_m": null,
+      "claims": {
+        "air_speed_ms": null,
+        "cfm": null,
+        "throw_m": null,
+        "noise_db_min": null,
+        "noise_db_max": null,
+        "power_w": null
+      },
+      "price_aud": null,
+      "measurements": [
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 6.1,
+          "air_ms": 1.48,
+          "noise_dba": 64.3,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "mybest: max wind speed at 20 ft (6.10 m) = strongest of 36 points in a 3x3 ft grid, max mode; sound meter at 5 ft (1.52 m), weighting not stated; ft/s x 0.3048 (derived). 4.85 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "max",
+          "distance_m": 1.52,
+          "air_ms": 3.17,
+          "noise_dba": null,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": "5 ft test, 10.4 ft/s."
+        },
+        {
+          "source": "mybest",
+          "url": "https://us.my-best.com/22136",
+          "setting": "min",
+          "distance_m": null,
+          "air_ms": null,
+          "noise_dba": 59.4,
+          "mic_m": 1.524,
+          "power_w": null,
+          "notes": ""
+        }
+      ],
+      "notes": "US reference point from mybest. Box fan. (box/floor fan)"
+    }
+  ]
+}
