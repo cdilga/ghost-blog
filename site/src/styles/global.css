@@ -203,3 +203,8 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .prose .wide { margin-left: 50%; margin-right: 0; transform: translateX(-50%); }
 /* full-bleed backgrounds also cover the strip revealed below the svh frame when the mobile toolbar hides */
 .scene .bg { bottom: calc(-4% - (100lvh - 100svh)); }
+/* chart hover readout */
+.chart svg { touch-action: pan-y; }
+.chart-tip { position: absolute; z-index: 2; pointer-events: none; display: grid; gap: 2px; background: rgba(18, 13, 10, .94); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: 12px var(--mono); color: var(--sand-dim); white-space: nowrap; }
+.chart-tip small { color: var(--sand); } .chart-tip b { color: var(--sand); font-weight: 500; }
+.chart-tip i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }

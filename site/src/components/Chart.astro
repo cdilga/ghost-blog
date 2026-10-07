@@ -28,7 +28,7 @@ const fmt = (v, log) => { const n = log ? Math.pow(10, v) : v; return Math.abs(n
 const bw = cat ? iw / cats.length : 0;
 const gw = cat ? (bw * 0.78) / series.length : 0;
 ---
-<figure class="chart wide" role="figure" aria-label={title || caption}>
+<figure class="chart wide" role="figure" aria-label={title || caption} data-interactive={type === 'line' ? JSON.stringify({ m, iw, ih, W, H, x0, x1, logX, colours, series: series.map((s) => ({ name: s.name, pts: s.data.map((d) => [d[0], d[1], sx(d[0]), sy(d[1])]) })) }) : undefined}>
   {title && <h3 style="margin:0 0 6px;font-size:1rem">{title}</h3>}
   {series.length > 1 && <div class="legend">{series.map((s, i) => <span><i style={`background:${colours[i % colours.length]}`}></i>{s.name}</span>)}</div>}
   <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={title || caption}>
@@ -51,3 +51,40 @@ const gw = cat ? (bw * 0.78) / series.length : 0;
   </svg>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
+<script>
+  // Hover / touch readout for line charts: a crosshair snaps to the nearest x and lists every series' value.
+  for (const fig of document.querySelectorAll<HTMLElement>('figure.chart[data-interactive]')) {
+    if (fig.dataset.wired) continue; fig.dataset.wired = '1';
+    const cfg = JSON.parse(fig.dataset.interactive!);
+    const svg = fig.querySelector('svg')!;
+    const NS = 'http://www.w3.org/2000/svg';
+    const g = document.createElementNS(NS, 'g'); g.style.display = 'none'; g.setAttribute('pointer-events', 'none');
+    const line = document.createElementNS(NS, 'line'); line.setAttribute('y1', cfg.m.t); line.setAttribute('y2', cfg.m.t + cfg.ih); line.setAttribute('stroke', 'rgba(242,230,211,.35)');
+    g.append(line);
+    const dots = cfg.series.map((_: unknown, i: number) => { const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', '5'); c.setAttribute('fill', cfg.colours[i % cfg.colours.length]); c.setAttribute('stroke', '#120d0a'); c.setAttribute('stroke-width', '2'); g.append(c); return c; });
+    svg.append(g);
+    const tip = document.createElement('div'); tip.className = 'chart-tip'; tip.hidden = true; fig.style.position = 'relative'; fig.append(tip);
+    const xsAll = [...new Set(cfg.series.flatMap((s: any) => s.pts.map((p: number[]) => p[2])))].sort((a: any, b: any) => a - b) as number[];
+    function show(ev: PointerEvent) {
+      const r = svg.getBoundingClientRect();
+      const vx = ((ev.clientX - r.left) / r.width) * cfg.W;
+      let best = xsAll[0]; for (const x of xsAll) if (Math.abs(x - vx) < Math.abs(best - vx)) best = x;
+      line.setAttribute('x1', String(best)); line.setAttribute('x2', String(best));
+      const rows: string[] = []; let xv: number | null = null;
+      cfg.series.forEach((s: any, i: number) => {
+        const p = s.pts.find((q: number[]) => Math.abs(q[2] - best) < 0.01);
+        if (!p) { dots[i].style.display = 'none'; return; }
+        dots[i].style.display = ''; dots[i].setAttribute('cx', p[2]); dots[i].setAttribute('cy', p[3]); xv = p[0];
+        rows.push(`<span><i style="background:${cfg.colours[i % cfg.colours.length]}"></i>${s.name}: <b>${+(+p[1]).toPrecision(4)}</b></span>`);
+      });
+      g.style.display = '';
+      tip.innerHTML = `<small>${xv}</small>${rows.join('')}`; tip.hidden = false;
+      const fr = fig.getBoundingClientRect();
+      const px = (best / cfg.W) * r.width + r.left - fr.left;
+      const left = px + 14 + tip.offsetWidth > fig.clientWidth - 8 ? px - 14 - tip.offsetWidth : px + 14;
+      tip.style.left = `${Math.max(8, left)}px`; tip.style.top = `${r.top - fr.top + 8}px`;
+    }
+    svg.addEventListener('pointermove', show); svg.addEventListener('pointerdown', show);
+    svg.addEventListener('pointerleave', () => { g.style.display = 'none'; tip.hidden = true; });
+  }
+</script>
