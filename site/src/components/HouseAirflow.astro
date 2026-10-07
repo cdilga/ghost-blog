@@ -19,7 +19,13 @@ const { preset = 'gap', caption = '' } = Astro.props;
     <button type="button" data-preset="gap">Dreo through the kitchen gap</button>
     <button type="button" data-preset="retreat">Dreo around the retreat</button>
     <button type="button" data-preset="hall">Dreo in the hall</button>
-    <button type="button" data-preset="custom" class="hair-place">Place your own fan</button>
+  </div>
+  <div class="hair-fans" role="group" aria-label="Edit fans">
+    <span class="mono" data-o="fancount"></span>
+    <button type="button" data-i="addfan">+ Add fan</button>
+    <button type="button" data-i="rmfan">Remove selected</button>
+    <button type="button" data-i="clearfans">Clear fans</button>
+    <button type="button" data-i="fullscreen" class="hair-fs" aria-pressed="false">Full screen</button>
   </div>
   <div class="hair-controls">
     <label>AC outlet <output data-o="ac"></output><input type="range" min="0" max="5" step="0.5" value="3.5" data-i="ac" /></label>
@@ -32,7 +38,7 @@ const { preset = 'gap', caption = '' } = Astro.props;
     </div>
   </div>
   <div class="hair-rooms" aria-live="off"></div>
-  <figcaption>{caption || 'A 2D slice at head height, drawn from the house model with its default furniture. Colour is air speed (dark is still, white is 1.5 m/s or more); streaks follow the flow. Pick a scenario, or choose "Place your own fan" and drag on the plan: press where the fan stands, drag the way it points. The clock is simulated time.'}</figcaption>
+  <figcaption>{caption || 'A 2D slice at head height, drawn from the house model with its default furniture. Colour is air speed (dark is still, white is 1.5 m/s or more); streaks follow the flow. Pick a scenario, then press any fan on the plan and drag it to move it, or select it and drag the ring at the tip of its arrow to aim it. Use the buttons to add (up to four), remove or clear fans. The clock is simulated time.'}</figcaption>
   <script type="application/json" class="hair-plan" set:html={JSON.stringify(plan)} />
 </figure>
 <style>
@@ -42,9 +48,12 @@ const { preset = 'gap', caption = '' } = Astro.props;
   .hair-hud { position: absolute; left: 10px; top: 8px; display: flex; gap: 12px; font-size: .72rem; color: var(--sand-dim); pointer-events: none; }
   .hair-hud span:first-child { color: var(--sand); }
   .hair-start { position: absolute; inset: 0; margin: auto; width: max-content; height: max-content; padding: 10px 18px; border-radius: 99px; border: 0; background: var(--orange); color: #1a0d00; font: 600 .95rem var(--font); cursor: pointer; }
-  .hair-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
-  .hair-presets button, .hair-toggles button { font: 500 .8rem var(--font); padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--sand); cursor: pointer; }
-  .hair-presets button[aria-pressed="true"] { background: var(--orange); color: #1a0d00; border-color: var(--orange); }
+  .hair-presets, .hair-fans { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; align-items: center; }
+  .hair-fans { margin-top: 6px; font-size: .78rem; color: var(--sand-dim); }
+  .hair-fans .hair-fs { margin-left: auto; }
+  .hair-fans button:disabled { opacity: .4; cursor: default; }
+  .hair-presets button, .hair-toggles button, .hair-fans button { font: 500 .8rem var(--font); padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--sand); cursor: pointer; }
+  .hair-presets button[aria-pressed="true"], .hair-fs[aria-pressed="true"] { background: var(--orange); color: #1a0d00; border-color: var(--orange); }
   .hair-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px 20px; margin: 10px 0 4px; font-size: .86rem; color: var(--sand-dim); }
   .hair-controls label { display: grid; grid-template-columns: 1fr auto; gap: 2px; align-items: center; }
   .hair-controls input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--orange); }
@@ -56,6 +65,12 @@ const { preset = 'gap', caption = '' } = Astro.props;
   .hair-rooms :global(div) { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font-size: .74rem; color: var(--sand-dim); position: relative; overflow: hidden; }
   .hair-rooms :global(b) { display: block; font: 500 .95rem var(--mono); color: var(--sand); }
   .hair-rooms :global(i) { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--orange); transition: width .4s; }
+  /* full screen: the figure fills the screen, plan on top as large as fits, controls below (scrolls if they do not) */
+  .hair:fullscreen, .hair.is-full { background: #120d0a; padding: 14px clamp(12px, 2vw, 28px) 20px; margin: 0; transform: none; max-width: none; width: 100%; height: 100%; overflow: auto; box-sizing: border-box; }
+  .hair.is-full { position: fixed; inset: 0; z-index: 1000; height: auto; }
+  :global(html.fig-full) { overflow: hidden; }
+  .hair:fullscreen .hair-stage, .hair.is-full .hair-stage { width: min(100%, calc((100vh - 230px) * 20.3 / 11.1)); min-width: 320px; margin-inline: auto; }
+  .hair:fullscreen .hair-canvas, .hair.is-full .hair-canvas { width: 100%; }
 </style>
 <script>
   import { airflowPresets, startHouseAirflow } from '../scripts/airflow-ui.js';

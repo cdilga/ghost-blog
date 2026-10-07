@@ -1,0 +1,53 @@
+---
+/**
+ * Two series with different units on one x axis, each read against its own labelled axis (left and right), every point
+ * labelled with its value, and an optional highlighted span. Build-time SVG, no client JS.
+ * <DualChart xs={[8, 10, 12]} left={{ name, unit, data, colour }} right={{ name, unit, data, colour, zero: true }} span={[12, 25, 'text']} />
+ * Used where one log axis would hide that the two quantities are not the same thing (speed in m/s, noise in dB).
+ */
+const { xs = [], left, right, xLabel = '', title = '', caption = '', span = null, height = 410 } = Astro.props;
+const W = 760, H = height, m = { l: 58, r: 62, t: 22, b: 90 };
+const iw = W - m.l - m.r, ih = H - m.t - m.b;
+const nice = (a, b, n = 5) => { const step = (b - a) / n; const p = Math.pow(10, Math.floor(Math.log10(step))); const f = step / p; const s = (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; const t = []; for (let v = Math.floor(a / s) * s; v <= b + 1e-9; v += s) t.push(+v.toPrecision(12)); return t; };
+const range = (d, pad) => { const lo = Math.min(0, ...d), hi = Math.max(0, ...d); return [lo < 0 ? lo - pad * (hi - lo) : 0, hi + pad * (hi - lo)]; };
+const [l0, l1] = range(left.data, 0.12), [r0, r1] = range(right.data, 0.12);
+const lt = nice(l0, l1), rt = nice(r0, r1);
+const x0 = Math.min(...xs), x1 = Math.max(...xs);
+const sx = (v) => m.l + ((v - x0) / (x1 - x0)) * iw;
+const sl = (v) => m.t + ih - ((v - l0) / (lt[lt.length - 1] - l0)) * ih;
+const sr = (v) => m.t + ih - ((v - rt[0]) / (rt[rt.length - 1] - rt[0])) * ih;
+const lpts = xs.map((x, i) => [sx(x), sl(left.data[i])]), rpts = xs.map((x, i) => [sx(x), sr(right.data[i])]);
+const path = (p) => p.map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)},${q[1].toFixed(1)}`).join('');
+const fmt = (v, d = 1) => (+v.toFixed(d)).toString();
+const signed = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v), 0);
+---
+<figure class="chart wide dual">
+  {title && <h3 style="margin:0 0 6px;font-size:1rem">{title}</h3>}
+  <div class="legend">
+    <span><i style={`background:${left.colour}`}></i>{left.name} <b>(left axis)</b></span>
+    <span><i style={`background:${right.colour}`}></i>{right.name} <b>(right axis)</b></span>
+  </div>
+  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={title}>
+    {span && <rect x={sx(span[0])} y={m.t} width={sx(span[1]) - sx(span[0])} height={ih} fill="#ffd166" opacity=".07" />}
+    {lt.map((v) => <g><line class="grid" x1={m.l} x2={W - m.r} y1={sl(v)} y2={sl(v)} /><text x={m.l - 8} y={sl(v) + 4} text-anchor="end" style={`fill:${left.colour}`}>{fmt(v)}</text></g>)}
+    {rt.map((v) => <text x={W - m.r + 8} y={sr(v) + 4} text-anchor="start" style={`fill:${right.colour}`}>{right.signed ? signed(v) : fmt(v)}</text>)}
+    {xs.map((v) => <g><line class="grid" x1={sx(v)} x2={sx(v)} y1={m.t} y2={m.t + ih} /><text x={sx(v)} y={H - m.b + 18} text-anchor="middle">{v}</text></g>)}
+    {right.zero && <g><line x1={m.l} x2={W - m.r} y1={sr(0)} y2={sr(0)} stroke={right.colour} stroke-dasharray="3 5" opacity=".6" /><text x={W - m.r - 6} y={sr(0) - 6} text-anchor="end" style={`fill:${right.colour}`}>{right.zero}</text></g>}
+    <line class="axis" x1={m.l} x2={W - m.r} y1={m.t + ih} y2={m.t + ih} /><line class="axis" x1={m.l} x2={m.l} y1={m.t} y2={m.t + ih} /><line class="axis" x1={W - m.r} x2={W - m.r} y1={m.t} y2={m.t + ih} />
+    <path d={path(lpts)} fill="none" stroke={left.colour} stroke-width="2.5" stroke-linejoin="round" />
+    <path d={path(rpts)} fill="none" stroke={right.colour} stroke-width="2.5" stroke-linejoin="round" />
+    {lpts.map((p, i) => <circle cx={p[0]} cy={p[1]} r="4.5" fill={left.colour}><title>{`${xs[i]} cm: ${fmt(left.data[i], 2)} ${left.unit}`}</title></circle>)}
+    {rpts.map((p, i) => <circle cx={p[0]} cy={p[1]} r="4.5" fill={right.colour}><title>{`${xs[i]} cm: ${right.signed ? signed(right.data[i]) : fmt(right.data[i], 1)} ${right.unit}`}</title></circle>)}
+    <text x={m.l - 22} y={H - m.b + 36} text-anchor="end" style={`fill:${left.colour}`}>{left.unit}</text>
+    <text x={m.l - 22} y={H - m.b + 54} text-anchor="end" style={`fill:${right.colour}`}>{right.unit}</text>
+    {xs.map((x, i) => <g><text x={sx(x)} y={H - m.b + 36} text-anchor="middle" style={`fill:${left.colour}`}>{fmt(left.data[i])}</text><text x={sx(x)} y={H - m.b + 54} text-anchor="middle" style={`fill:${right.colour}`}>{right.signed ? signed(right.data[i]) : fmt(right.data[i])}</text></g>)}
+    {span && <text x={(sx(span[0]) + sx(span[1])) / 2} y={m.t + 14} text-anchor="middle" style="fill:#ffd166">{span[2]}</text>}
+    <text x={m.l + iw / 2} y={H - 4} text-anchor="middle">{xLabel}, with the value at each point below</text>
+    <text transform={`translate(14 ${m.t + ih / 2}) rotate(-90)`} text-anchor="middle" style={`fill:${left.colour}`}>{left.name} ({left.unit})</text>
+    <text transform={`translate(${W - 12} ${m.t + ih / 2}) rotate(90)`} text-anchor="middle" style={`fill:${right.colour}`}>{right.name} ({right.unit})</text>
+  </svg>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<style>
+  .dual .legend b { font-weight: 500; opacity: .7; }
+</style>

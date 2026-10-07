@@ -12,6 +12,9 @@ import Tweet from '../../components/Tweet.astro';
 import JetExplorer from '../../components/JetExplorer.astro';
 import HouseAirflow from '../../components/HouseAirflow.astro';
 import HouseAirflow3D from '../../components/HouseAirflow3D.astro';
+import DualChart from '../../components/DualChart.astro';
+import BarList from '../../components/BarList.astro';
+import fansData from '../../data/fans.json';
 
 export const rho = 1.2, nu = 1.5e-5, B = 6.2;
 export const d = 0.12;
@@ -30,55 +33,79 @@ export const archi = [0.25, 0.5, 1, 2, 3, 5].map((u) => [`${u} m/s`, +((9.81 * (
 export const T = 0.5;
 export const diams = [0.08, 0.1, 0.12, 0.16, 0.2, 0.25, 0.3];
 export const exitU = (dia) => Math.sqrt((4 * T) / (Math.PI * rho * dia * dia));
-export const trade = [
-  { name: 'exit speed (m/s)', data: diams.map((dia) => [dia * 100, +exitU(dia).toFixed(2)]) },
-  { name: 'relative noise, U^6, 12 cm = 1', data: diams.map((dia) => [dia * 100, +Math.pow(exitU(dia) / exitU(0.12), 6).toFixed(3)]) },
-];
+export const dB = (u, u0) => 60 * Math.log10(u / u0); // sound power change for a U^6 law
+export const tradeSpeed = diams.map((dia) => exitU(dia));
+export const tradeNoise = diams.map((dia) => dB(exitU(dia), exitU(0.12)));
 
-export const dreo = {
-  m353: { U: 7.92, Q: 1000 / 2118.88, rotor: 0.178 },
-  m512: { U: 7.62, Q: 1100 / 2118.88, rotor: 0.229 },
-};
+export const fanById = (id) => fansData.fans.find((f) => f.id === id);
+export const claimed = (id) => { const f = fanById(id); return { U: f.claims.air_speed_ms, Q: f.claims.cfm / 2118.88, rotor: f.rotor_m, cfm: f.claims.cfm }; };
+export const dreo = { m353: claimed('dreo-353'), m512: claimed('dreo-512') };
 export const r2 = (v) => Math.round(v * 100) / 100;
 export const dEff = (f) => Math.sqrt((4 * f.Q) / (Math.PI * f.U));
 export const ucl = (U, dd, x) => Math.min(U, (B * dd * U) / x);
 export const xsD = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 6, 7, 8, 10];
 export const crossover = [
-  { name: '353, rotor estimate', data: xsD.map((x) => [x, r2(ucl(dreo.m353.U, dreo.m353.rotor, x))]) },
   { name: '512, rotor estimate', data: xsD.map((x) => [x, r2(ucl(dreo.m512.U, dreo.m512.rotor, x))]) },
-  { name: '353, momentum estimate', data: xsD.map((x) => [x, r2(ucl(dreo.m353.U, dEff(dreo.m353), x))]) },
+  { name: '353, rotor estimate', data: xsD.map((x) => [x, r2(ucl(dreo.m353.U, dreo.m353.rotor, x))]) },
   { name: '512, momentum estimate', data: xsD.map((x) => [x, r2(ucl(dreo.m512.U, dEff(dreo.m512), x))]) },
+  { name: '353, momentum estimate', data: xsD.map((x) => [x, r2(ucl(dreo.m353.U, dEff(dreo.m353), x))]) },
 ];
+// the 512 against the 353, two ways of reading "outlet size", both from Dreo's own listed figures
+export const rhoAir = 1.2;
+export const pushRotor = (f) => rhoAir * Math.PI / 4 * f.rotor ** 2 * f.U ** 2;   // N, rotor disc as the outlet
+export const pushFlow = (f) => rhoAir * f.Q * f.U;                                   // N, from the catalogue airflow
+export const pc = (a, b) => `+${Math.round((a / b - 1) * 100)}%`;
+export const cmp = {
+  rotor: pc(dreo.m512.rotor, dreo.m353.rotor),
+  flow: pc(dreo.m512.cfm, dreo.m353.cfm),
+  pushRotor: pc(pushRotor(dreo.m512), pushRotor(dreo.m353)),
+  pushFlow: pc(pushFlow(dreo.m512), pushFlow(dreo.m353)),
+  farRotor: pc(dreo.m512.U * dreo.m512.rotor, dreo.m353.U * dreo.m353.rotor),
+  farFlow: pc(Math.sqrt(pushFlow(dreo.m512)), Math.sqrt(pushFlow(dreo.m353))),
+  quietRotor: r2(-dB(dreo.m353.rotor, dreo.m512.rotor)),
+  quietFlow: r2(-dB(dEff(dreo.m353), dEff(dreo.m512))),
+};
+export const n1 = (v) => v.toFixed(1);
 export const groupsDC = { dc: { label: 'DC motor', colour: '#ff7a1a' }, ac: { label: 'AC motor', colour: '#5ec8c0' }, na: { label: 'motor not stated', colour: '#b48cff' } };
 export const far = [
   { label: 'Dreo CF714S', x: 54.9, y: 2.75, group: 'dc', sub: '(not sold here)' },
-  { label: 'Dreo pedestal', x: 48.0, y: 2.46, group: 'dc', dy: 16 },
+  { label: 'Dreo Portable Pedestal', sub: '(513S-class?)', x: 48.0, y: 2.46, group: 'dc', dy: 16 },
   { label: 'Vornado 660', x: 52.2, y: 2.21, group: 'ac', sub: 'A$195', dy: 16 },
   { label: 'Vornado 7803', x: 62.5, y: 2.44, group: 'ac', sub: 'A$250', anchor: 'end', dx: -9 },
   { label: 'Lasko 3300', x: 64.7, y: 2.22, group: 'ac', anchor: 'end', dx: -9, dy: 16 },
   { label: 'Vornado Silver Swan', x: 60.7, y: 1.37, group: 'ac', dy: 16 },
-  { label: 'Honeywell HT-908', x: 51.4, y: 1.62, group: 'ac', anchor: 'end', dx: -9, dy: 16 },
+  { label: 'Honeywell HT-908', x: 51.4, y: 1.62, group: 'ac', dy: -9 },
   { label: 'Pelonis FS40 DC', x: 50.1, y: 1.64, group: 'dc', anchor: 'end', dx: -9 },
   { label: 'Pelonis PFS40', x: 42.1, y: 1.22, group: 'na' },
-  { label: 'Lasko 1827', x: 60.7, y: 1.54, group: 'ac', anchor: 'end', dx: -9 },
+  { label: 'Lasko 1827', x: 60.7, y: 1.54, group: 'ac', anchor: 'end', dx: -9, dy: -4 },
   { label: 'Lasko tower', x: 44.7, y: 1.19, group: 'ac', dy: 16 },
   { label: 'Pelonis box', x: 64.3, y: 1.48, group: 'na', dy: 16 },
 ];
 export const near = [
-  { name: 'Dreo 513S', group: 'dc', data: [[34.4, 2.2], [35.6, 2.8], [37.8, 3.4], [41.0, 4.0], [44.2, 4.4], [47.5, 5.2], [50.3, 5.8], [53.1, 6.2]] },
+  { name: 'Dreo 513S', group: 'dc', ldy: -10, data: [[34.4, 2.2], [35.6, 2.8], [37.8, 3.4], [41.0, 4.0], [44.2, 4.4], [47.5, 5.2], [50.3, 5.8], [53.1, 6.2]] },
   { name: 'Dreo 508S', group: 'dc', data: [[32.6, 0.9], [34.2, 1.3], [37.4, 1.8], [40.6, 2.5], [43.8, 3.3], [46.6, 3.5], [50.0, 3.7], [51.3, 4.0], [52.8, 4.5], [58.5, 5.0]] },
-  { name: 'Dreo 502S', group: 'dc', data: [[25.3, 1.5], [27.8, 2.4], [29.5, 2.6], [31.7, 2.8], [34.6, 3.2], [43.2, 3.8], [45.3, 4.4], [48.1, 4.8], [52.5, 5.5]] },
+  { name: 'Dreo 502S', group: 'dc', ldx: 6, ldy: 18, data: [[25.3, 1.5], [27.8, 2.4], [29.5, 2.6], [31.7, 2.8], [34.6, 3.2], [43.2, 3.8], [45.3, 4.4], [48.1, 4.8], [52.5, 5.5]] },
 ];
 export const nearPts = [
-  { label: 'Dreo 765S min', x: 27.8, y: 2.2, group: 'dc', dy: 16 },
-  { label: '765S setting 12', x: 54.6, y: 5.5, group: 'dc', anchor: 'end', dx: -9, dy: 16 },
-  { label: 'Meaco Sefte Pro 10', x: 35.5, y: 4.6, group: 'na' },
-  { label: 'Sefte min', x: 24.5, y: 2.2, group: 'na', dy: -10 },
-  { label: 'Meaco 1056P', x: 45.9, y: 3.8, group: 'na', dy: 16 },
-  { label: 'Levoit 42 tower', x: 54.6, y: 3.4, group: 'na', dy: 16 },
-  { label: 'Levoit 36', x: 45.2, y: 3.2, group: 'na', anchor: 'end', dx: -9, dy: 16 },
-  { label: 'Honeywell HT900', x: 47.5, y: 2.7, group: 'ac', dy: 16 },
+  { label: 'Dreo 765S, setting 1', x: 27.8, y: 2.2, group: 'dc', dx: 10, dy: 16, spot: true },
+  { label: 'Dreo 765S, setting 12', x: 54.6, y: 5.5, group: 'dc', dx: 10, dy: 4, spot: true },
+  { label: 'Meaco Sefte Pro 10', sub: '(max)', x: 35.5, y: 4.6, group: 'na', spot: true },
+  { label: 'Sefte min', x: 24.5, y: 2.2, group: 'na', dx: -8, dy: -9, anchor: 'start', spot: true },
+  { label: 'Meaco 1056P', x: 45.9, y: 3.8, group: 'na', dy: 16, spot: true },
+  { label: 'Levoit 42 tower', x: 54.6, y: 3.4, group: 'na', dy: 16, spot: true },
+  { label: 'Levoit 36', x: 45.2, y: 3.2, group: 'na', anchor: 'end', dx: -9, dy: 16, spot: true },
+  { label: 'Honeywell HT900', x: 47.5, y: 2.7, group: 'ac', dy: 16, spot: true },
 ];
+// the mybest rows that measured the same fan at 1.5 m and at 6.1 m: how much of the speed survives the trip
+export const keep = [
+  ['dreo-portable-pedestal-mybest', 'Dreo Portable Pedestal', '(513S-class?)', 'dc'], ['vornado-660', 'Vornado 660', '', 'ac'], ['vornado-7803', 'Vornado 7803', '', 'ac'],
+  ['lasko-3300', 'Lasko 3300', '', 'ac'], ['pelonis-box-20', 'Pelonis box', '', 'na'], ['lasko-1827', 'Lasko 1827', '', 'ac'], ['dyson-tp01', 'Dyson Pure Cool TP01', '', 'na'],
+  ['pelonis-fs40-19prd', 'Pelonis FS40 DC', '', 'dc'], ['lasko-t42951', 'Lasko Wind Curve tower', '', 'ac'], ['pelonis-pfs40m2abb', 'Pelonis PFS40', '', 'na'],
+].map(([id, label, sub, group]) => {
+  const m = fanById(id).measurements.filter((q) => q.source === 'mybest' && q.air_ms);
+  const a = m.find((q) => q.distance_m === 1.52).air_ms, b = m.find((q) => q.distance_m === 6.1).air_ms;
+  return { label, sub: `${a.toFixed(1)} → ${b.toFixed(1)} m/s ${sub}`.trim(), value: (100 * b) / a, group };
+});
 export const power513 = [{ name: 'Dreo 513S (ETM)', data: [[2.9, 34.4], [4.1, 35.6], [5.8, 37.8], [8.0, 41.0], [10.8, 44.2], [14.6, 47.5], [19.3, 50.3], [25.0, 53.1]] }];
 
 > **Working draft.** The physics below is real, and the fan figures come from manufacturers' catalogues and independent reviews (ETM Testmagazin, mybest, Expert Reviews, Trusted Reviews, TechGearLab). None of it is my own measurement yet, and the long-range numbers are model extrapolations, not data. I would rather publish the method early than polish it in private.
@@ -139,7 +166,7 @@ so what matters is the product of outlet diameter and outlet speed, i.e. the mom
 
 Thrust (momentum flux) is `T = ρ·(π/4)·d²·U²`. Hold it fixed and the throw, which scales as `d·U`, **does not change with diameter at all**: a bigger, slower outlet delivers the same punch down the room. Noise, however, rises steeply with speed. Using a rough `U⁶` scaling for broadband fan and jet noise as a stand-in:
 
-<Chart type="line" title="Same thrust (0.5 N), different outlet diameters" series={trade} logY xLabel="outlet diameter (cm)" yLabel="value" caption="Doubling the diameter from 12 cm to 25 cm drops the required exit speed by half and the relative noise by roughly two orders of magnitude, for the same far-field push. The exponent is a rule of thumb; real blade and motor noise add tonal components on top." />
+<DualChart title="Same push (0.5 N), different outlet diameters" xs={diams.map((v) => v * 100)} left={{ name: 'exit speed', unit: 'm/s', data: tradeSpeed, colour: '#ff7a1a' }} right={{ name: 'noise vs a 12 cm outlet', unit: 'dB', data: tradeNoise, colour: '#5ec8c0', signed: true, zero: '12 cm = the reference' }} span={[12, 25, '12 to 25 cm']} xLabel="outlet diameter (cm)" caption="Read each line against its own axis: orange against the left (how fast the air leaves), teal against the right (how much louder or quieter than a 12 cm outlet, in decibels). Going from 12 cm to 25 cm, the exit speed more than halves (6.1 to 2.9 m/s) and the noise drops by about 20 dB, which is roughly a quarter as loud to the ear, for exactly the same far-field push. The U⁶ rule behind the teal line is a rule of thumb; real blade and motor noise add tonal components on top." />
 
 Here is the same idea as something you can play with. The particle jet is the far-field model above, with the spreading rate of a real turbulent round jet. Hold the thrust constant and drag the diameter: the yellow line (where the breeze drops to a just-noticeable 0.5 m/s) barely moves, while the noise figure falls away.
 
@@ -220,6 +247,8 @@ I started with Dreo's shortlist and ended up reading every independent fan test 
 
 <Term name="Pareto frontier">The set of options that cannot be beaten on one thing without losing on another. For fans: no other fan (or setting) is both quieter *and* pushes more air. Anything below the frontier is dominated: there is a better choice on both counts.</Term>
 
+The other trap is that the same fan has different names in different tests, and the tests cannot be mixed. Every fan on the charts below is labelled the way its tester labelled it, with the closest match in brackets where I had to guess. Dreo numbers its models in families: 3xx (the 353), 5xx (the 512, and the 513S, 508S and 502S that ETM tested) and 7xx (the 704S, 714S and 765S). The 5xx fans share a 9 in rotor, so the 513S results are the best stand-in for my 512, but the 512 itself has never been measured.
+
 The other trap is distance. Most reviewers measure air speed at 1 m, which tells you about the outlet, not the throw. **Only one tester measured at hallway distance**: mybest, at 6.1 m (20 ft), with the strongest reading taken from a grid of 36 points and noise at 1.5 m.
 
 ### At hallway distance: 6.1 m
@@ -228,11 +257,17 @@ The other trap is distance. Most reviewers measure air speed at 1 m, which tells
 
 This supports what I suspected about the big-brand circulators. A Vornado 7803 at full power gets 2.44 m/s to the far end of a 6 m room and makes 62.5 dB doing it; the Dreo CF714S gets 2.75 m/s for 54.9 dB. Eight decibels is the difference between "fan noise" and "a fan you can sleep next to". Most of Vornado's range here uses AC motors (the 460, 560, 630, 633, 660, 683, 7503, 7803); their DC models (533DC, 633DC, 683DC, 5303DC, 6303DC) cost more and were not in this test.
 
+### How much speed survives the trip
+
+mybest measured eleven fans at both 1.5 m and 6.1 m with the same grid method, which gives something rare: how much of a fan's speed is still there at the end of a hallway, which is what a hallway fan is for.
+
+<BarList title="Air speed left at 6.1 m, as a share of the speed at 1.5 m (mybest)" rows={keep} groups={groupsDC} unit="%" max={60} ref={{ value: 25, label: 'a fully developed free jet that started at the fan face would keep about 25% (1.5 m ÷ 6.1 m)' }} caption="Every fan keeps more than the free-jet figure, 32% to 50%, because the reading is the strongest of 36 points and a real jet keeps its core for several diameters. The ranking matters more than the numbers: the Dreo Portable Pedestal and the big Lasko keep about half their speed, the narrow PFS40 and the tower keep about a third. Wide, slow outlets carry their speed further, which is the momentum argument again. Dreo CF714S, Honeywell HT-908 and the Silver Swan were not measured at 1.5 m, so they are missing here." />
+
 ### Up close: the quiet envelope at 1 m
 
 At 1 m there is much more data, including every setting of three Dreo circulators (ETM Testmagazin) and spot readings from Expert Reviews. Each line is one fan walking through its speed settings.
 
-<ParetoChart curves={near} points={nearPts} groups={groupsDC} title="Air speed at 1 m vs noise at 1 m, setting by setting" yLabel="air speed at 1 m (m/s)" xLabel="noise at 1 m (dBA)" height={420} caption="Lines: every setting of the Dreo 513S, 508S and 502S (ETM, same lab and method). Dots: Expert Reviews spot readings (phone meter, so allow a few dB). Two different testers, so read differences under about 5 dB as a tie. The surprise is the Meaco Sefte Pro 10 pedestal: 4.6 m/s at 35.5 dBA, which no other fan here matches." />
+<ParetoChart curves={near} points={nearPts} groups={groupsDC} title="Air speed at 1 m vs noise at 1 m, setting by setting" yLabel="air speed at 1 m (m/s)" xLabel="noise at 1 m (dBA)" height={440} caption="Lines: every setting of the Dreo 513S, 508S and 502S (ETM, one lab, one method). The dashed frontier is drawn from those lines only. Hollow dots: single Expert Reviews spot readings (phone sound meter, so allow several dB), left off the frontier on purpose. The Meaco Sefte Pro 10 pedestal is the hollow dot that beats the lab frontier: 4.6 m/s at 35.5 dBA, where the best lab-measured Dreo gives 4.0 m/s at 41 dBA. It is one phone reading, so I am treating it as a lead to check, not a result." />
 
 A few things this teaches:
 
@@ -244,12 +279,25 @@ A few things this teaches:
 
 ### 353 vs 512: the two Dreos you can actually buy here
 
-These are the two models sold locally (A$159.99 and A$189.99 on amazon.com.au), and I now own a 512. Annoyingly, neither has any independent measurement, so this part is the jet model on Dreo's own claims. The 353 has the faster claimed outlet (7.92 vs 7.62 m/s), so it wins right at the fan. Far away, centreline speed scales with *outlet speed times outlet diameter*, so the bigger 512 should catch up. By how much depends on what you take the outlet diameter to be:
+These are the two models sold locally (A$159.99 and A$189.99 on amazon.com.au), and I now own a 512. Neither has an independent measurement, so this is the jet model run on Dreo's own listed figures. Both list the same 25 ft/s (7.62 m/s) outlet speed and the same 20 dB at the lowest setting. What differs is size: the 512 has a 9 in (229 mm) blade against the 353's 8 in (203 mm), and a higher airflow claim (1,100 against 1,000 CFM). At the same exit speed the bigger outlet moves more air, so it carries more momentum, and in the far field the centreline speed goes as outlet speed times outlet diameter. By how much depends on what you take the outlet to be:
 
-- **Rotor estimate.** Treat the rotor as the outlet. U·d is 1.41 for the 353 and 1.74 for the 512, so the 512 carries **about 24% more** speed in the far field.
-- **Momentum estimate.** Use the catalogue airflow and speed: momentum flux ρQU is 4.5 N for the 353 and 4.7 N for the 512, **only about 2% more**. The implied outlet is bigger than either rotor, so the catalogue CFM probably includes entrained air.
+| | Dreo 353 | Dreo 512 | 512 vs 353 |
+|---|---|---|---|
+| Blade diameter | {Math.round(dreo.m353.rotor * 1000)} mm | {Math.round(dreo.m512.rotor * 1000)} mm | {cmp.rotor} |
+| Claimed exit speed | {dreo.m353.U} m/s | {dreo.m512.U} m/s | same |
+| Claimed airflow | {dreo.m353.cfm} CFM | {dreo.m512.cfm} CFM | {cmp.flow} |
+| Push, treating the rotor as the outlet (ρ·A·U²) | {n1(pushRotor(dreo.m353))} N | {n1(pushRotor(dreo.m512))} N | **{cmp.pushRotor}** |
+| Push, from the catalogue airflow (ρ·Q·U) | {n1(pushFlow(dreo.m353))} N | {n1(pushFlow(dreo.m512))} N | {cmp.pushFlow} |
+| Speed at the far end of a room (goes as the square root of the push) | | | {cmp.farFlow} to {cmp.farRotor} |
+| Noise to match the 353's far-field push (U⁶ rule) | | | {cmp.quietFlow} to {cmp.quietRotor} dB quieter |
 
-<Chart type="line" title="353 vs 512: modelled centreline speed (not measured)" series={crossover} xLabel="distance from fan (m)" yLabel="centreline speed (m/s)" logX caption="Both estimates agree on the shape: the 353 leads inside about 1.2 to 1.8 m, then the 512 leads. They disagree on the size of the lead at 7 m. A model prediction on manufacturer claims, not a measurement." />
+So the 512 gives a fifth to a quarter more push if you trust the rotor size, or a tenth more if you trust the catalogue airflow (which probably includes air the jet drags along). That is where the "about 20%" I remembered lives: it is the *push*, not the speed down the hall, because speed only grows as the square root of push. At 7 m that is roughly {r2(ucl(dreo.m353.U, dreo.m353.rotor, 7))} m/s for the 353 against {r2(ucl(dreo.m512.U, dreo.m512.rotor, 7))} m/s for the 512 on the rotor estimate: the 512 never falls behind and leads by about the amount in the table.
+
+The quieter part is weaker. Dreo claims the same 20 dB minimum for both, and I could not find any test that measures either. What the model says is that, because the 512's outlet is bigger, it can make the same push at a lower exit speed, and with noise rising as speed to the sixth power that is worth about {cmp.quietFlow} to {cmp.quietRotor} dB. That is audible side by side but small, nowhere near a fifth.
+
+> **A correction to the earlier draft.** It claimed the 512 carried about 24% more far-field speed than the 353 and about 2% more momentum. Those came from ChatGPT's inputs (a 7 in rotor and 7.92 m/s for the 353). Dreo's own spec lists an 8 in blade and 7.62 m/s, which is what the table above uses, so the far-field gap shrinks to {cmp.farFlow} to {cmp.farRotor} while the push gap grows to {cmp.pushFlow} to {cmp.pushRotor}.
+
+<Chart type="line" title="353 vs 512: modelled centreline speed (not measured)" series={crossover} xLabel="distance from fan (m)" yLabel="centreline speed (m/s)" caption="Solid orange and teal lines use the rotor as the outlet, the other two use the catalogue airflow. Both estimates agree that the two fans leave the nozzle at the same speed, the 353 starts to fall off first, and the 512 stays ahead from about 1.4 m outwards. They disagree on the size of the lead. A model on manufacturer claims, not a measurement." />
 
 A word of caution on models like this: one French review reportedly measured a 765S dropping from 4.8 m/s at 1 m to 0.3 m/s at 7 m, far below what any free-jet formula predicts. Oscillation, aim and room recirculation all eat throw. That is exactly why the hallway needs measuring, and why the house simulation further up matters more than the jet formula.
 
@@ -261,7 +309,7 @@ Delivered in Australia in October 2026, the picture is lopsided. The 353 (A$159.
 
 > **Watch out for fake "Dreo Australia" stores.** While shopping I found several sites pretending to be Dreo's Australian store; I reported them and Dreo had some taken down. Dreo's own brand-protection page warns about the `dreo-[country].com` pattern, and it lists no official Australian shop. If a site offers Dreo fans in Australian dollars at a discount, assume it is a scam and buy through a marketplace you trust.
 
-**Where that leaves me.** The measured data favours DC-motor circulators with big rotors run slowly, and on the evidence the Meaco Sefte Pro 10 and the Dreo 7xx family sit on or near the frontier. The two fans I can buy cheaply here (353 and 512) are unmeasured, so the next step is obvious: measure my 512 in the actual hallway, at 1, 3, 5 and 7 m, against a sound meter, and put it on these charts.
+**Where that leaves me.** The measured data favours DC-motor circulators with big rotors run slowly, and on the evidence the Dreo 5xx and 7xx families sit on the lab-measured frontier, and the Meaco Sefte Pro 10 is a promising single reading worth checking. The two fans I can buy cheaply here (353 and 512) are unmeasured: the 512 should push 10 to 27% harder than the 353 for about the same noise, but that is a model, so the next step is obvious: measure my 512 in the actual hallway, at 1, 3, 5 and 7 m, against a sound meter, and put it on these charts.
 
 ## What is next
 

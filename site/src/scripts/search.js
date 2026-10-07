@@ -18,11 +18,9 @@ const SCOPES = [['all', 'All'], ['post', 'Posts'], ['project', 'Projects'], ['pa
 let engine = null, data = null, vectors = null, loading = null;
 let worker = null, semantic = 'off', semanticPct = 0; // off | loading | ready | failed
 let mode = 'fused', scope = 'all', sel = 0, results = [], qid = 0, lastLex = null, meaning = [], meaningFor = '';
-const dots = () => document.querySelectorAll('.search-dot');
 
 function setState(s, pct) {
   semantic = s; if (pct != null) semanticPct = pct;
-  dots().forEach((d) => { d.dataset.state = s; });
   renderStatus();
 }
 

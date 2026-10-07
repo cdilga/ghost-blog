@@ -1,10 +1,13 @@
 // Runs the 3D house airflow solver (airflow3d.js) off the main thread. Posts back a horizontal slice at the chosen
-// height, a vertical section along the chosen line, and per-room speed and AC-air statistics.
+// height, a vertical section along the chosen line, and per-room speed and AC-air statistics; while the volume view is
+// open, also the whole 3D speed, tracer and velocity fields every VOL_MS.
 import { createSim3D } from './airflow3d.js';
 
 let sim = null, house = null, cfg = null, running = true, timer = 0;
 const BUDGET_MS = 30; // solver time per tick; one post per tick
 let msPerStep = 0;
+const VOL_MS = 250; // volume fields cadence (only while the volume view is open)
+let vol = false, lastVol = 0;
 
 function sources(c) {
   return {
@@ -24,6 +27,13 @@ function configure(c, hard) {
     postMessage({ type: 'grid', NX: sim.NX, NY: sim.NY, NZ: sim.NZ, nz: sim.nz, h: sim.h, dt: sim.dt, extent: sim.extent, ceil: sim.ceil, nF: sim.nF, solid: sim.solid.slice() });
   }
   post();
+  if (vol) postVol();
+}
+
+function postVol() {
+  const v = sim.volume();
+  lastVol = performance.now();
+  postMessage({ type: 'volume', simTime: sim.time, sc: v.sc, vel: v.vel }, [v.sc.buffer, v.vel.buffer]);
 }
 
 function post() {
@@ -47,6 +57,7 @@ function tick() {
   const ms = (performance.now() - t0) / n;
   msPerStep = msPerStep ? msPerStep * 0.8 + ms * 0.2 : ms;
   post();
+  if (vol && performance.now() - lastVol >= VOL_MS) postVol();
   timer = setTimeout(tick, 0);
 }
 const kick = () => { if (!timer && running) timer = setTimeout(tick, 0); };
@@ -56,4 +67,5 @@ onmessage = (e) => {
   if (m.type === 'init') { house = m.house; configure(m.cfg, true); kick(); }
   else if (m.type === 'config') { configure(m.cfg, m.reset); kick(); }
   else if (m.type === 'pause') { running = !m.paused; kick(); }
+  else if (m.type === 'volume') { vol = m.on; if (vol && sim) postVol(); }
 };
