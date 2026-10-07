@@ -1,0 +1,18 @@
+---
+// Footer for the writing pages: everywhere to find me, plus the feed and a way back.
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const links = [
+  ['GitHub', 'https://github.com/cdilga'],
+  ['LinkedIn', 'https://linkedin.com/in/cdilga'],
+  ['X', 'https://x.com/cdilga'],
+  ['YouTube', 'https://youtube.com/@cdilga'],
+  ['RSS', `${base}/rss.xml`],
+];
+---
+<footer class="foot">
+  <nav class="foot-links" aria-label="Elsewhere">
+    {links.map(([t, u]) => <a href={u} rel={u.startsWith('http') ? 'me noopener' : undefined}>{t}</a>)}
+  </nav>
+  <p class="foot-sub"><a href={`${base}/`}>Home</a> · <a href={`${base}/blog/`}>Writing</a> · <button type="button" class="foot-search" data-search-open>Search <kbd>/</kbd></button></p>
+  <p class="foot-sub">© Chris Dilger</p>
+</footer>

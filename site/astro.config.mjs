@@ -3,6 +3,8 @@ import mdx from '@astrojs/mdx';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { optimiseImages } from './scripts/optimise-images.mjs';
+import { buildSearch } from './scripts/search-index.mjs';
 
 // Cloudflare Pages: turn every meta-refresh redirect page (old Ghost URLs, /rss/, author and tag pages) into
 // a real 301 in _redirects, and keep the shared preview site out of search engines via _headers.
@@ -10,8 +12,11 @@ function cloudflarePages() {
   return {
     name: 'cloudflare-pages-files',
     hooks: {
-      'astro:build:done': async ({ dir }) => {
+      'astro:build:done': async ({ dir, logger }) => {
         const root = fileURLToPath(dir);
+        const log = { info: (m) => logger.info(m), warn: (m) => logger.warn(m) };
+        await optimiseImages(root, base.replace(/\/$/, ''), log);
+        await buildSearch(root, log);
         const lines = ['/feed /rss.xml 301', '/feed/ /rss.xml 301', '/rss /rss.xml 301'];
         const walk = async (d) => {
           for (const e of await readdir(d, { withFileTypes: true })) {
@@ -29,6 +34,10 @@ function cloudflarePages() {
         await writeFile(join(root, '_headers'), [
           'https://chris-preview.dilger.me/*', '  X-Robots-Tag: noindex', '',
           '/_astro/*', '  Cache-Control: public, max-age=31536000, immutable', '',
+          '/_img/*', '  Cache-Control: public, max-age=31536000, immutable', '',
+          '/models/*', '  Cache-Control: public, max-age=2592000', '',
+          '/ort/*', '  Cache-Control: public, max-age=2592000', '',
+          '/search/*', '  Cache-Control: public, max-age=300', '',
         ].join('\n'));
       },
     },
