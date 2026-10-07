@@ -1,0 +1,11 @@
+---
+import Base from '../layouts/Base.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<Base title="Not found · Chris Dilger" description="That page has blown away.">
+  <section class="prose" style="min-height:70vh;display:grid;align-content:center;max-width:640px;margin:0 auto;padding:120px 20px 60px">
+    <p class="kicker mono">404</p>
+    <h1 style="font-size:clamp(2.2rem,7vw,4rem);margin:.2em 0">That page has blown away.</h1>
+    <p>The old blog moved here, and a few addresses did not make the trip. Try the <a href={`${base}/blog/`}>writing</a> or go <a href={`${base}/`}>home</a>.</p>
+  </section>
+</Base>
