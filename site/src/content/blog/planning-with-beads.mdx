@@ -8,6 +8,7 @@ import Chart from '../../components/Chart.astro';
 import BeadsGraph from '../../components/BeadsGraph.astro';
 import site from '../../data/beads-this-site.json';
 import jj from '../../data/beads-joystick-jammers.json';
+import ps from '../../data/beads-physical-soccer.json';
 
 export const created = [[19, 1], [20, 1], [21, 1], [22, 17], [23, 22], [24, 48], [25, 77], [26, 91], [27, 99], [28, 99], [29, 99]];
 export const closed = [[19, 0], [20, 0], [21, 0], [22, 3], [23, 22], [24, 24], [25, 57], [26, 68], [27, 80], [28, 81], [29, 85]];
@@ -54,15 +55,18 @@ The previous Ghost theme for this site was planned and built this way over about
 
 The part that surprised me is how much the graph helps *me*. Writing the plan down as small, dependent pieces forces the thinking up front, and it makes the agents interchangeable: any of them can take the next ready bead. When something goes wrong, the fix is usually a better bead (clearer acceptance criteria, a missing dependency), not a better prompt. I wrote about that shift in [Your Prompts Do Not Matter (Anymore)](/blog/your-prompts-do-not-matter-anymore/).
 
-## A bigger graph: Joystick Jammers
+## Bigger graphs: Joystick Jammers and Physical Soccer
 
-The same idea scales, and the graphs get much denser. Below is the real dependency graph of Joystick Jammers, drawn from its beads database. Each dot is a bead. It sits further right the more beads must close before it can start. Filled dots are closed. I have left the titles out on purpose; the shape is the interesting part.
+The same idea scales, and the graphs get much denser. Below are the real dependency graphs of two current projects, drawn from their beads databases. Each dot is a bead. It sits further right the more beads must close before it can start. Filled dots are closed. I have left the titles out on purpose; the shape is the interesting part.
 
 <BeadsGraph data={jj} title={`Joystick Jammers: ${jj.beads} beads, ${jj.blocks} blocking links`} caption={`Three weeks of polishing (${jj.span[0]} to ${jj.span[1]}). ${jj.status.closed} closed. ${jj.creators} different authors created beads, including agent identities like OliveFox and SilverBass: the swarm files follow-up work for itself. Median time to close: about ${Math.round(jj.median_close_h / 24)} days, because most of it is polish waiting on playtests.`} />
+
+<BeadsGraph data={ps} height={420} title={`Physical Soccer: ${ps.beads} beads, ${ps.blocks} blocking links, ${ps.layers} layers deep`} caption={`Every bead in the current database was created on 24 or 25 September, straight from the written plan (plan.md, with plan-beads-map.md as the coverage index), and ${ps.blocked_by_something} of the ${ps.beads} beads wait on at least one other. The longest chain is ${ps.layers} beads long: that is the real critical path of the project, and no number of agents makes it shorter. You can watch the closed work move through it as a wave from left to right. Deferred beads (grey outline) are ideas parked on purpose.`} />
 
 | Project | Beads | Blocking links | Longest chain | Closed |
 |---|---|---|---|---|
 | This site (previous version) | {site.beads} | {site.blocks} | {site.layers} | {site.status.closed} |
 | Joystick Jammers | {jj.beads} | {jj.blocks} | {jj.layers} | {jj.status.closed} |
+| Physical Soccer | {ps.beads} | {ps.blocks} | {ps.layers} | {ps.status.closed} |
 
 The longest chain is the number I watch now. A herd of agents makes the graph *wide* cheaply, but only good planning makes it *shallow*.
