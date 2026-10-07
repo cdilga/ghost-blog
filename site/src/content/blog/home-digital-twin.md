@@ -3,6 +3,7 @@ title: "home.dilger.dev: a digital twin of a real house, built from the drawings
 description: "Walk a full 3D model of a new-build home and its street, switch construction stages, and mark up where things go. Generated from code, in the browser, on desktop or phone."
 date: 2026-10-06
 tags: [projects, 3d, rust, bevy]
+image: /shots/home-d.jpg
 ---
 
 Walk through a full 3D model of a new-build home and its street, switch between construction stages (slab, frame, finished), and mark up where you want things to go. It runs in the browser, on desktop or phone, with nothing to install. It is not public yet, but here is what it is and why I built it.

@@ -237,8 +237,16 @@ function splitWords(el) {
   for (const node of texts) {
     const parts = node.textContent.split(/(\s+)/);
     const frag = document.createDocumentFragment();
-    for (const part of parts) {
+    for (const [pi, part] of parts.entries()) {
       if (!part) continue;
+      // punctuation straight after an inline element (e.g. "<b>slab</b>,") must not wrap onto its own line
+      if (pi === 0 && words.length && /^[,.;:!?)'’”]+$/.test(part)) {
+        const g = document.createElement('span'); g.textContent = part; g.className = 'glue';
+        const prev = words[words.length - 1];
+        const wrap = document.createElement('span'); wrap.className = 'nowrap';
+        prev.replaceWith(wrap); wrap.append(prev, g);
+        continue;
+      }
       if (/^\s+$/.test(part)) { frag.append(' '); continue; }
       const s = document.createElement('span');
       s.className = 'w'; s.setAttribute('aria-hidden', 'true'); s.textContent = part;

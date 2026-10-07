@@ -206,11 +206,13 @@ const term = [
           <div class="copy">
             <p class="kicker" data-fx="fade" data-a="0" data-d=".1">07 · home.dilger.dev</p>
             <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">A digital twin of a real house, from the drawings.</h2>
-            <p class="lede" data-fx="reveal" data-a=".15" data-d=".36">Walk the model and its street, switch between <b>slab</b>, <b>frame</b> and <b>finished</b>, and mark where the power points should go. It is generated from code, so every element has a stable ID and changes show up as diffs. Rust and Bevy on WebGPU, in your browser. Not public yet.</p>
+            <p class="lede" data-fx="reveal" data-a=".15" data-d=".36">Walk the model and its street, switch between <b>slab</b>, <b>frame</b> and <b>finished</b>, mark where the power points should go, and drive a ute and trailer down the side to check it fits. It is generated from code, so every element has a stable ID and changes show up as diffs. Rust and Bevy on WebGPU, in your browser. Not public yet.</p>
             <div data-fx="rise" data-a=".2" data-d=".15"><span class="pill" data-stage="slab">slab</span><span class="pill" data-stage="frame">frame</span><span class="pill" data-stage="finished">finished</span></div>
             <a class="cta" data-fx="rise" data-a=".28" data-d=".15" href={`${base}/blog/home-digital-twin/`}>How it works</a>
           </div>
-          <svg viewBox="0 0 520 340" class="house" role="img" aria-label="House model moving from slab to frame to finished" data-hook="house" data-fx="tilt" data-a=".05" data-d=".5">
+          <div class="duo homeduo" data-fx="tilt" data-a=".05" data-d=".5">
+            <div class="browser"><div class="chrome"><i></i><i></i><i></i><span>home.dilger.dev</span></div><div class="shot"><img src={`${base}/shots/home-d.jpg`} alt="The house twin: a new-build home on its street with a ute and caravan in the driveway, landscaped front garden and neighbouring houses" loading="lazy" /></div></div>
+            <svg viewBox="0 0 520 340" class="house inset" role="img" aria-label="House model moving from slab to frame to finished" data-hook="house">
             <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1a12" /><stop offset="1" stop-color="#120d0a" /></linearGradient></defs>
             <rect width="520" height="340" rx="16" fill="url(#sky)" stroke="rgba(242,230,211,.18)" />
             <path d="M30 270 L260 310 L490 270 L260 230 Z" fill="#2c1e15" stroke="rgba(242,230,211,.25)" />
@@ -228,6 +230,7 @@ const term = [
             <g class="marks">{[[200, 232], [330, 244], [276, 256]].map(([x, y], i) => <g data-i={i}><circle cx={x} cy={y} r="7" fill="#ff7a1a" /><circle cx={x} cy={y} r="14" fill="none" stroke="#ff7a1a" stroke-opacity=".5" /></g>)}</g>
             <text class="stagelabel" x="28" y="44" fill="#f2e6d3" font-size="15" font-family="JetBrains Mono, monospace">SLAB</text>
           </svg>
+          </div>
         </div>
       </section>
 
