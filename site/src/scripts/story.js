@@ -42,7 +42,7 @@ function init() {
     return;
   }
 
-  const hooks = { beads: beadsHook, terms: termsHook, rack: rackHook, house: houseHook, timeline: timelineHook, crt: crtHook, tvon: tvOnHook, wheel: wheelHook };
+  const hooks = { beads: beadsHook, terms: termsHook, rack: rackHook, house: houseHook, timeline: timelineHook, crt: crtHook, tvon: tvOnHook, wheel: wheelHook, spot: spotHook };
   for (const s of scenes) {
     const runs = s.hooksEl.map((h) => hooks[h.dataset.hook]?.(h)).filter(Boolean);
     if (!runs.length) continue;
@@ -348,6 +348,21 @@ function crtHook(el) {
     black.style.opacity = Math.min(1, squash * 1.4).toFixed(3);
     line.style.opacity = (squash > 0.85 ? 1 - gone : 0).toFixed(3);
     line.style.transform = `translate(-50%, -50%) scaleX(${(1 - shrink * 0.985).toFixed(4)})`;
+  };
+}
+
+// Spotlight: a warm cone walks across the stage photos with scroll, lighting each one in turn.
+function spotHook(el) {
+  const figs = [...el.querySelectorAll('figure')];
+  return (lp) => {
+    const t = clamp((lp - 0.12) / 0.7) * (figs.length - 1);
+    let cx = 0, cy = 0;
+    figs.forEach((f, i) => {
+      const lit = Math.max(0, 1 - Math.abs(t - i));
+      f.style.setProperty('--lit', lit.toFixed(3));
+      cx += (f.offsetLeft + f.offsetWidth / 2) * lit; cy += (f.offsetTop + f.offsetHeight / 2) * lit;
+    });
+    el.style.setProperty('--sx', cx.toFixed(1) + 'px'); el.style.setProperty('--sy', cy.toFixed(1) + 'px');
   };
 }
 

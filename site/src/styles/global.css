@@ -273,3 +273,14 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .wheel-all { margin-left: 0; position: relative; z-index: 2; }
 @media (max-height: 620px) { .wheel { height: 40svh; } .wcard .wimg { aspect-ratio: 16 / 7; } }
 .static .wheel { height: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; } .static .wcard { position: static; transform: none !important; visibility: visible !important; opacity: 1 !important; }
+
+/* stage: fanned talk photos with a spotlight that walks across them */
+.stagegal { position: relative; aspect-ratio: 4 / 3; width: 100%; max-height: 62svh; --sx: 30%; --sy: 40%; }
+.stagegal .sp { position: absolute; margin: 0; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 30px 60px -24px rgba(0,0,0,.9); --lit: 0; filter: brightness(calc(.42 + var(--lit) * .7)) saturate(calc(.6 + var(--lit) * .5)); transition: filter .15s linear; }
+.stagegal .sp img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.stagegal .sp0 { left: 0; top: 4%; width: 62%; aspect-ratio: 16 / 10; rotate: -4deg; z-index: 1; }
+.stagegal .sp1 { right: 0; top: 0; width: 40%; aspect-ratio: 1; rotate: 5deg; z-index: 2; }
+.stagegal .sp2 { left: 24%; bottom: 0; width: 52%; aspect-ratio: 3 / 2; rotate: -1.5deg; z-index: 3; }
+.stagegal figcaption { position: absolute; white-space: nowrap; left: 10px; bottom: 8px; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: #fff; background: rgba(0,0,0,.55); padding: 3px 7px; border-radius: 6px; opacity: calc(.3 + var(--lit)); }
+.stagegal .spotlight { position: absolute; inset: 0; z-index: 4; pointer-events: none; mix-blend-mode: screen; background: radial-gradient(ellipse 42% 56% at var(--sx) var(--sy), rgba(255,190,120,.22), rgba(255,140,60,.06) 55%, transparent 75%); }
+@media (max-aspect-ratio: 1/1), (max-width: 560px) { .stagegal { max-height: 40svh; aspect-ratio: 16 / 11; } }

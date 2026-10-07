@@ -17,6 +17,7 @@ const scenes = [
   { id: 'books', label: 'Aviation ABCs', len: 1.25 },
   { id: 'dishmate', label: 'Dishmate', len: 1.15 },
   { id: 'home', label: 'Home twin', len: 1.5 },
+  { id: 'stage', label: 'On stage', len: 1.4 },
   { id: 'writing', label: 'Writing', len: 2.2 },
   { id: 'contact', label: 'Say hello', len: 0.9 },
 ];
@@ -262,11 +263,33 @@ const term = [
         </div>
       </section>
 
-      <!-- 8. WRITING: rotary carousel -->
+      <!-- 8. STAGE: talks, with a spotlight that walks across the photos -->
+      <section class="scene" data-scene="stage" data-bg="b" data-bg-dim=".72" data-len={S('stage').len} aria-label="On stage">
+        <div class="content split flip">
+          <div class="stagegal" data-hook="spot" aria-hidden="false">
+            {[
+              ['thought-leadership', 'Presenting to a full room', 'on stage'],
+              ['aws-community-day', 'AWS Community Day Melbourne', 'AWS Community Day'],
+              ['awards-ceremony', 'At an awards ceremony', 'awards night'],
+            ].map(([f, alt, tag], i) => (
+              <figure class={`sp sp${i}`} data-fx="rise" data-a={(0.04 + i * 0.07).toFixed(2)} data-d=".2"><img src={`${base}/img/speaker/${f}.jpg`} alt={alt} loading="lazy" /><figcaption class="mono">{tag}</figcaption></figure>
+            ))}
+            <i class="spotlight" aria-hidden="true"></i>
+          </div>
+          <div class="copy">
+            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">09 · On stage</p>
+            <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">I talk about weird stuff, in depth.</h2>
+            <p class="lede" data-fx="reveal" data-a=".16" data-d=".36">Hardware wallets and why a secure element is a trade-off. AI that morphs faces in real time. Data governance nobody asked for. Cloud platforms that actually scale. Lately: what happens when you hand a codebase to a swarm of agents and a well-shaped plan. Happy to bring any of it to your meetup or conference.</p>
+            <div data-fx="rise" data-a=".3" data-d=".15"><a class="cta" href="https://www.youtube.com/watch?v=uVwReaMfQSQ">Watch a talk</a> <a class="cta ghost" href="#contact">Ask me to speak</a></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. WRITING: rotary carousel -->
       <section class="scene" data-scene="writing" data-len={S('writing').len} aria-label="Writing">
         <div class="bg sandvid" aria-hidden="true"><video muted loop playsinline preload="none" poster={`${base}/video/windswept-poster.jpg`} data-src-webm={`${base}/video/windswept.webm`} data-src-mp4={`${base}/video/windswept.mp4`}></video></div>
         <div class="content wheelwrap">
-          <p class="kicker" data-fx="fade" data-a="0" data-d=".06">09 · Writing</p>
+          <p class="kicker" data-fx="fade" data-a="0" data-d=".06">10 · Writing</p>
           <h2 class="mid" data-fx="words" data-a=".01" data-d=".12">Notes with the workings shown.</h2>
           <p class="wheel-hint mono" data-fx="fade" data-a=".08" data-d=".08">scroll or drag to turn · {allPosts.length} posts</p>
           <div class="wheel" data-hook="wheel" role="list" aria-label="All posts, newest first">
