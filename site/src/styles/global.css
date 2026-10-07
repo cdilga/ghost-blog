@@ -242,3 +242,4 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .mu-panel canvas { width: 96px; height: 96px; image-rendering: pixelated; border-radius: 4px; display: block; }
 .mu-panel p { margin: 8px 0 0; font-size: .66rem; line-height: 1.45; letter-spacing: 0; }
 @media (max-width: 700px) { .motion-ui { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 26px); } .mu-src { display: none; } }
+.morphphone img { object-fit: cover; object-position: center; }

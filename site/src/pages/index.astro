@@ -10,6 +10,7 @@ const scenes = [
   { id: 'story', label: 'How I got here', len: 2.4 },
   { id: 'plan', label: 'Plan with beads', len: 1.5 },
   { id: 'fleet', label: 'A fleet of agents', len: 1.5 },
+  { id: 'facemorph', label: 'facemorph.me', len: 1.35 },
   { id: 'projects', label: 'Physical Soccer', len: 1.25 },
   { id: 'jammers', label: 'Joystick Jammers', len: 1.25 },
   { id: 'books', label: 'Aviation ABCs', len: 1.25 },
@@ -33,7 +34,7 @@ const beads = [
 const timeline = [
   { year: 2018, era: 'University', title: 'Evolutionary algorithms', body: 'Studying at Swinburne. My first research write-up: a genetic algorithm that reduces data sets without losing what matters.', href: '/blog/data-reduction-efficency/' },
   { year: 2018, era: 'Abroad', title: 'Sarawak, Brunei, Boston', body: 'A social innovation project in Kampung Stutong Baru, then an exchange to Northeastern. Learning to build for people who are not me.', href: '/blog/social-innovation-project/' },
-  { year: 2019, era: 'Hackathons', title: 'Checkface', body: 'We turned hash checking into something your brain does for free: a hash becomes a generated face you recognise at a glance.', href: '/blog/checkface/' },
+  { year: 2019, era: 'Hackathons', title: 'Checkface', body: 'We turned hash checking into something your brain does for free: a hash becomes a generated face you recognise at a glance. It grew into facemorph.me.', href: '/blog/checkface/' },
   { year: 2020, era: 'Teaching', title: 'Explaining things', body: 'Data engineering bootcamps and plain-English explainers like "What is an API?". Teaching is how I check I actually understand something.', href: '/blog/what-is-an-api/' },
   { year: 2021, era: 'Measuring', title: 'M1 vs i7 4790k', body: 'Benchmarking a new Mac against an old desktop, published in English and Chinese. Opinions are cheap, numbers are better.', href: '/blog/new-mac-m1-or-old-intel-i7-4790k-which-would-win/' },
   { year: 2023, era: 'Consulting', title: 'Data and platforms', body: 'Data engineering and consulting for teams who need systems that keep working after the consultant leaves.' },
@@ -143,11 +144,28 @@ const term = [
         </div>
       </section>
 
+      <!-- 3. FACEMORPH -->
+      <section class="scene" data-scene="facemorph" data-len={S('facemorph').len} aria-label="facemorph.me">
+        <div class="content split flip">
+          <div class="duo" data-fx="tilt" data-a=".05" data-d=".5">
+            <div class="browser"><div class="chrome"><i></i><i></i><i></i><span>facemorph.me</span></div><div class="shot"><img src={`${base}/shots/facemorph-d.jpg`} alt="The new facemorph.me: generate faces from words, seeds or photos, all on your device" loading="lazy" /></div></div>
+            <div class="phone morphphone" data-fx="rise" data-a=".3" data-d=".2"><img src={`${base}/img/ghost/checkface/disconcerting-faces-gif.webp`} alt="An animated morph between generated faces" loading="lazy" /></div>
+          </div>
+          <div class="copy">
+            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">03 · facemorph.me</p>
+            <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">A GPU server's job, now done by your phone.</h2>
+            <p class="lede" data-fx="reveal" data-a=".16" data-d=".36">Type any words and <b>facemorph.me</b> turns them into a face that does not exist, then morphs smoothly to the next. It used to need a server with a GTX 1080. The new version runs <b>StyleGAN2 and encoder4editing entirely on your device</b>: nothing is uploaded, and the server can retire. The port was done with autoresearch loops: agents iterating against fidelity checks until the phone matched the server.</p>
+            <div data-fx="rise" data-a=".28" data-d=".15"><span class="pill">StyleGAN2</span><span class="pill">on-device</span><span class="pill">autoresearch port</span></div>
+            <a class="cta" data-fx="rise" data-a=".32" data-d=".15" href="https://next.facemorph.me">Try the preview</a>
+          </div>
+        </div>
+      </section>
+
       <!-- 3. PHYSICAL SOCCER -->
       <section class="scene" data-scene="projects" id="projects" data-len={S('projects').len} aria-label="Physical Soccer">
         <div class="content split">
           <div class="copy">
-            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">03 · Physical Soccer</p>
+            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">04 · Physical Soccer</p>
             <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Anything can be a controller.</h2>
             <p class="lede" data-fx="reveal" data-a=".18" data-d=".36">Host the match on the TV. Friends join with their phones, a keyboard, a pad, or half a touchscreen: <b>every button is its own player</b>. Each kickoff deals a new mix of footballers or forklifts, walker frames, rain and body quirks, and one button drives whatever you get. Twenty-two playtest rounds and counting.</p>
             <div data-fx="rise" data-a=".28" data-d=".15"><span class="pill">QR join</span><span class="pill">Forklift Football</span><span class="pill">Walker Ball</span><span class="pill">Spec Ops</span></div>
@@ -168,7 +186,7 @@ const term = [
             <div class="phone" data-fx="rise" data-a=".3" data-d=".2"><img src={`${base}/shots/jammers-poc-m.jpg`} alt="The phone controller: drive and action thumbsticks, boost bar and lap position" loading="lazy" /></div>
           </div>
           <div class="copy">
-            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">04 · Joystick Jammers</p>
+            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">05 · Joystick Jammers</p>
             <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">The TV is the arena. Phones are the pads.</h2>
             <p class="lede" data-fx="reveal" data-a=".18" data-d=".36">A party racer and demolition derby for <b>sixteen-plus players</b>. Open a room, scan the QR, race before the couch gets cold. The new version takes it to the outback: ink outlines, halftone shading and red dirt, split-screen on the TV, twin sticks on your phone. No installs.</p>
             <a class="cta" data-fx="rise" data-a=".3" data-d=".15" href="https://jammers.dilger.dev">jammers.dilger.dev</a>
@@ -180,7 +198,7 @@ const term = [
       <section class="scene" data-scene="books" data-len={S('books').len} aria-label="Aviation ABCs">
         <div class="content split">
           <div class="copy">
-            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">05 · Dilger Books</p>
+            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">06 · Dilger Books</p>
             <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">26 letters. 26 flying machines.</h2>
             <p class="lede" data-fx="reveal" data-a=".18" data-d=".36"><b>Aviation ABCs</b>, written by Daniel Dilger and published by me: a 20 × 20 cm hardcover picture book from Air Tractor to Zero, printed to order. Its own storefront, page-by-page peek inside, and Stripe checkout. A little book with a big sky.</p>
             <a class="cta" data-fx="rise" data-a=".3" data-d=".15" href="https://books.dilger.au">books.dilger.au</a>
@@ -200,7 +218,7 @@ const term = [
             <div class="phone" data-fx="rise" data-a=".3" data-d=".2"><img src={`${base}/shots/dishmate-m.jpg`} alt="Dishmate on a phone" loading="lazy" /></div>
           </div>
           <div class="copy">
-            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">06 · Dishmate</p>
+            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">07 · Dishmate</p>
             <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Small tools that solve a real annoyance.</h2>
             <p class="lede" data-fx="reveal" data-a=".18" data-d=".36"><b>Dishmate</b> is a set of dishwasher decision trees: a load advisor, a troubleshooter for cloudy glasses and white film, and advice on detergent, rinse aid and hard water. A dependency-free TypeScript library with an offline-capable demo. (Spoiler: use powder, run the hot tap first, and stop pre-rinsing.)</p>
             <a class="cta" data-fx="rise" data-a=".3" data-d=".15" href="https://cdilga.github.io/dishmate/">Try the demo</a>
@@ -212,7 +230,7 @@ const term = [
       <section class="scene" data-scene="home" data-len={S('home').len} aria-label="Home digital twin">
         <div class="content split">
           <div class="copy">
-            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">07 · House twin (private)</p>
+            <p class="kicker" data-fx="fade" data-a="0" data-d=".1">08 · House twin (private)</p>
             <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">A digital twin of a real house, from the drawings.</h2>
             <p class="lede" data-fx="reveal" data-a=".15" data-d=".36">Walk the model and its street, switch between <b>slab</b>, <b>frame</b> and <b>finished</b>, mark where the power points should go, and drive a ute and trailer down the side to check it fits, and turn any view into a photographic garden visualisation. It is generated from code, so every element has a stable ID and changes show up as diffs. Rust and Bevy on WebGPU, in the browser. It stays private: a model this detailed would give away where we live.</p>
             <div data-fx="rise" data-a=".2" data-d=".15"><span class="pill" data-stage="slab">slab</span><span class="pill" data-stage="frame">frame</span><span class="pill" data-stage="finished">finished</span></div>
@@ -245,7 +263,7 @@ const term = [
       <!-- 8. WRITING -->
       <section class="scene" data-scene="writing" data-len={S('writing').len} aria-label="Writing">
         <div class="content">
-          <p class="kicker" data-fx="fade" data-a="0" data-d=".1">08 · Writing</p>
+          <p class="kicker" data-fx="fade" data-a="0" data-d=".1">09 · Writing</p>
           <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Notes with the workings shown.</h2>
           <div class="cards">
             {posts.map((p, i) => (
