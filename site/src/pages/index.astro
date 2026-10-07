@@ -65,6 +65,7 @@ const term = [
       <section class="scene" data-scene="top" data-len={S('top').len} aria-label="Introduction">
         <div class="bg" data-fx="bgzoom"><img src={`${base}/desert.jpg`} alt="" style="width:100%;height:100%;object-fit:cover;filter:brightness(.5) saturate(1.1)" /></div>
         <div class="bg" style="background:radial-gradient(120% 90% at 30% 30%, transparent 30%, var(--ink) 95%)"></div>
+        <div class="beadfield" aria-hidden="true"><i data-fx="drift" data-speed="160" style="left:8%;top:22%;width:12px;height:12px"></i><i data-fx="drift" data-speed="90" style="left:18%;top:70%;width:8px;height:8px"></i><i data-fx="drift" data-speed="260" style="left:27%;top:38%;width:18px;height:18px"></i><i data-fx="drift" data-speed="120" style="left:41%;top:82%;width:10px;height:10px"></i><i data-fx="drift" data-speed="70" style="left:55%;top:15%;width:6px;height:6px"></i><i data-fx="drift" data-speed="200" style="left:63%;top:60%;width:14px;height:14px"></i><i data-fx="drift" data-speed="110" style="left:72%;top:30%;width:8px;height:8px"></i><i data-fx="drift" data-speed="300" style="left:81%;top:76%;width:20px;height:20px"></i><i data-fx="drift" data-speed="150" style="left:88%;top:45%;width:10px;height:10px"></i><i data-fx="drift" data-speed="80" style="left:94%;top:18%;width:6px;height:6px"></i><i data-fx="drift" data-speed="180" style="left:35%;top:90%;width:12px;height:12px"></i><i data-fx="drift" data-speed="60" style="left:12%;top:48%;width:6px;height:6px"></i><i data-fx="drift" data-speed="140" style="left:50%;top:55%;width:8px;height:8px"></i><i data-fx="drift" data-speed="220" style="left:76%;top:90%;width:10px;height:10px"></i></div>
         <div class="content">
           <p class="kicker" data-fx="fade" data-a="0" data-d=".12">Chris Dilger · software engineer</p>
           <h1 class="big" data-fx="words" data-a=".02" data-d=".4">I plan in beads and ship with a fleet of agents.</h1>
@@ -72,6 +73,7 @@ const term = [
           <a class="cta" data-fx="rise" data-a=".4" data-d=".2" href="#projects">See the projects</a>
           <a class="cta ghost" data-fx="rise" data-a=".45" data-d=".2" href={`${base}/blog/`}>Read the writing</a>
         </div>
+        <div class="cue mono" data-fx="out" data-a=".05" data-d=".2" aria-hidden="true">scroll<i></i></div>
       </section>
 
       <!-- 0b. STORY: how I got here -->

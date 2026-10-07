@@ -210,8 +210,9 @@ function prepFx(el) {
   }
   if (type === 'drift') {
     const sp = parseFloat(el.dataset.speed ?? '60');
-    return { run(lp, p) { el.style.transform = `translate3d(0,${((0.5 - clamp(p, -0.3, 1.3)) * sp).toFixed(1)}px,0)`; } };
+    return { run(lp, p) { const q = clamp(p, -0.3, 1.3); el.style.transform = `translate3d(${(Math.sin(q * 3 + sp) * sp * 0.08).toFixed(1)}px,${((0.5 - q) * sp).toFixed(1)}px,0)`; } };
   }
+  if (type === 'out') return { run(lp) { el.style.opacity = 1 - seg(lp); } };
   if (type === 'fade') return { run(lp) { el.style.opacity = seg(lp); } };
   if (type === 'rise') return { run(lp) { const t = easeOut(seg(lp)); el.style.opacity = t; el.style.transform = `translate3d(0,${(1 - t) * 48}px,0)`; } };
   if (type === 'tilt') return { run(lp) {

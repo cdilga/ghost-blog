@@ -208,3 +208,11 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .chart-tip { position: absolute; z-index: 2; pointer-events: none; display: grid; gap: 2px; background: rgba(18, 13, 10, .94); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: 12px var(--mono); color: var(--sand-dim); white-space: nowrap; }
 .chart-tip small { color: var(--sand); } .chart-tip b { color: var(--sand); font-weight: 500; }
 .chart-tip i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+/* hero depth: drifting beads and a scroll cue */
+.beadfield { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.beadfield i { position: absolute; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffb070, var(--orange) 45%, #7a2e0a); box-shadow: 0 0 18px rgba(255, 122, 26, .35); opacity: .55; }
+.beadfield i:nth-child(3n) { opacity: .3; filter: blur(1.5px); }
+.cue { position: absolute; left: 50%; bottom: clamp(56px, 9svh, 90px); translate: -50% 0; z-index: 1; font-size: .7rem; letter-spacing: .3em; text-transform: uppercase; color: var(--sand-dim); display: grid; justify-items: center; gap: 8px; }
+.cue i { width: 1px; height: 34px; background: linear-gradient(var(--orange), transparent); animation: cue 1.8s ease-in-out infinite; transform-origin: top; }
+@keyframes cue { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
+.static .cue, .no-js .cue { display: none; }
