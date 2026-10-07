@@ -17,7 +17,7 @@ export function startHouseAirflow(fig, presets) {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const small = innerWidth < 700 || (navigator.hardwareConcurrency || 4) <= 4;
   const state = {
-    preset: fig.dataset.preset || 'gap', custom: [], acSpeed: 3.5, louvre: 0, fanSpeed: 4.5, doorsOpen: true, furniture: true,
+    preset: fig.dataset.preset || 'gap', custom: [], sel: -1, acSpeed: 3.5, louvre: 0, fanSpeed: 4.5, doorsOpen: true, furniture: true,
     h: small ? 0.13 : 0.1,
   };
   const pad = 0.15, [ex0, ey0, ex1, ey1] = plan.extent;
@@ -28,6 +28,8 @@ export function startHouseAirflow(fig, presets) {
   // ---------- worker ----------
   let worker = null, grid = null, field = null, lastSim = 0, simRate = 0, lastMsgT = 0;
   const fans = () => (state.preset === 'custom' ? state.custom : presets[state.preset] || []).map((f) => ({ ...f, speed: state.fanSpeed }));
+  const MAX_FANS = 4;
+  const editable = () => (state.preset === 'custom' ? state.custom : (presets[state.preset] || []).map((f) => ({ x: f.x, y: f.y, dir: [...f.dir] })));
   const cfg = () => ({ h: state.h, doorsOpen: state.doorsOpen, furniture: state.furniture, uRef: U_REF, ac: { on: state.acSpeed > 0, speed: state.acSpeed, louvre: state.louvre }, fans: fans() });
   function start() {
     if (worker) return;
@@ -37,7 +39,7 @@ export function startHouseAirflow(fig, presets) {
       if (m.type === 'grid') { grid = m; field = null; buildBase(); resetTracers(); lastSim = 0; }
       else if (m.type === 'field') {
         const now = performance.now();
-        if (lastMsgT && m.simTime > lastSim) simRate = simRate * 0.8 + 0.2 * ((m.simTime - lastSim) / ((now - lastMsgT) / 1000));
+        if (lastMsgT && m.simTime > lastSim && now - lastMsgT > 4) simRate = simRate * 0.8 + 0.2 * ((m.simTime - lastSim) / ((now - lastMsgT) / 1000));
         lastMsgT = now; lastSim = m.simTime; field = m;
         $('[data-o="clock"]').textContent = `${m.simTime.toFixed(1)} s simulated`;
         $('[data-o="rate"]').textContent = `${simRate.toFixed(1)}x real time`;
@@ -180,12 +182,14 @@ export function startHouseAirflow(fig, presets) {
     ctx.fillRect(px(a.centre_x - a.width / 2), py(a.wall_y) - 1, a.width * S, Math.max(4, 0.23 * S));
     ctx.font = `600 ${Math.max(9, Math.round(S * 0.22))}px JetBrains Mono, monospace`; ctx.textAlign = 'center'; ctx.fillStyle = '#f2e6d3';
     ctx.fillText('AC', px(a.centre_x), py(a.wall_y) + Math.max(14, 0.55 * S));
-    for (const f of fans()) {
-      ctx.beginPath(); ctx.arc(px(f.x), py(f.y), Math.max(6, 0.17 * S), 0, Math.PI * 2);
+    fans().forEach((f, i) => {
+      const on = state.preset === 'custom' && i === state.sel, r = Math.max(6, 0.17 * S);
+      ctx.beginPath(); ctx.arc(px(f.x), py(f.y), r, 0, Math.PI * 2);
       ctx.fillStyle = '#ff7a1a'; ctx.fill();
+      if (on) { ctx.strokeStyle = '#f2e6d3'; ctx.lineWidth = 2; ctx.stroke(); }
       arrow(f.x, f.y, f.dir[0], f.dir[1], 0.75, '#ffd166');
-    }
-    if (drag) arrow(drag.x, drag.y, drag.dx, drag.dy, 0.75, '#ffd166');
+      if (on) { const h = handle(f); ctx.beginPath(); ctx.arc(h[0], h[1], 5, 0, Math.PI * 2); ctx.fillStyle = '#120d0a'; ctx.fill(); ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 2; ctx.stroke(); }
+    });
   }
 
   // ---------- room readouts ----------
@@ -207,7 +211,7 @@ export function startHouseAirflow(fig, presets) {
     fig.classList.toggle('placing', p === 'custom');
     send(true); resetTracers();
   }
-  presetBtns.forEach((b) => b.addEventListener('click', () => { start(); setPreset(b.dataset.preset); }));
+  presetBtns.forEach((b) => b.addEventListener('click', () => { start(); state.sel = -1; setPreset(b.dataset.preset); syncFanUi(); }));
   const out = (k, v) => { $(`[data-o="${k}"]`).textContent = v; };
   const bind = (k, fn) => $(`[data-i="${k}"]`).addEventListener('input', (e) => { fn(e.target); send(false); });
   bind('ac', (el) => { state.acSpeed = +el.value; out('ac', state.acSpeed ? `${state.acSpeed.toFixed(1)} m/s` : 'off'); });
@@ -219,28 +223,89 @@ export function startHouseAirflow(fig, presets) {
   out('ac', `${state.acSpeed.toFixed(1)} m/s`); out('louvre', '0°'); out('fan', `${state.fanSpeed.toFixed(1)} m/s`);
   presetBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.preset === state.preset)));
 
-  // place-your-own: press where the fan stands, drag the way it points
+  // fans are edited in place: press a fan to select and drag it to move it, drag the ring at the tip of its arrow to
+  // aim it. Touching a preset's fan copies the preset into 'custom' first, so the scene stays what you were looking at.
+  const handle = (f) => { const n = Math.hypot(f.dir[0], f.dir[1]) || 1; return [px(f.x + (f.dir[0] / n) * 0.75), py(f.y + (f.dir[1] / n) * 0.75)]; };
+  const toCustom = () => { if (state.preset === 'custom') return; state.custom = editable(); state.preset = 'custom'; presetBtns.forEach((b) => b.setAttribute('aria-pressed', 'false')); fig.classList.add('placing'); };
+  const syncFanUi = () => {
+    const n = editable().length, hasSel = state.preset === 'custom' && state.sel >= 0;
+    $('[data-i="addfan"]').disabled = n >= MAX_FANS;
+    $('[data-i="rmfan"]').disabled = !hasSel;
+    $('[data-i="clearfans"]').disabled = n === 0;
+    $('[data-o="fancount"]').textContent = n ? `${n} fan${n > 1 ? 's' : ''}` : 'no fans';
+  };
+  function addFan() {
+    start(); toCustom();
+    if (state.custom.length >= MAX_FANS) return;
+    let x = 9.4, y = 5.6;
+    for (let t = 0; t < 8 && state.custom.some((f) => Math.hypot(f.x - x, f.y - y) < 0.7); t++) { x -= 0.9; if (x < ex0 + 1) { x = 9.4; y -= 0.9; } }
+    state.custom.push({ x, y, dir: [0, -1] }); state.sel = state.custom.length - 1;
+    send(false); syncFanUi();
+  }
+  function removeFan() {
+    if (state.preset !== 'custom' || state.sel < 0) return;
+    state.custom.splice(state.sel, 1); state.sel = Math.min(state.sel, state.custom.length - 1);
+    send(false); syncFanUi();
+  }
+  $('[data-i="addfan"]').addEventListener('click', addFan);
+  $('[data-i="rmfan"]').addEventListener('click', removeFan);
+  $('[data-i="clearfans"]').addEventListener('click', () => { start(); state.custom = []; state.sel = -1; toCustom(); send(true); resetTracers(); syncFanUi(); });
+  fig.tabIndex = -1;
+  fig.addEventListener('keydown', (e) => { if ((e.key === 'Delete' || e.key === 'Backspace') && state.sel >= 0 && !/INPUT|BUTTON/.test(e.target.tagName)) { e.preventDefault(); removeFan(); } });
+
   let drag = null;
+  const hit = (cx, cy) => {
+    const list = fans();
+    for (let i = list.length - 1; i >= 0; i--) { // aim handle first (only on the selected fan), then the fan body
+      if (state.preset === 'custom' && i === state.sel) { const h = handle(list[i]); if (Math.hypot(cx - h[0], cy - h[1]) < 16) return { i, aim: true }; }
+    }
+    for (let i = list.length - 1; i >= 0; i--) if (Math.hypot(cx - px(list[i].x), cy - py(list[i].y)) < Math.max(16, 0.17 * S + 8)) return { i, aim: false };
+    return null;
+  };
+  const clampX = (x) => Math.min(ex1 - 0.2, Math.max(ex0 + 0.2, x)), clampY = (y) => Math.min(ey1 - 0.2, Math.max(ey0 + 0.2, y));
   cv.addEventListener('pointerdown', (e) => {
-    if (state.preset !== 'custom') return;
-    const r = cv.getBoundingClientRect(); const x = mx(e.clientX - r.left), y = my(e.clientY - r.top);
-    drag = { x, y, dx: 0, dy: -1 }; cv.setPointerCapture(e.pointerId);
+    const r = cv.getBoundingClientRect(), cx = e.clientX - r.left, cy = e.clientY - r.top, h = hit(cx, cy);
+    if (!h) { if (state.preset === 'custom' && state.sel >= 0) { state.sel = -1; syncFanUi(); } return; }
+    start(); toCustom();
+    state.sel = h.i; syncFanUi();
+    const f = state.custom[h.i];
+    drag = { i: h.i, aim: h.aim, ox: f.x - mx(cx), oy: f.y - my(cy), moved: false };
+    cv.setPointerCapture(e.pointerId); e.preventDefault();
   });
   cv.addEventListener('pointermove', (e) => {
-    if (!drag) return;
-    const r = cv.getBoundingClientRect(); const x = mx(e.clientX - r.left), y = my(e.clientY - r.top);
-    if (Math.hypot(x - drag.x, y - drag.y) > 0.15) { drag.dx = x - drag.x; drag.dy = y - drag.y; }
+    const r = cv.getBoundingClientRect(), cx = e.clientX - r.left, cy = e.clientY - r.top;
+    if (!drag) { cv.style.cursor = hit(cx, cy) ? 'grab' : ''; return; }
+    const f = state.custom[drag.i]; if (!f) return;
+    drag.moved = true; cv.style.cursor = 'grabbing';
+    if (drag.aim) { const dx = mx(cx) - f.x, dy = my(cy) - f.y; if (Math.hypot(dx, dy) > 0.15) f.dir = [dx, dy]; }
+    else { f.x = clampX(mx(cx) + drag.ox); f.y = clampY(my(cy) + drag.oy); }
   });
-  cv.addEventListener('pointerup', () => {
-    if (!drag) return;
-    state.custom = [...state.custom.slice(-2), { x: drag.x, y: drag.y, dir: [drag.dx, drag.dy] }];
-    drag = null; send(false);
-  });
+  const drop = () => { if (!drag) return; const moved = drag.moved; drag = null; cv.style.cursor = ''; if (moved) send(false); };
+  cv.addEventListener('pointerup', drop);
+  cv.addEventListener('pointercancel', drop);
+
+  // ---------- full screen (Fullscreen API, or a fixed-position fallback where it is missing, e.g. iPhone Safari) ----------
+  const fsBtn = $('[data-i="fullscreen"]');
+  const isFull = () => document.fullscreenElement === fig || fig.classList.contains('is-full');
+  function setFull(on) {
+    if (on === isFull()) return;
+    if (on) {
+      if (fig.requestFullscreen) fig.requestFullscreen().catch(() => { fig.classList.add('is-full'); document.documentElement.classList.add('fig-full'); });
+      else { fig.classList.add('is-full'); document.documentElement.classList.add('fig-full'); }
+    } else if (document.fullscreenElement === fig) document.exitFullscreen();
+    else { fig.classList.remove('is-full'); document.documentElement.classList.remove('fig-full'); }
+    relayout();
+  }
+  const relayout = () => requestAnimationFrame(() => requestAnimationFrame(() => { fsBtn.textContent = isFull() ? 'Exit full screen' : 'Full screen'; fsBtn.setAttribute('aria-pressed', String(isFull())); if (cv.clientWidth !== resizeW) { resizeW = cv.clientWidth; size(); tctx.clearRect(0, 0, W, H); } }));
+  fsBtn.addEventListener('click', () => setFull(!isFull()));
+  document.addEventListener('fullscreenchange', relayout);
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && fig.classList.contains('is-full')) setFull(false); });
 
   // ---------- lifecycle ----------
-  size();
   let resizeW = cv.clientWidth;
-  addEventListener('resize', () => { if (cv.clientWidth !== resizeW) { resizeW = cv.clientWidth; size(); tctx.clearRect(0, 0, W, H); } });
+  size();
+  addEventListener('resize', relayout);
+  syncFanUi();
   new IntersectionObserver(([e]) => {
     visible = e.isIntersecting;
     worker?.postMessage({ type: 'pause', paused: !visible });

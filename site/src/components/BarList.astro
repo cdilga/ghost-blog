@@ -1,0 +1,39 @@
+---
+/**
+ * Horizontal ranked bars with a value label and an optional reference line. Build-time HTML and CSS, no client JS.
+ * <BarList rows={[{ label, sub?, value, group? }]} groups={{ dc: { colour } }} unit="%" max={100} ref={{ value: 25, label: 'free-jet 1/x' }} />
+ */
+const { rows = [], groups = {}, unit = '', max = 100, ref = null, title = '', caption = '' } = Astro.props;
+const sorted = [...rows].sort((a, b) => b.value - a.value);
+---
+<figure class="chart wide barlist">
+  {title && <h3 style="margin:0 0 6px;font-size:1rem">{title}</h3>}
+  <div class="legend">{Object.entries(groups).map(([g, v]) => <span><i style={`background:${v.colour}`}></i>{v.label}</span>)}</div>
+  <ol>
+    {sorted.map((r) => (
+      <li>
+        <span class="bl-name">{r.label}{r.sub && <small> {r.sub}</small>}</span>
+        <span class="bl-track">
+          <span class="bl-bar" style={`width:${Math.min(100, (r.value / max) * 100)}%;background:${groups[r.group]?.colour ?? '#f2e6d3'}`}></span>
+          {ref && <span class="bl-ref" style={`left:${(ref.value / max) * 100}%`}></span>}
+        </span>
+        <b class="bl-val">{Math.round(r.value)}{unit}</b>
+      </li>
+    ))}
+  </ol>
+  {ref && <p class="bl-key"><span class="bl-ref-key"></span> {ref.label}</p>}
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<style>
+  .barlist ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+  .barlist li { display: grid; grid-template-columns: minmax(120px, 270px) 1fr 3.2rem; gap: 10px; align-items: center; font-size: .82rem; }
+  .bl-name { color: var(--sand); text-align: right; line-height: 1.2; }
+  .bl-name small { color: var(--sand-dim); font-size: .72rem; }
+  .bl-track { position: relative; height: 14px; background: rgba(242,230,211,.06); border-radius: 4px; }
+  .bl-bar { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
+  .bl-ref { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 2px dashed #ffd166; }
+  .bl-val { font: 500 .8rem var(--mono); color: var(--sand); text-align: right; }
+  .bl-key { margin: 8px 0 0; font-size: .76rem; color: var(--sand-dim); display: flex; align-items: center; gap: 8px; }
+  .bl-ref-key { display: inline-block; height: 12px; border-left: 2px dashed #ffd166; }
+  @media (max-width: 560px) { .barlist li { grid-template-columns: 1fr 3rem; } .bl-name { grid-column: 1 / -1; text-align: left; } }
+</style>

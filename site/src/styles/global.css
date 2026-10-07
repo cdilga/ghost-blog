@@ -357,10 +357,6 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .search-btn:hover, .search-btn:focus-visible { color: var(--sand); border-color: rgba(255,154,77,.5); }
 .search-btn svg { width: 14px; height: 14px; }
 .search-btn kbd, .search-dlg kbd, .foot kbd { font: 500 .7rem var(--mono); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line); color: var(--sand-dim); background: rgba(255,255,255,.04); }
-/* model status: grey while loading, warm when meaning search is ready */
-.search-dot { position: absolute; top: -2px; right: -2px; width: 7px; height: 7px; border-radius: 50%; background: transparent; }
-.search-dot[data-state="loading"] { background: #8a7a66; animation: blink 1.4s ease-in-out infinite; }
-.search-dot[data-state="ready"] { background: #7ed49a; box-shadow: 0 0 6px #7ed49a; }
 @media (max-width: 720px) { .bar .icon-link span, .search-btn span, .search-btn kbd { display: none; } .search-btn { padding: 7px; } .bar nav { gap: 14px; } }
 
 /* ---------- search palette ---------- */
