@@ -15,6 +15,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: site } }
+    outputs:
+      pages: ${{ steps.pages.outcome }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,16 +24,22 @@ jobs:
       - run: npm ci
       # configure-pages reports the real Pages URL: https://cdilga.github.io/ghost-blog until a
       # custom domain is set, then https://chris.dilger.me with an empty base path.
+      # Until Pages is enabled (Settings > Pages > Source: GitHub Actions) it fails; we still build to verify.
       - id: pages
         uses: actions/configure-pages@v5
+        continue-on-error: true
       - run: npm run build
         env:
-          SITE: ${{ steps.pages.outputs.origin }}
+          SITE: ${{ steps.pages.outputs.origin || 'https://chris.dilger.me' }}
           BASE: ${{ steps.pages.outputs.base_path }}/
-      - uses: actions/upload-pages-artifact@v3
+      - if: steps.pages.outcome != 'success'
+        run: echo "::notice::Built OK. Not deploying because GitHub Pages is not enabled for this repo (Settings > Pages > Source - GitHub Actions)."
+      - if: steps.pages.outcome == 'success'
+        uses: actions/upload-pages-artifact@v3
         with: { path: site/dist }
   deploy:
     needs: build
+    if: needs.build.outputs.pages == 'success'
     runs-on: ubuntu-latest
     environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
     steps:
