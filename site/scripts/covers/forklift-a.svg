@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 190">
+  <g id="chassis" data-pivot-x="100" data-pivot-y="120">
+    <path id="a-hull-edge" d="M44 100 L156 100 L156 140 L44 140 Z" fill="#172b35"/>
+    <path id="a-hull-team" d="M48 103 L151 103 L151 132 L143 136 L52 136 L48 131 Z" fill="#e6524c" data-slot="team"/>
+    <path id="a-hull-belly" d="M51 129 L147 129 L143 137 L54 137 Z" fill="#293c47"/>
+    <path id="a-bonnet" d="M115 103 L151 103 L151 120 L118 120 Z" fill="#f4d674" data-slot="trim"/>
+    <path id="a-bonnet-stripe" d="M123 104 L130 104 L119 120 L113 120 Z M136 104 L143 104 L132 120 L126 120 Z" fill="#172b35"/>
+    <path id="a-side-light" d="M146 108 L152 108 L152 117 L146 117 Z" fill="#fff1c4"/>
+    <path id="a-team-shield" d="M69 106 L86 106 L88 124 L77 130 L67 123 Z" fill="#f6eee0"/>
+    <path id="a-team-shield-core" d="M72 109 L83 109 L84 122 L77 126 L71 122 Z" fill="#e6524c" data-slot="team"/>
+    <path id="a-cab-rear-upright" d="M72 70 L84 70 L84 100 L72 100 Z" fill="#516b73"/>
+    <path id="a-cab-upright-light" d="M76 74 L80 74 L80 96 L76 96 Z" fill="#d7e2dc"/>
+    <path id="a-seat-back" d="M69 82 L81 82 L86 117 L75 119 Z" fill="#172b35"/>
+    <path id="a-seat-pad" d="M76 108 L112 108 L115 117 L79 120 Z" fill="#355764"/>
+    <path id="a-rider-body-outline" d="M88 93 L107 91 L124 108 L115 123 L90 117 L83 105 Z" fill="#172b35"/>
+    <path id="a-rider-jersey" d="M90 96 L106 94 L119 108 L113 119 L92 114 L87 104 Z" fill="#e6524c" data-slot="team"/>
+    <path id="a-rider-sleeve" d="M106 97 L116 101 L127 116 L120 122 L110 111 Z" fill="#f6eee0"/>
+    <path id="a-rider-hand" d="M124 115 L136 111 L140 116 L131 123 L124 122 Z" fill="#d8a878" data-slot="skin"/>
+    <path id="a-steering-post" d="M135 107 L139 107 L143 129 L138 129 Z" fill="#172b35"/>
+    <path id="a-steering-grip" d="M131 105 L145 105 L145 109 L131 109 Z" fill="#f4d674" data-slot="trim"/>
+    <path id="a-rider-neck" d="M96 88 L104 88 L108 99 L99 101 Z" fill="#d8a878" data-slot="skin"/>
+    <path id="a-rider-face" d="M89 76 L109 75 L115 82 L112 96 L102 101 L90 95 Z" fill="#d8a878" data-slot="skin"/>
+    <path id="a-rider-nose" d="M110 84 L119 87 L113 91 Z" fill="#d8a878" data-slot="skin"/>
+    <path id="a-rider-eye" d="M105 84 L109 84 L109 88 L105 88 Z" fill="#172b35"/>
+    <path id="a-rider-helmet-edge" d="M87 74 L91 68 L106 68 L114 75 L114 80 L87 80 Z" fill="#172b35"/>
+    <path id="a-rider-helmet" d="M90 73 L94 70 L104 70 L111 75 L111 77 L90 77 Z" fill="#e6524c" data-slot="team"/>
+    <path id="a-rider-visor" d="M109 76 L121 76 L121 80 L110 81 Z" fill="#f4d674" data-slot="trim"/>
+    <path id="a-roof-physical" d="M57 64 L61 60 L139 60 L143 64 L143 67 L139 71 L61 71 L57 67 Z" fill="#516b73"/>
+    <path id="a-guard-rail-highlight" d="M62 62 L138 62 L140 65 L60 65 Z" fill="#d7e2dc"/>
+    <path id="a-recovery-brace-physical" d="M70 29 L74 25 L82 25 L86 29 L86 63 L70 63 Z" fill="#516b73"/>
+    <path id="a-recovery-brace-light" d="M74 29 L82 29 L82 61 L74 61 Z" fill="#d7e2dc"/>
+    <path id="a-mast-physical" d="M149 28 L164 28 L164 134 L149 134 Z" fill="#172b35"/>
+    <path id="a-mast-rail" d="M152 32 L160 32 L160 128 L152 128 Z" fill="#d7e2dc"/>
+    <path id="a-mast-guide" d="M150 108 L163 108 L163 120 L150 120 Z" fill="#f4d674" data-slot="trim"/>
+  </g>
+  <g id="rear-wheel" data-pivot-x="58" data-pivot-y="148">
+    <path id="a-rear-tyre" d="M58 130 L69 134 L76 143 L76 153 L69 162 L58 166 L47 162 L40 153 L40 143 L47 134 Z" fill="#172b35"/>
+    <path id="a-rear-rim" d="M58 135 L67 138 L71 145 L71 151 L67 158 L58 161 L49 158 L45 151 L45 145 L49 138 Z" fill="#516b73"/>
+    <path id="a-rear-hub" d="M58 142 L63 144 L64 148 L63 152 L58 154 L53 152 L52 148 L53 144 Z" fill="#f5ead5"/>
+    <path id="a-rear-spoke" d="M56 136 L60 136 L60 142 L56 142 Z M65 146 L71 146 L71 150 L65 150 Z M56 154 L60 154 L60 160 L56 160 Z M45 146 L51 146 L51 150 L45 150 Z" fill="#172b35"/>
+  </g>
+  <g id="front-wheel" data-pivot-x="142" data-pivot-y="148">
+    <path id="a-front-tyre" d="M142 130 L153 134 L160 143 L160 153 L153 162 L142 166 L131 162 L124 153 L124 143 L131 134 Z" fill="#172b35"/>
+    <path id="a-front-rim" d="M142 135 L151 138 L155 145 L155 151 L151 158 L142 161 L133 158 L129 151 L129 145 L133 138 Z" fill="#516b73"/>
+    <path id="a-front-hub" d="M142 142 L147 144 L148 148 L147 152 L142 154 L137 152 L136 148 L137 144 Z" fill="#f5ead5"/>
+  </g>
+  <g id="fork" data-pivot-x="165" data-pivot-y="137">
+    <path id="a-fork-backplate-physical" d="M158 118 L172 118 L172 156 L158 156 Z" fill="#172b35"/>
+    <path id="a-fork-guard-physical" d="M157 63 L173 63 L173 147 L157 147 Z" fill="#172b35"/>
+    <path id="a-fork-guard-steel" d="M160 67 L169 67 L169 142 L160 142 Z" fill="#d7e2dc"/>
+    <path id="a-fork-tine-physical" d="M164 147 L236 147 L236 155 L164 155 Z" fill="#172b35"/>
+    <path id="a-fork-tine-stripe" d="M173 148 L204 148 L204 151 L173 151 Z" fill="#f4d674" data-slot="trim"/>
+    <path id="a-fork-tip" d="M224 148 L235 148 L235 154 L224 154 Z" fill="#d7e2dc"/>
+  </g>
+</svg>

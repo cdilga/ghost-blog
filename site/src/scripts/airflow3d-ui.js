@@ -45,9 +45,9 @@ export function startHouseAirflow3D(fig) {
       if (m.type === 'grid') { grid = m; field = null; lastSim = 0; lastMsgT = 0; buildBase(); buildSecBase(); resetTracers(); out('grid', `${m.NX}×${m.NY}×${m.NZ} cells, ${(m.h * 100).toFixed(0)} cm`); }
       else if (m.type === 'field') {
         const now = performance.now();
-        if (lastMsgT && m.simTime > lastSim) simRate = simRate * 0.85 + 0.15 * ((m.simTime - lastSim) / ((now - lastMsgT) / 1000));
+        if (lastMsgT && m.simTime > lastSim && now - lastMsgT > 4) simRate = simRate * 0.85 + 0.15 * ((m.simTime - lastSim) / ((now - lastMsgT) / 1000));
         if (m.simTime < lastSim) simRate = 0;
-        lastMsgT = now; lastSim = m.simTime; field = m;
+        if (!lastMsgT || now - lastMsgT > 4 || m.simTime < lastSim) { lastMsgT = now; lastSim = m.simTime; } field = m;
         out('clock', `${m.simTime.toFixed(1)} s simulated`);
         out('rate', simRate ? `${simRate.toFixed(2)}× real time` : '');
         readouts(m);
