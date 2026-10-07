@@ -1,13 +1,14 @@
 name: Deploy
 
+# Legacy Ghost deploy. Manual only: the site is moving to the static build in site/ (pages.yml), and
+# pushes to main must never redeploy or touch the live Ghost server. Run it from the Actions tab and
+# type "deploy ghost" to confirm.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'themes/**'
-      - 'ghost/adapters/**'
-      - 'scripts/configure-storage.py'
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy ghost" to deploy the legacy Ghost theme to the live server'
+        required: true
 
 env:
   THEME_NAME: chris-theme
@@ -16,6 +17,7 @@ env:
 
 jobs:
   detect-changes:
+    if: github.event.inputs.confirm == 'deploy ghost'
     runs-on: ubuntu-latest
     outputs:
       themes: ${{ steps.filter.outputs.themes }}
