@@ -1,0 +1,34 @@
+# Promote what is on preview.chris.dilger.me (main) to production (chris.dilger.me).
+# Fast-forwards the prod branch, and Cloudflare Pages deploys it. Run it from the Actions tab
+# (or `gh workflow run promote.yml`). Pass a commit to promote an earlier one instead of main's tip;
+# to undo a bad release instantly, use "Rollback" on an older production deployment in the Cloudflare
+# dashboard (Workers & Pages > chris-dilger-me > Deployments).
+name: Promote to production
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Commit or branch to promote (default: main)'
+        required: false
+        default: main
+permissions:
+  contents: write
+concurrency:
+  group: promote
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Fast-forward prod
+        run: |
+          set -euo pipefail
+          target=$(git rev-parse "origin/${{ inputs.ref }}" 2>/dev/null || git rev-parse "${{ inputs.ref }}")
+          git fetch origin prod
+          if ! git merge-base --is-ancestor origin/prod "$target"; then
+            echo "::error::prod is not an ancestor of $target. Refusing to rewrite production history." && exit 1
+          fi
+          git push origin "$target:refs/heads/prod"
+          echo "### Promoted \`${target:0:7}\` to production" >> "$GITHUB_STEP_SUMMARY"
+          git log --oneline "origin/prod..$target" >> "$GITHUB_STEP_SUMMARY" || true
