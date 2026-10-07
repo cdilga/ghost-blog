@@ -1,0 +1,63 @@
+---
+/**
+ * Interactive airflow on the real floor plan (home-digital-twin, default furniture layout).
+ * Solver: src/scripts/airflow.js (D2Q9 lattice Boltzmann + Smagorinsky LES) in a Web Worker.
+ * <HouseAirflow preset="gap" />   presets: ac | gap | retreat | hall
+ */
+import plan from '../data/house-plan.json';
+const { preset = 'gap', caption = '' } = Astro.props;
+---
+<figure class="chart wide hair" data-preset={preset}>
+  <h3 style="margin:0 0 6px;font-size:1rem">Live: the split system and a Dreo fan, on the actual floor plan</h3>
+  <div class="hair-stage">
+    <canvas class="hair-canvas" aria-label="Top-down floor plan of the house with the simulated airflow drawn as glowing streaks" role="img"></canvas>
+    <div class="hair-hud mono"><span data-o="clock">0.0 s</span><span data-o="rate"></span></div>
+    <button type="button" class="hair-start" hidden>Start the simulation</button>
+  </div>
+  <div class="hair-presets" role="group" aria-label="Scenarios">
+    <button type="button" data-preset="ac">AC only</button>
+    <button type="button" data-preset="gap">Dreo through the kitchen gap</button>
+    <button type="button" data-preset="retreat">Dreo around the retreat</button>
+    <button type="button" data-preset="hall">Dreo in the hall</button>
+    <button type="button" data-preset="custom" class="hair-place">Place your own fan</button>
+  </div>
+  <div class="hair-controls">
+    <label>AC outlet <output data-o="ac"></output><input type="range" min="0" max="5" step="0.5" value="3.5" data-i="ac" /></label>
+    <label>AC louvres <output data-o="louvre"></output><input type="range" min="-40" max="40" step="5" value="0" data-i="louvre" /></label>
+    <label>Fan speed <output data-o="fan"></output><input type="range" min="1" max="6" step="0.5" value="4.5" data-i="fan" /></label>
+    <div class="hair-toggles">
+      <label><input type="checkbox" data-i="doors" checked /> bedroom doors open</label>
+      <label><input type="checkbox" data-i="furniture" checked /> furniture</label>
+      <button type="button" data-i="reset">Restart</button>
+    </div>
+  </div>
+  <div class="hair-rooms" aria-live="off"></div>
+  <figcaption>{caption || 'A 2D slice at head height, drawn from the house model with its default furniture. Colour is air speed (dark is still, white is 1.5 m/s or more); streaks follow the flow. Pick a scenario, or choose "Place your own fan" and drag on the plan: press where the fan stands, drag the way it points. The clock is simulated time.'}</figcaption>
+  <script type="application/json" class="hair-plan" set:html={JSON.stringify(plan)} />
+</figure>
+<style>
+  .hair-stage { position: relative; border-radius: 10px; overflow: hidden; background: #0b0806; touch-action: pan-y; }
+  .hair-canvas { width: 100%; display: block; aspect-ratio: 20.3 / 11.1; cursor: default; }
+  .hair.placing .hair-canvas { cursor: crosshair; touch-action: none; }
+  .hair-hud { position: absolute; left: 10px; top: 8px; display: flex; gap: 12px; font-size: .72rem; color: var(--sand-dim); pointer-events: none; }
+  .hair-hud span:first-child { color: var(--sand); }
+  .hair-start { position: absolute; inset: 0; margin: auto; width: max-content; height: max-content; padding: 10px 18px; border-radius: 99px; border: 0; background: var(--orange); color: #1a0d00; font: 600 .95rem var(--font); cursor: pointer; }
+  .hair-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+  .hair-presets button, .hair-toggles button { font: 500 .8rem var(--font); padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--sand); cursor: pointer; }
+  .hair-presets button[aria-pressed="true"] { background: var(--orange); color: #1a0d00; border-color: var(--orange); }
+  .hair-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px 20px; margin: 10px 0 4px; font-size: .86rem; color: var(--sand-dim); }
+  .hair-controls label { display: grid; grid-template-columns: 1fr auto; gap: 2px; align-items: center; }
+  .hair-controls input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--orange); }
+  .hair-controls output { font-family: var(--mono); color: var(--sand); }
+  .hair-toggles { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+  .hair-toggles label { display: flex !important; gap: 6px; align-items: center; }
+  .hair-toggles input { accent-color: var(--orange); }
+  .hair-rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; margin: 10px 0 4px; }
+  .hair-rooms :global(div) { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font-size: .74rem; color: var(--sand-dim); position: relative; overflow: hidden; }
+  .hair-rooms :global(b) { display: block; font: 500 .95rem var(--mono); color: var(--sand); }
+  .hair-rooms :global(i) { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--orange); transition: width .4s; }
+</style>
+<script>
+  import { airflowPresets, startHouseAirflow } from '../scripts/airflow-ui.js';
+  for (const fig of document.querySelectorAll<HTMLElement>('figure.hair')) startHouseAirflow(fig, airflowPresets);
+</script>

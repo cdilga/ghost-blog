@@ -6,6 +6,7 @@ tags: [physics, hardware, working-draft]
 ---
 import Chart from '../../components/Chart.astro';
 import JetExplorer from '../../components/JetExplorer.astro';
+import HouseAirflow from '../../components/HouseAirflow.astro';
 
 export const rho = 1.2, nu = 1.5e-5, B = 6.2;
 export const d = 0.12;
@@ -51,8 +52,33 @@ Here is the same idea as something you can play with. The particle jet is the fa
 
 So the shopping heuristic is: **maximise outlet area for the thrust you need**, then check the motor and blades are not adding their own whine.
 
+## The real question: getting the cold air down the hall
+
+The free-jet picture says what a fan can do in open air. Our actual problem is a house: one split system on the dining room's north wall, and bedrooms down a hallway that the cold air never seems to reach. So I took the floor plan from the [digital twin of the house](/blog/home-digital-twin/), with its walls, doorways, kitchen joinery and the default furniture layout, and ran a 2D airflow simulation on it, right here in the page.
+
+<HouseAirflow preset="gap" />
+
+What it shows, averaged over the second half of 45 simulated seconds (AC at 3.5 m/s, fan at 4.5 m/s):
+
+| Where | AC only | Dreo through the kitchen gap | Dreo around the retreat |
+|---|---|---|---|
+| Dining | 0.45 m/s | 0.76 m/s | 0.62 m/s |
+| Living | 0.13 m/s | 0.52 m/s | 0.38 m/s |
+| Retreat | 0.005 m/s | 0.76 m/s | 0.79 m/s |
+| Hall | 0.003 m/s | 0.71 m/s | 0.46 m/s |
+| Bedrooms | about 0 | about 0.01 | about 0.01 |
+
+Three things jump out.
+
+1. **On its own, the split system's air stays in the dining and living room.** The jet hits the floor-to-ceiling obstacles (fridge, island, sofa) and curls back on itself. The hall is effectively dead air.
+2. **One fan in the right place changes that completely.** Pointed south through the gap east of the kitchen, it sets up a loop: down through the gap, west along the hall, back up through the retreat into the dining room, where the AC tops it up again. The retreat route works too, but more of its push is spent in the retreat itself.
+3. **Bedrooms are dead ends.** Even with every door open, almost nothing flows *through* a bedroom, because there is nowhere for the air to come out. A second fan in the hall aimed straight into the Bed 2 doorway lifts that room's average from 0.01 to 0.05 m/s, but it is a local swirl of hall air at the door rather than a supply of cooled air, and it partly fights the first fan. Getting conditioned air *into* a bedroom needs a through path (a door undercut or transfer grille plus a fan pushing in) or a head in the room. Try it yourself: choose "Place your own fan", then press in the hall and drag towards a bedroom door.
+
+This is a 2D, depth-averaged slice, so it is honest about *where* air can go but not about the ceiling: a real split-system jet hugs the ceiling (the Coandă effect), and cold air sinks as it slows. Tall things like the fridge block most of the slice; low things like beds and the dining table only add drag. The solver is a lattice Boltzmann method with a Smagorinsky turbulence model, running in a Web Worker in your browser. The return air the split system draws in from the ceiling is modelled as a gentle sink around the head.
+
 ## What is next
 
 1. Measure the candidate Dreo's outlet area and real exit speed with an anemometer.
 2. Replace the placeholder `B` and the `U⁶` rule with measured decay and a dB(A) reading at 1 m, 3 m.
 3. Add a small CFD sanity check of the near field, where the 1/x law does not yet hold.
+4. Measure air speed in the hall with the AC alone and with the fan in each spot, and put the measurements next to the simulation.
