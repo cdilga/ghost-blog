@@ -5,6 +5,7 @@ date: 2026-10-06
 tags: [projects, 3d, rust, bevy]
 image: /shots/home-d.jpg
 ---
+import CompareWipe from '../../components/CompareWipe.astro';
 
 Walk through a full 3D model of a new-build home and its street, switch between construction stages (slab, frame, finished), and mark up where you want things to go. It runs in the browser, on desktop or phone, with nothing to install. It is not public yet, but here is what it is and why I built it.
 
@@ -21,7 +22,10 @@ Every element has a stable ID. A change shows up as a diff, and the model rebuil
 - **Review electrical placement.** Family members mark power points on specific walls. Markers attach to an element ID and a local position, so they survive the model being regenerated. Every export is flagged as needing an electrician's review, so nothing reads as compliant by default.
 - **Try furniture layouts.** Open-plan, retreat and dining variants use measured furniture sizes, and yes, there is a chairs-tucked toggle.
 - **See day and night lighting**, with smart-light room scenes, a real star catalogue and a daylight-inside mode.
-- **Plan the landscape.** A garden and landscape study kit with scenario files, a rule checker, an in-browser garden editor and a plant and vehicle catalogue. Drive mode lets you run a ute and trailer through the site with physics, to test turning circles and access down the side.
+- **Plan the landscape.** A garden and landscape study kit with scenario files, a rule checker, an in-browser garden editor and a plant and vehicle catalogue. Drive mode lets you run a ute and trailer through the site with physics, to test turning circles and access down the side. (The picture at the top of this post is drive mode: a ute and a caravan, parked where they would actually fit.)
+- **Turn a view into a picture.** Any camera pose in the viewer can be handed to an image model (Meta's Muse Image) together with a material board made from the signed colour selection. It returns a photographic visualisation of the garden proposal from exactly that viewpoint. Drag the slider to compare:
+
+<CompareWipe before="/shots/home-street-model.jpg" after="/shots/home-street-muse.jpg" beforeLabel="Engine frame" afterLabel="AI visualisation" alt="the house from across the street with the proposed front garden" caption="Same camera pose, before and after. The trees in the model are plain stand-ins at the scenario's real positions; the picture is a draft proposal, not a photo. Plants, light and wear are invented by the image model, and every picture in the viewer is stamped to say so. A drift check compares edges against the engine frame to catch re-framing." />
 - **Compare against captured reality.** A Gaussian-splat pipeline is meant to show the site as photographed, registered to the CAD with published residuals. It never gets baked into the model: the splat is optional and the product ships without it.
 
 ## Why bother
@@ -35,6 +39,10 @@ Every element has a stable ID. A change shows up as a diff, and the model rebuil
 **Quality is measured both ways.** Validation scripts check precision (does what is modelled match the drawing?) and recall (is everything the drawing shows actually there, and can you walk into every room?). Each gate prints what it does not cover, so a green tick never overclaims.
 
 **It is reusable.** The house is data, not baked into the product, so the same platform could take another property.
+
+## It is good for physics too
+
+Because the walls, doorways and furniture are data, the model can feed other tools. I sliced it at head height and ran an airflow simulation on it, to work out where a fan should go to push the split system's cold air down the hallway. It runs live in the browser: [choosing a quiet fan with physics](/blog/choosing-a-quiet-fan-with-physics/).
 
 ## How it was built
 

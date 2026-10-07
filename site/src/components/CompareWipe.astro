@@ -1,0 +1,36 @@
+---
+/**
+ * Before/after wipe: two images of the same view, a slider reveals one over the other.
+ * <CompareWipe before="/shots/a.jpg" after="/shots/b.jpg" beforeLabel="Model" afterLabel="Picture" alt="..." caption="..." />
+ */
+const { before, after, beforeLabel = 'Before', afterLabel = 'After', alt = '', caption = '', start = 50 } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const src = (p) => (p.startsWith('/') ? `${base}${p}` : p);
+---
+<figure class="wipe wide" style={`--p:${start}%`}>
+  <div class="wipe-box">
+    <img src={src(before)} alt={`${beforeLabel}: ${alt}`} loading="lazy" />
+    <img class="wipe-after" src={src(after)} alt={`${afterLabel}: ${alt}`} loading="lazy" />
+    <span class="wipe-tag l mono">{beforeLabel}</span><span class="wipe-tag r mono">{afterLabel}</span>
+    <i class="wipe-bar" aria-hidden="true"></i>
+    <input type="range" min="0" max="100" value={start} aria-label={`Slide between ${beforeLabel} and ${afterLabel}`} />
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<style>
+  .wipe { margin-top: 2em; margin-bottom: 2em; }
+  .wipe-box { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+  .wipe-box img { display: block; width: 100%; height: auto; margin: 0; }
+  .wipe-after { position: absolute; inset: 0; height: 100% !important; object-fit: cover; clip-path: inset(0 0 0 var(--p)); }
+  .wipe-bar { position: absolute; top: 0; bottom: 0; left: var(--p); width: 2px; translate: -1px 0; background: var(--orange); box-shadow: 0 0 12px rgba(0,0,0,.6); pointer-events: none; }
+  .wipe-tag { position: absolute; top: 10px; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; background: rgba(18,13,10,.75); color: var(--sand); padding: 3px 8px; border-radius: 6px; pointer-events: none; }
+  .wipe-tag.l { left: 10px; } .wipe-tag.r { right: 10px; }
+  .wipe-box input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
+  .wipe figcaption { color: var(--sand-dim); font-size: .88rem; margin-top: 8px; }
+</style>
+<script>
+  for (const fig of document.querySelectorAll<HTMLElement>('figure.wipe')) {
+    const input = fig.querySelector('input')!;
+    input.addEventListener('input', () => fig.style.setProperty('--p', `${input.value}%`));
+  }
+</script>
