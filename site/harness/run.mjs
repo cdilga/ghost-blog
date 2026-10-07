@@ -36,7 +36,7 @@ const devices = [
   { name: 'laptop-zoom150', w: 960, h: 600, dpr: 1.5 },
   { name: 'laptop-zoom200', w: 720, h: 450, dpr: 2 },
   { name: 'desktop-4k-zoom75', w: 2560, h: 1440, dpr: 0.75 },
-].filter((d) => !quick || ['iphone-toolbar-shown', 'laptop'].includes(d.name));
+].filter((d) => !quick || ['iphone-toolbar-shown', 'pixel-landscape', 'laptop-zoom200'].includes(d.name));
 
 const STOPS = 30;
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
