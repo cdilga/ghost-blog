@@ -2,7 +2,8 @@
 import Base from '../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const posts = (await getCollection('blog', (p) => !p.data.draft)).sort((a, b) => +b.data.date - +a.data.date).slice(0, 3);
+const allPosts = (await getCollection('blog', (p) => !p.data.draft)).sort((a, b) => +b.data.date - +a.data.date);
+const img = (p) => (p ? `${base}${p}` : '');
 
 // Scene lengths are in viewport-heights of scroll. Total drives the track height in CSS.
 const scenes = [
@@ -16,7 +17,7 @@ const scenes = [
   { id: 'books', label: 'Aviation ABCs', len: 1.25 },
   { id: 'dishmate', label: 'Dishmate', len: 1.15 },
   { id: 'home', label: 'Home twin', len: 1.5 },
-  { id: 'writing', label: 'Writing', len: 1.1 },
+  { id: 'writing', label: 'Writing', len: 2.2 },
   { id: 'contact', label: 'Say hello', len: 0.9 },
 ];
 const total = scenes.reduce((a, s) => a + s.len, 0);
@@ -261,19 +262,23 @@ const term = [
         </div>
       </section>
 
-      <!-- 8. WRITING -->
+      <!-- 8. WRITING: rotary carousel -->
       <section class="scene" data-scene="writing" data-len={S('writing').len} aria-label="Writing">
-        <div class="content">
-          <p class="kicker" data-fx="fade" data-a="0" data-d=".1">09 · Writing</p>
-          <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Notes with the workings shown.</h2>
-          <div class="cards">
-            {posts.map((p, i) => (
-              <a class="card" data-fx="rise" data-a={0.15 + i * 0.08} data-d=".2" href={`${base}/blog/${p.id}/`}>
-                <small>{p.data.date.toISOString().slice(0, 10)}</small><h3>{p.data.title}</h3><p>{p.data.description}</p>
+        <div class="bg sandvid" aria-hidden="true"><video muted loop playsinline preload="none" poster={`${base}/video/windswept-poster.jpg`} data-src-webm={`${base}/video/windswept.webm`} data-src-mp4={`${base}/video/windswept.mp4`}></video></div>
+        <div class="content wheelwrap">
+          <p class="kicker" data-fx="fade" data-a="0" data-d=".06">09 · Writing</p>
+          <h2 class="mid" data-fx="words" data-a=".01" data-d=".12">Notes with the workings shown.</h2>
+          <p class="wheel-hint mono" data-fx="fade" data-a=".08" data-d=".08">scroll or drag to turn · {allPosts.length} posts</p>
+          <div class="wheel" data-hook="wheel" role="list" aria-label="All posts, newest first">
+            {allPosts.map((p) => (
+              <a class={`wcard${p.data.legacy ? ' old' : ''}`} role="listitem" href={`${base}/blog/${p.id}/`} draggable="false">
+                <span class="wimg">{p.data.image ? <img src={img(p.data.image)} alt="" loading="lazy" draggable="false" /> : <i aria-hidden="true"></i>}</span>
+                <small>{p.data.date.toISOString().slice(0, 10)}{p.data.legacy ? ' · archive' : ''}</small>
+                <b>{p.data.title}</b>
               </a>
             ))}
           </div>
-          <a class="cta ghost" style="margin-left:0" data-fx="rise" data-a=".4" data-d=".15" href={`${base}/blog/`}>All posts</a>
+          <a class="cta ghost wheel-all" data-fx="rise" data-a=".1" data-d=".1" href={`${base}/blog/`}>All posts</a>
         </div>
       </section>
 

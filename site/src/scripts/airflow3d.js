@@ -16,12 +16,15 @@
 //  - Optional buoyancy: AC air is denser (cooler by dT at full concentration), a Boussinesq body force.
 //
 // Units: lattice speed = LS x physical speed (m/s), so dt = LS x h seconds per step. Read it as a model of where the
-// air can go and how strongly, not as certified CFD: the grid is 15 to 25 cm and the walls are no-slip bounce-back.
+// air can go and how strongly, not as certified CFD: the grid is 15 to 26 cm, walls and furniture are no-slip
+// (half-way bounce-back) and the floor and ceiling are free-slip (specular), because a no-slip cell 20 cm thick drags a
+// ceiling jet off the ceiling while the real boundary layer is a few millimetres.
 
 const CX = [0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 1, -1, 1, -1, 0, 0, 0, 0];
 const CY = [0, 0, 0, 1, -1, 0, 0, 1, -1, -1, 1, 0, 0, 0, 0, 1, -1, 1, -1];
 const CZ = [0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 1, -1, -1, 1, 1, -1, -1, 1];
 const OPP = [0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17];
+const MIRZ = CX.map((_, q) => CX.findIndex((x, p) => x === CX[q] && CY[p] === CY[q] && CZ[p] === -CZ[q]));
 const WQ = CX.map((_, q) => (q === 0 ? 1 / 3 : q < 7 ? 1 / 18 : 1 / 36));
 const C13 = 1 / 3;
 export const BEDROOMS = ['Bed 1', 'Bed 2', 'Bed 3', 'Bed 4', 'Media'];
@@ -129,6 +132,7 @@ export function createSim3D(house, opts = {}) {
   const roomNames = [...new Set(house.rooms.map((r) => r.name))];
 
   let doorsOpen = opts.doorsOpen ?? true, furniture = opts.furniture ?? true;
+  const freeSlip = opts.freeSlip ?? true;    // free-slip floor and ceiling (walls and furniture stay no-slip)
   let dT = opts.dT ?? 8;                   // K colder than the room at full AC-air concentration (0 = no buoyancy)
   let decayS = opts.decay ?? 0;            // e-folding time (s) of the tracer, 0 = none
 
@@ -225,7 +229,14 @@ export function createSim3D(house, opts = {}) {
       const k = cellOf[t];
       for (let q = 1; q < 19; q++) {
         const s = k - CX[q] - CY[q] * NX - CZ[q] * NXY; // pull from upstream
-        nb[t * 18 + q - 1] = solid[s] ? t * 19 + OPP[q] : idx[s] * 19 + q;
+        let src = solid[s] ? t * 19 + OPP[q] : idx[s] * 19 + q;
+        if (solid[s] && CZ[q] !== 0 && freeSlip) {
+          // ceiling and floor are free-slip (specular): at 15 to 25 cm cells the real boundary layer is far thinner
+          // than one cell, and no-slip there drags a ceiling jet off the ceiling
+          const lz = Math.floor(k / NXY) - CZ[q], lat = k - CX[q] - CY[q] * NX;
+          if ((lz === 0 || lz === nz + 1) && !solid[lat]) src = idx[lat] * 19 + MIRZ[q];
+        }
+        nb[t * 18 + q - 1] = src;
       }
       px[t] = solid[k + 1] ? -1 : idx[k + 1];
       py[t] = solid[k + NX] ? -1 : idx[k + NX];

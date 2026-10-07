@@ -1,0 +1,90 @@
+---
+/**
+ * Interactive 3D airflow in the real house (home-digital-twin shell, fit-out and default furniture).
+ * Solver: src/scripts/airflow3d.js (D3Q19 lattice Boltzmann, regularised collision + Smagorinsky LES, AC-air tracer)
+ * in a Web Worker (airflow3d-worker.js); drawing and controls in airflow3d-ui.js.
+ * <HouseAirflow3D preset="hall" />   presets: ac | hall | two | custom
+ */
+import house from '../data/house-3d.json';
+const { preset = 'hall', caption = '' } = Astro.props;
+---
+<figure class="chart wide h3d" data-preset={preset}>
+  <h3 style="margin:0 0 6px;font-size:1rem">Live in 3D: getting the split system's air into the bedrooms</h3>
+  <div class="h3d-stage">
+    <canvas class="h3d-plan" aria-label="Top-down floor plan cut at the chosen height, with the simulated airflow drawn as a heat map and glowing streaks" role="img"></canvas>
+    <div class="h3d-hud mono"><span data-o="clock">0.0 s</span><span data-o="rate"></span><span data-o="grid"></span></div>
+    <button type="button" class="h3d-start" hidden>Start the simulation</button>
+  </div>
+  <div class="h3d-secwrap">
+    <div class="h3d-sechead mono">Section through the door of <span class="h3d-doors" role="group" aria-label="Section through which door"></span></div>
+    <canvas class="h3d-sec" aria-label="Vertical section through the chosen bedroom door and the hall, showing air crossing the doorway above and below" role="img"></canvas>
+  </div>
+  <div class="h3d-presets" role="group" aria-label="Scenarios">
+    <button type="button" data-preset="ac">AC only</button>
+    <button type="button" data-preset="hall">Fan in the hall, into Bed 2</button>
+    <button type="button" data-preset="two">Two fans: kitchen gap + hall</button>
+    <button type="button" data-preset="custom" class="h3d-place">Place your own fans</button>
+  </div>
+  <div class="h3d-colour" role="group" aria-label="Colour by">
+    <span class="mono">Colour</span>
+    <button type="button" data-colour="speed">air speed</button>
+    <button type="button" data-colour="ac">AC air</button>
+    <span class="h3d-legend mono" data-mode="speed"><i></i><em class="sp">0 to 1.5 m/s</em><em class="ac">0 to 50% AC air</em></span>
+  </div>
+  <div class="h3d-controls">
+    <label>Plan cut height <output data-o="z"></output><input type="range" min="0.3" max="2.5" step="0.1" value="1.2" data-i="z" /></label>
+    <label>AC fan <output data-o="ac"></output><input type="range" min="0" max="350" step="25" value="300" data-i="ac" /></label>
+    <label>AC louvres <output data-o="louvre"></output><input type="range" min="-30" max="40" step="5" value="15" data-i="louvre" /></label>
+    <label>Fan speed <output data-o="fan"></output><input type="range" min="1" max="6" step="0.5" value="4.5" data-i="fan" /></label>
+    <label>Your fans' height <output data-o="fanz"></output><input type="range" min="0.3" max="2" step="0.1" value="0.9" data-i="fanz" /></label>
+    <label>Fan tilt <output data-o="tilt"></output><input type="range" min="-30" max="45" step="5" value="0" data-i="tilt" /></label>
+    <div class="h3d-toggles">
+      <label><input type="checkbox" data-i="doors" checked /> bedroom doors open</label>
+      <label><input type="checkbox" data-i="cold" checked /> AC air is 8 °C colder</label>
+      <button type="button" data-i="reset">Restart</button>
+    </div>
+  </div>
+  <div class="h3d-rooms" aria-live="off"></div>
+  <figcaption>{caption || 'A 3D simulation of the whole house from its model, with the default furniture as solid blocks. The plan is a horizontal cut at the chosen height; the strip below is a vertical cut through the chosen bedroom door (dashed line on the plan), so you can see air crossing the doorway under the 2.1 m door head. "AC air" is the share of the air that has come through the split system since the start: the number that says whether cooled air is actually getting into a room. Room figures are averaged over the occupied zone, 0.1 to 1.8 m above the floor. To place your own fans (up to three), press where a fan stands and drag the way it points; press the button again to clear them. The clock is simulated time.'}</figcaption>
+  <script type="application/json" class="h3d-house" set:html={JSON.stringify(house)} />
+</figure>
+<style>
+  .h3d-stage { position: relative; border-radius: 10px 10px 0 0; overflow: hidden; background: #0b0806; touch-action: pan-y; }
+  .h3d-plan { width: 100%; display: block; aspect-ratio: 19.91 / 11.09; cursor: default; }
+  .h3d.placing .h3d-plan { cursor: crosshair; touch-action: none; }
+  .h3d-hud { position: absolute; left: 10px; top: 8px; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .72rem; color: var(--sand-dim); pointer-events: none; }
+  .h3d-hud span:first-child { color: var(--sand); }
+  .h3d-start { position: absolute; inset: 0; margin: auto; width: max-content; height: max-content; padding: 10px 18px; border-radius: 99px; border: 0; background: var(--orange); color: #1a0d00; font: 600 .95rem var(--font); cursor: pointer; }
+  .h3d-secwrap { background: #0b0806; border-radius: 0 0 10px 10px; border-top: 1px solid var(--line); padding: 6px 0 0; }
+  .h3d-sechead { font-size: .72rem; color: var(--sand-dim); padding: 0 10px 4px; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+  .h3d-sec { width: 100%; display: block; }
+  .h3d-doors { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+  .h3d-doors :global(button), .h3d-presets button, .h3d-colour button, .h3d-toggles button { font: 500 .8rem var(--font); padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--sand); cursor: pointer; }
+  .h3d-doors :global(button) { padding: 2px 9px; font-size: .72rem; }
+  .h3d-doors :global(button[aria-pressed="true"]), .h3d-presets button[aria-pressed="true"], .h3d-colour button[aria-pressed="true"] { background: var(--orange); color: #1a0d00; border-color: var(--orange); }
+  .h3d-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+  .h3d-colour { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin: 8px 0 4px; font-size: .78rem; color: var(--sand-dim); }
+  .h3d-legend { display: inline-flex; align-items: center; gap: 8px; margin-left: 6px; }
+  .h3d-legend i { width: 90px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #0b0806, #ff7a1a 55%, #ffe6c8); }
+  .h3d-legend[data-mode="ac"] i { background: linear-gradient(90deg, #0b0806, #3a8fd0 55%, #e8f6ff); }
+  .h3d-legend em { font-style: normal; }
+  .h3d-legend[data-mode="speed"] .ac, .h3d-legend[data-mode="ac"] .sp { display: none; }
+  .h3d-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px 20px; margin: 10px 0 4px; font-size: .86rem; color: var(--sand-dim); }
+  .h3d-controls label { display: grid; grid-template-columns: 1fr auto; gap: 2px; align-items: center; }
+  .h3d-controls input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--orange); }
+  .h3d-controls output { font-family: var(--mono); color: var(--sand); }
+  .h3d-toggles { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+  .h3d-toggles label { display: flex !important; gap: 6px; align-items: center; }
+  .h3d-toggles input { accent-color: var(--orange); }
+  .h3d-rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin: 10px 0 4px; }
+  .h3d-rooms :global(div) { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px 9px; font-size: .74rem; color: var(--sand-dim); position: relative; overflow: hidden; }
+  .h3d-rooms :global(b) { display: block; font: 500 .95rem var(--mono); color: #cfe9ff; }
+  .h3d-rooms :global(span) { display: block; font: .72rem var(--mono); color: var(--sand); }
+  .h3d-rooms :global(i) { position: absolute; left: 0; height: 3px; transition: width .4s; }
+  .h3d-rooms :global(i.ac) { bottom: 3px; background: #5ec8ff; }
+  .h3d-rooms :global(i.sp) { bottom: 0; background: var(--orange); }
+</style>
+<script>
+  import { startHouseAirflow3D } from '../scripts/airflow3d-ui.js';
+  for (const fig of document.querySelectorAll<HTMLElement>('figure.h3d')) startHouseAirflow3D(fig);
+</script>

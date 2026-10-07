@@ -42,7 +42,7 @@ export function startHouseAirflow3D(fig) {
     worker = new Worker(new URL('./airflow3d-worker.js', import.meta.url), { type: 'module' });
     worker.onmessage = (e) => {
       const m = e.data;
-      if (m.type === 'grid') { grid = m; field = null; lastSim = 0; lastMsgT = 0; resetTracers(); out('grid', `${m.NX}×${m.NY}×${m.NZ} cells, ${(m.h * 100).toFixed(0)} cm`); }
+      if (m.type === 'grid') { grid = m; field = null; lastSim = 0; lastMsgT = 0; buildBase(); buildSecBase(); resetTracers(); out('grid', `${m.NX}×${m.NY}×${m.NZ} cells, ${(m.h * 100).toFixed(0)} cm`); }
       else if (m.type === 'field') {
         const now = performance.now();
         if (lastMsgT && m.simTime > lastSim) simRate = simRate * 0.85 + 0.15 * ((m.simTime - lastSim) / ((now - lastMsgT) / 1000));
@@ -64,6 +64,7 @@ export function startHouseAirflow3D(fig) {
   const trails = document.createElement('canvas'), tctx = trails.getContext('2d');
   const heat = document.createElement('canvas'), hctx = heat.getContext('2d');
   const sbase = document.createElement('canvas'), sbctx = sbase.getContext('2d');
+  const ssol = document.createElement('canvas'), ssctx = ssol.getContext('2d'); // solids and labels, drawn over the heat
   const strails = document.createElement('canvas'), stctx = strails.getContext('2d');
   const sheat = document.createElement('canvas'), shctx = sheat.getContext('2d');
   // section geometry: y along the canvas, z up
@@ -78,8 +79,8 @@ export function startHouseAirflow3D(fig) {
     for (const c of [ctx, bctx, tctx]) c.setTransform(dpr, 0, 0, dpr, 0, 0);
     SW = sv.clientWidth; SS = SW / (secLen() + 0.2); SH = Math.round((CEIL + 0.24) * SS);
     sv.style.height = `${SH}px`;
-    for (const c of [sv, sbase, strails]) { c.width = SW * dpr; c.height = SH * dpr; }
-    for (const c of [sctx, sbctx, stctx]) c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (const c of [sv, sbase, ssol, strails]) { c.width = SW * dpr; c.height = SH * dpr; }
+    for (const c of [sctx, sbctx, ssctx, stctx]) c.setTransform(dpr, 0, 0, dpr, 0, 0);
     buildBase(); buildSecBase();
   }
   const inZ = (b, z) => b[2] <= z && z <= b[5];
@@ -124,22 +125,24 @@ export function startHouseAirflow3D(fig) {
     sbctx.fillStyle = '#17110d';
     for (let y = 0; y < L; y += step) if (house.rooms.some((r) => inPoly(x, y + step / 2, r.poly))) sbctx.fillRect(spx(y), spz(CEIL), step * SS + 0.6, CEIL * SS);
     const cut = (b) => b[0] <= x && x <= b[3] && b[1] < L;
-    const rect = (b, fill) => { sbctx.fillStyle = fill; sbctx.fillRect(spx(b[1]), spz(b[5]), Math.max(1.5, (Math.min(L, b[4]) - b[1]) * SS), (b[5] - b[2]) * SS); };
+    ssctx.clearRect(0, 0, SW, SH);
+    const rect = (b, fill) => { ssctx.fillStyle = fill; ssctx.fillRect(spx(b[1]), spz(b[5]), Math.max(1.5, (Math.min(L, b[4]) - b[1]) * SS), (b[5] - b[2]) * SS); };
     for (const o of [...house.joinery, ...house.furniture]) if (cut(o.b)) rect(o.b, 'rgba(242,230,211,.42)');
     for (const s of house.solids) if (cut(s.b)) rect(s.b, s.c === 'window' ? '#5e8fb8' : '#b9a68f');
     if (!state.doorsOpen) for (const d of house.doors) if (d.closable && cut(d.b)) rect([d.b[0], d.b[1], 0.012, d.b[3], d.b[4], d.head_z], '#7a6a58');
     // floor and ceiling
-    sbctx.fillStyle = '#b9a68f'; sbctx.fillRect(0, spz(0), SW, 2); sbctx.fillRect(0, spz(CEIL) - 2, SW, 2);
+    ssctx.fillStyle = '#b9a68f'; ssctx.fillRect(0, spz(0), SW, 2); ssctx.fillRect(0, spz(CEIL) - 2, SW, 2);
     // labels: room names along the floor, door head height
-    sbctx.font = `${Math.max(9, Math.round(SS * 0.2))}px JetBrains Mono, monospace`; sbctx.textAlign = 'center'; sbctx.fillStyle = 'rgba(185,166,143,.7)';
+    ssctx.font = `${Math.min(12, Math.max(9, Math.round(SS * 0.11)))}px JetBrains Mono, monospace`; ssctx.textAlign = 'center'; ssctx.fillStyle = 'rgba(185,166,143,.8)';
     let last = null, y0 = 0;
     for (let y = 0; y <= L + step; y += step) {
       const r = house.rooms.find((q) => inPoly(x, y, q.poly))?.name ?? null;
-      if (r !== last) { if (last && y - y0 > 0.8) sbctx.fillText(last.toUpperCase(), spx((y0 + y) / 2), spz(0) - 6); last = r; y0 = y; }
+      if (r !== last) { if (last && y - y0 > 0.8) ssctx.fillText(last.toUpperCase(), spx((y0 + y) / 2), spz(0) - 6); last = r; y0 = y; }
     }
     const d = door();
-    sbctx.textAlign = 'left'; sbctx.fillStyle = 'rgba(255,122,26,.85)';
-    sbctx.fillText(`door head ${d.head_z.toFixed(2)} m`, spx(d.b[4]) + 6, spz(d.head_z) + 4);
+    ssctx.textAlign = 'left'; ssctx.fillStyle = 'rgba(255,122,26,.9)';
+    ssctx.fillRect(spx(d.b[1]) - 3, spz(d.head_z), (d.b[4] - d.b[1]) * SS + 6, 1);
+    ssctx.fillText(`door head ${d.head_z.toFixed(2)} m`, spx(d.b[4]) + 6, spz(d.head_z) - 4);
     if (grid) { sheat.width = grid.NY; sheat.height = grid.NZ; sheatImg = shctx.createImageData(grid.NY, grid.NZ); }
   }
 
@@ -216,6 +219,7 @@ export function startHouseAirflow3D(fig) {
     const dtSim = dtReal * Math.max(0.25, simRate || 1);
     ctx.clearRect(0, 0, W, H); ctx.drawImage(base, 0, 0, W, H);
     sctx.clearRect(0, 0, SW, SH); sctx.drawImage(sbase, 0, 0, SW, SH);
+    if (!field) sctx.drawImage(ssol, 0, 0, SW, SH);
     if (field && grid && heatImg && sheatImg) {
       // plan heat
       const { NX, NY, NZ, h, extent } = grid, d = heatImg.data, sl = field.slice, L = sl.layer * NX * NY;
@@ -256,7 +260,7 @@ export function startHouseAirflow3D(fig) {
       // cell i spans y0 + (i-1)h .. y0 + ih; layer l spans (l-1)h .. lh
       sctx.drawImage(sheat, spx(extent[1] - h), spz((NZ - 1) * h), n * h * SS, NZ * h * SS);
       sctx.restore();
-      sctx.drawImage(sbase, 0, 0, SW, SH, 0, 0, SW, SH); // redraw solids on top so blurred heat stays inside the rooms
+      sctx.drawImage(ssol, 0, 0, SW, SH); // solids over the heat, so the smoothed heat stays inside the rooms
       stctx.globalCompositeOperation = 'destination-out'; stctx.fillStyle = 'rgba(0,0,0,0.16)'; stctx.fillRect(0, 0, SW, SH);
       stctx.globalCompositeOperation = 'source-over'; stctx.lineWidth = 1.2;
       for (let m = 0; m < NS; m++) {
@@ -304,7 +308,7 @@ export function startHouseAirflow3D(fig) {
   function drawSecDoor() {
     const d = field.doors.find((q) => q.name === door().label.replace(' Door', '')) || field.doors.find((q) => q.room === door().joins[0]);
     if (!d) return;
-    sctx.font = `500 ${Math.max(10, Math.round(SS * 0.2))}px JetBrains Mono, monospace`; sctx.textAlign = 'left'; sctx.fillStyle = '#f2e6d3';
+    sctx.font = `500 ${Math.min(12, Math.max(10, Math.round(SS * 0.11)))}px JetBrains Mono, monospace`; sctx.textAlign = 'left'; sctx.fillStyle = '#f2e6d3';
     const txt = d.closed ? `door shut: ${d.inLs.toFixed(1)} L/s under it` : `door: ${d.inLs.toFixed(0)} L/s in (${d.upperInLs.toFixed(0)} high, ${d.lowerInLs.toFixed(0)} low)`;
     sctx.fillText(txt, spx(0.15), spz(CEIL) + Math.max(14, SS * 0.28));
   }
@@ -388,7 +392,7 @@ export function startHouseAirflow3D(fig) {
     if (visible && !reduce) start();
     if (visible) { last = performance.now(); kick(); }
   }, { rootMargin: '100px' }).observe(fig);
-  ctx.drawImage(base, 0, 0, W, H); sctx.drawImage(sbase, 0, 0, SW, SH); drawFans();
+  ctx.drawImage(base, 0, 0, W, H); sctx.drawImage(sbase, 0, 0, SW, SH); sctx.drawImage(ssol, 0, 0, SW, SH); drawFans();
   if (reduce) { const b = $('.h3d-start'); b.hidden = false; b.addEventListener('click', () => { visible = true; start(); }); }
 }
 

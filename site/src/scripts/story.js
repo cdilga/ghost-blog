@@ -42,7 +42,7 @@ function init() {
     return;
   }
 
-  const hooks = { beads: beadsHook, terms: termsHook, rack: rackHook, house: houseHook, timeline: timelineHook, crt: crtHook, tvon: tvOnHook };
+  const hooks = { beads: beadsHook, terms: termsHook, rack: rackHook, house: houseHook, timeline: timelineHook, crt: crtHook, tvon: tvOnHook, wheel: wheelHook };
   for (const s of scenes) {
     const runs = s.hooksEl.map((h) => hooks[h.dataset.hook]?.(h)).filter(Boolean);
     if (!runs.length) continue;
@@ -266,6 +266,70 @@ function splitWords(el) {
 }
 
 /* ---------- scene hooks: stateless functions of local progress ---------- */
+
+// Rotary carousel ("Kodak projector" wheel): every post on the rim of a wheel whose hub sits below the
+// fold, so you see the top arc. Scroll turns it, with mechanical detents that make it settle on each
+// card. You can also drag or flick it; a flick coasts with momentum. Cards lean radially like gear teeth.
+function wheelHook(el) {
+  const cards = [...el.querySelectorAll('.wcard')];
+  const n = cards.length;
+  const scene = el.closest('.scene');
+  const video = scene.querySelector('.sandvid video');
+  let R = 500, step = 13, drag = 0, vel = 0, dragging = false, moved = 0, lastX = 0, lastScroll = 0, lastRun = 0, raf = 0;
+  function relayout() {
+    const w = el.offsetWidth;
+    R = Math.max(300, Math.min(620, w * 0.55));
+    // cards stand on the rim and splay outward, so their feet set the spacing: card width as degrees, plus a gap
+    step = ((cards[0]?.offsetWidth || 200) / R) * (180 / Math.PI) * 1.08;
+    el.style.setProperty('--R', R + 'px');
+    el.style.setProperty('--H', (cards[0]?.offsetHeight || 220) + 'px');
+  }
+  relayout();
+  const detent = (x) => x - Math.sin(2 * Math.PI * x) / (2 * Math.PI) * 0.85; // sticky near whole cards
+  function place() {
+    const turn = clamp(lastScroll * (n - 1) + drag, 0, n - 1);
+    const pos = detent(turn);
+    cards.forEach((c, i) => {
+      const a = (i - pos) * step;
+      const vis = Math.abs(a) < 105;
+      c.style.visibility = vis ? 'visible' : 'hidden';
+      if (!vis) return;
+      c.style.transform = `translate(-50%, 0) rotate(${a.toFixed(2)}deg) translateY(calc(var(--R) * -1)) translateY(-100%) scale(${(Math.abs(a) < step / 2 ? 1 : 0.86).toFixed(2)})`;
+      c.style.opacity = (1 - Math.min(1, Math.abs(a) / 110) * 0.75).toFixed(3);
+      c.classList.toggle('active', Math.abs(a) < step / 2);
+    });
+  }
+  // drag / flick
+  el.addEventListener('pointerdown', (e) => { dragging = true; moved = 0; lastX = e.clientX; vel = 0; el.setPointerCapture(e.pointerId); });
+  el.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX; lastX = e.clientX; moved += Math.abs(dx);
+    const d = -dx / ((R * Math.PI / 180) * step); drag += d; vel = d; place();
+  });
+  const release = () => {
+    if (!dragging) return; dragging = false;
+    const coast = () => { vel *= 0.92; drag += vel; place(); if (Math.abs(vel) > 0.002) raf = requestAnimationFrame(coast); };
+    raf = requestAnimationFrame(coast);
+  };
+  el.addEventListener('pointerup', release); el.addEventListener('pointercancel', release);
+  el.addEventListener('click', (e) => { if (moved > 6) { e.preventDefault(); e.stopPropagation(); } }, true);
+  el.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') { drag += 1; place(); } if (e.key === 'ArrowLeft') { drag -= 1; place(); } });
+  // background video only plays while this scene is on screen
+  const ensureVideo = () => {
+    if (!video) return;
+    if (!video.dataset.ready) {
+      video.dataset.ready = '1';
+      for (const [k, t] of [['srcWebm', 'video/webm'], ['srcMp4', 'video/mp4']]) { const so = document.createElement('source'); so.src = video.dataset[k]; so.type = t; video.append(so); }
+      video.load(); video.playbackRate = 0.5;
+    }
+    if (video.paused) video.play().catch(() => {});
+    lastRun = performance.now();
+  };
+  setInterval(() => { if (video && !video.paused && performance.now() - lastRun > 400) video.pause(); }, 500);
+  const run = (lp) => { lastScroll = clamp((lp - 0.12) / 0.76); place(); ensureVideo(); };
+  run.relayout = () => { relayout(); place(); };
+  return run;
+}
 
 // TV shutoff: the picture squashes into a bright horizontal line, the line shrinks to a dot, black.
 // Put data-hook="crt" on a wrapper around the scene's content; it needs a sibling .crt-line.
