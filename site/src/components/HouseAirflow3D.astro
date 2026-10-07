@@ -31,7 +31,7 @@ const { preset = 'hall', caption = '' } = Astro.props;
           <button type="button" data-orbit="home">Reset view</button>
         </div>
         <div class="h3d-vhint mono">drag to orbit, scroll or pinch to zoom</div>
-        <div class="h3d-hud mono"><span data-o="clock">0.0 s</span><span data-o="rate"></span><span data-o="grid"></span></div>
+        <div class="h3d-hud mono"><span data-o="clock">0.0 s</span><span data-o="rate"></span><span data-o="acclk"></span><span data-o="grid"></span></div>
         <button type="button" class="h3d-start" hidden>Start the simulation</button>
       </div>
       <div class="h3d-secwrap">
@@ -64,6 +64,7 @@ const { preset = 'hall', caption = '' } = Astro.props;
         <label class="vol-only">Walls cut at <output data-o="cut"></output><input type="range" min="0" max="2.6" step="0.1" value="1" data-i="cut" /></label>
         <label class="slice-only">Plan cut height <output data-o="z"></output><input type="range" min="0.3" max="2.5" step="0.1" value="1.2" data-i="z" /></label>
         <label>AC fan <output data-o="ac"></output><input type="range" min="0" max="350" step="25" value="300" data-i="ac" /></label>
+        <label>AC air warms up in <output data-o="decay"></output><input type="range" min="0" max="30" step="1" value="10" data-i="decay" /></label>
         <label>AC louvres <output data-o="louvre"></output><input type="range" min="-30" max="40" step="5" value="15" data-i="louvre" /></label>
         <label>Fan speed <output data-o="fan"></output><input type="range" min="1" max="6" step="0.5" value="4.5" data-i="fan" /></label>
         <label>Your fans' height <output data-o="fanz"></output><input type="range" min="0.3" max="2" step="0.1" value="0.9" data-i="fanz" /></label>
@@ -74,10 +75,11 @@ const { preset = 'hall', caption = '' } = Astro.props;
           <button type="button" data-i="reset">Restart</button>
         </div>
       </div>
+      <p class="h3d-status mono"><span data-o="settle" data-settled="false">AC air: settling</span><span data-o="deliv"></span></p>
       <div class="h3d-rooms" aria-live="off"></div>
     </div>
   </div>
-  <figcaption>{caption || 'A 3D simulation of the whole house from its model, with the default furniture as solid blocks. In the slices view, the plan is a horizontal cut at the chosen height and the strip below is a vertical cut through the chosen bedroom door (dashed line on the plan), so you can see air crossing the doorway under the 2.1 m door head. The 3D volume view draws the air through the whole house at once: drag to orbit, scroll or pinch to zoom, raise "show air above" to see only the faster air (or, coloured by AC air, only the air that came through the split system), and lower the walls to look into the rooms. "AC air" is the share of the air that has come through the split system since the start: the number that says whether cooled air is actually getting into a room. Room figures are averaged over the occupied zone, 0.1 to 1.8 m above the floor. To change the fans, drag any fan on the plan to move it and drag the dot at the tip of its arrow to aim it (a preset scenario becomes your own layout when you do). Add fan puts a new one in the hall, up to four; click a fan to select it, then Remove fan or the Delete key takes it away, and Clear fans removes them all. The clock is simulated time.'}</figcaption>
+  <figcaption>{caption || 'A 3D simulation of the whole house from its model, with the default furniture as solid blocks. In the slices view, the plan is a horizontal cut at the chosen height and the strip below is a vertical cut through the chosen bedroom door (dashed line on the plan), so you can see air crossing the doorway under the 2.1 m door head. The 3D volume view draws the air through the whole house at once: drag to orbit, scroll or pinch to zoom, raise "show air above" to see only the faster air (or, coloured by AC air, only the air that came through the split system), and lower the walls to look into the rooms. "AC air" is the share of the air in a room that is cool air from the split system. Cooled air slowly warms up (set by "AC air warms up in"; the heat gains of the house stand behind it), so each room settles to a steady share that depends on the layout, and moving a fan simply shifts it: no restart needed. The sums behind it run as a time-lapse (see the AC air clock) because the airflow settles in seconds and the temperature in minutes. "Bedrooms get" is the cooling that crosses the bedroom doors, from the doorway flow times its share of AC air, assuming the supply air is 8 °C colder than the room: the rate at which cool air is actually delivered. Room figures are averaged over the occupied zone, 0.1 to 1.8 m above the floor. To change the fans, drag any fan on the plan to move it and drag the dot at the tip of its arrow to aim it (a preset scenario becomes your own layout when you do). Add fan puts a new one in the hall, up to four; click a fan to select it, then Remove fan or the Delete key takes it away, and Clear fans removes them all. The clock is simulated time.'}</figcaption>
   <script type="application/json" class="h3d-house" set:html={JSON.stringify(house)} />
 </figure>
 <style>
@@ -128,10 +130,16 @@ const { preset = 'hall', caption = '' } = Astro.props;
   .h3d-toggles { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
   .h3d-toggles label { display: flex !important; gap: 6px; align-items: center; }
   .h3d-toggles input { accent-color: var(--orange); }
+  .h3d-status { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin: 10px 0 0; font-size: .74rem; color: var(--sand); }
+  .h3d-status [data-o="settle"]::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--orange); animation: h3d-pulse 1.2s ease-in-out infinite; }
+  .h3d-status [data-o="settle"][data-settled="true"]::before { background: #5ec8ff; animation: none; }
+  @keyframes h3d-pulse { 50% { opacity: .3; } }
+  @media (prefers-reduced-motion: reduce) { .h3d-status [data-o="settle"]::before { animation: none; } }
   .h3d-rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin: 10px 0 4px; }
   .h3d-rooms :global(div) { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px 9px; font-size: .74rem; color: var(--sand-dim); position: relative; overflow: hidden; }
   .h3d-rooms :global(b) { display: block; font: 500 .95rem var(--mono); color: #cfe9ff; }
   .h3d-rooms :global(span) { display: block; font: .72rem var(--mono); color: var(--sand); }
+  .h3d-rooms :global(em) { display: block; font: normal .7rem var(--mono); color: #cfe9ff; min-height: 1em; }
   .h3d-rooms :global(i) { position: absolute; left: 0; height: 3px; transition: width .4s; }
   .h3d-rooms :global(i.ac) { bottom: 3px; background: #5ec8ff; }
   .h3d-rooms :global(i.sp) { bottom: 0; background: var(--orange); }

@@ -10,7 +10,10 @@
 //  - The split-system head adds air at its louvre (mass and momentum, as its own equilibrium) and takes the same mass
 //    back out at its intake grille on top, so the house neither gains nor loses air. Injected air is tagged with the
 //    tracer at concentration 1. The tracer is advected with the flow (first-order upwind, monotone) and diffused with
-//    the LES eddy diffusivity. An optional decay stands in for heat gains (AC air slowly stops being "cool").
+//    the LES eddy diffusivity. A decay (e-folding time `decay`) stands in for heat gains: AC air slowly stops being "cool",
+//    so each room settles to a steady share instead of creeping towards 100%. The tracer is cheap next to the flow, so it
+//    runs `lapse` times per flow update: a time-lapse that reaches steady state in a minute or two of watching (the flow
+//    itself is near steady).
 //  - Fans are actuator discs: a fixed thrust T = rho (pi/4) D^2 U^2 spread over the cells of the disc, so the far-field
 //    momentum flux matches a real fan of that outlet diameter and speed even though the disc is only a few cells wide.
 //  - Optional buoyancy: AC air is denser (cooler by dT at full concentration), a Boussinesq body force.
@@ -136,6 +139,7 @@ export function createSim3D(house, opts = {}) {
   const freeSlip = opts.freeSlip ?? true;    // free-slip floor and ceiling (walls and furniture stay no-slip)
   let dT = opts.dT ?? 8;                   // K colder than the room at full AC-air concentration (0 = no buoyancy)
   let decayS = opts.decay ?? 0;            // e-folding time (s) of the tracer, 0 = none
+  let lapse = Math.max(1, opts.lapse ?? 1); // tracer updates per flow update (time-lapse of the tracer)
 
   const solid = new Uint8Array(N), room = new Int8Array(N), doorway = new Int16Array(N);
   let idx = new Int32Array(N), nF = 0, cellOf = new Int32Array(0);
@@ -339,11 +343,11 @@ export function createSim3D(house, opts = {}) {
     }
   }
 
-  let steps = 0, cref = 0, decayF = 1;
+  let steps = 0, cref = 0, decayF = 1, tcalls = 0;
   function reset() {
     for (let t = 0; t < nF; t++) for (let q = 0; q < 19; q++) { f[t * 19 + q] = WQ[q]; g[t * 19 + q] = WQ[q]; }
     U.fill(0); V.fill(0); Wz.fill(0); R.fill(1); NU.fill(nu0); c.fill(0); dc.fill(0);
-    steps = 0; cref = 0;
+    steps = 0; cref = 0; tcalls = 0;
   }
 
   function collide() {
@@ -370,29 +374,43 @@ export function createSim3D(house, opts = {}) {
     }
   }
 
-  // runs every other step with a doubled time step (it is cheap to be monotone at these speeds)
+  // The tracer runs every other step with a doubled time step (it is cheap to be monotone at these speeds). Its face
+  // velocities and diffusivities are worked out once per flow update (faces), then `lapse` tracer updates reuse them.
+  let faces = null; // per cell: upwind speed and diffusivity across its +x, +y and +z faces
+  function prepFaces() {
+    if (!faces || faces.length !== nF * 6) faces = new Float32Array(nF * 6);
+    const S = 2, D0 = 0.002 * S;
+    for (let t = 0; t < nF; t++) {
+      const nt = NU[t];
+      let m = px[t];
+      if (m >= 0) { faces[6 * t] = S * 0.5 * (U[t] + U[m]); faces[6 * t + 3] = Math.min(0.12, D0 + S * (0.5 * (nt + NU[m]) - nu0) / Sc); }
+      m = py[t];
+      if (m >= 0) { faces[6 * t + 1] = S * 0.5 * (V[t] + V[m]); faces[6 * t + 4] = Math.min(0.12, D0 + S * (0.5 * (nt + NU[m]) - nu0) / Sc); }
+      m = pz[t];
+      if (m >= 0) { faces[6 * t + 2] = S * 0.5 * (Wz[t] + Wz[m]); faces[6 * t + 5] = Math.min(0.12, D0 + S * (0.5 * (nt + NU[m]) - nu0) / Sc); }
+    }
+  }
   function tracer() {
-    const n = nF, S = 2;
-    const D0 = 0.002 * S;
+    const n = nF;
     for (let t = 0; t < n; t++) {
-      const ct = c[t], ut = U[t], vt = V[t], wt = Wz[t], nt = NU[t];
+      const ct = c[t], o = 6 * t;
       let m = px[t];
       if (m >= 0) {
-        const uf = S * 0.5 * (ut + U[m]), D = Math.min(0.12, D0 + S * (0.5 * (nt + NU[m]) - nu0) / Sc), cm = c[m];
-        if (uf > 0) dc[m] += uf * (ct - cm); else dc[t] -= uf * (cm - ct);
-        const df = D * (cm - ct); dc[t] += df; dc[m] -= df;
+        const uf = faces[o], cm = c[m], df = faces[o + 3] * (cm - ct);
+        dc[uf > 0 ? m : t] += uf > 0 ? uf * (ct - cm) : -uf * (cm - ct);
+        dc[t] += df; dc[m] -= df;
       }
       m = py[t];
       if (m >= 0) {
-        const uf = S * 0.5 * (vt + V[m]), D = Math.min(0.12, D0 + S * (0.5 * (nt + NU[m]) - nu0) / Sc), cm = c[m];
-        if (uf > 0) dc[m] += uf * (ct - cm); else dc[t] -= uf * (cm - ct);
-        const df = D * (cm - ct); dc[t] += df; dc[m] -= df;
+        const uf = faces[o + 1], cm = c[m], df = faces[o + 4] * (cm - ct);
+        dc[uf > 0 ? m : t] += uf > 0 ? uf * (ct - cm) : -uf * (cm - ct);
+        dc[t] += df; dc[m] -= df;
       }
       m = pz[t];
       if (m >= 0) {
-        const uf = S * 0.5 * (wt + Wz[m]), D = Math.min(0.12, D0 + S * (0.5 * (nt + NU[m]) - nu0) / Sc), cm = c[m];
-        if (uf > 0) dc[m] += uf * (ct - cm); else dc[t] -= uf * (cm - ct);
-        const df = D * (cm - ct); dc[t] += df; dc[m] -= df;
+        const uf = faces[o + 2], cm = c[m], df = faces[o + 5] * (cm - ct);
+        dc[uf > 0 ? m : t] += uf > 0 ? uf * (ct - cm) : -uf * (cm - ct);
+        dc[t] += df; dc[m] -= df;
       }
     }
     let sum = 0;
@@ -403,6 +421,7 @@ export function createSim3D(house, opts = {}) {
     }
     for (let s = 0; s < outlet.length; s++) c[outlet[s]] = 1;
     cref = sum / n;
+    tcalls++;
   }
 
   function step(count = 1) {
@@ -413,7 +432,7 @@ export function createSim3D(house, opts = {}) {
       sources();
       const tmp = f; f = g; g = tmp;
       steps++;
-      if ((steps & 1) === 0) tracer();
+      if ((steps & 1) === 0) { prepFaces(); for (let q = 0; q < lapse; q++) tracer(); }
     }
   }
 
@@ -445,7 +464,7 @@ export function createSim3D(house, opts = {}) {
       }
       return { name: d.name, room: d.room, closed: d.closed, inLs: inn * 1000, outLs: out * 1000, acInLs: acIn * 1000, upperInLs: upIn * 1000, lowerInLs: loIn * 1000, profile: prof };
     });
-    return { rooms, doors, nan, cref, time: steps * dt };
+    return { rooms, doors, nan, cref, time: steps * dt, scalarTime: tcalls * 2 * dt };
   }
   function layerOf(z) { return Math.min(nz, Math.max(1, Math.floor(z / h) + 1)); }
   // horizontal slice at height z: ux, uy, uz (m/s) and tracer, NaN-free, zero in solids
@@ -504,6 +523,7 @@ export function createSim3D(house, opts = {}) {
       if ('furniture' in o && o.furniture !== furniture) { furniture = o.furniture; geom = true; }
       if ('dT' in o) dT = o.dT;
       if ('decay' in o) decayS = o.decay;
+      if ('lapse' in o) lapse = Math.max(1, o.lapse | 0);
       if (geom) { buildMask(); reset(); }
       return geom;
     },

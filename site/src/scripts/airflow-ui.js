@@ -15,7 +15,7 @@ export function startHouseAirflow(fig, presets) {
   const ctx = cv.getContext('2d');
   const $ = (s) => fig.querySelector(s);
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const small = innerWidth < 700 || (navigator.hardwareConcurrency || 4) <= 4;
+  const small = innerWidth < 700 || (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 8) <= 4;
   const state = {
     preset: fig.dataset.preset || 'gap', custom: [], sel: -1, acSpeed: 3.5, louvre: 0, fanSpeed: 4.5, doorsOpen: true, furniture: true,
     h: small ? 0.13 : 0.1,
@@ -31,14 +31,31 @@ export function startHouseAirflow(fig, presets) {
   const MAX_FANS = 4;
   const editable = () => (state.preset === 'custom' ? state.custom : (presets[state.preset] || []).map((f) => ({ x: f.x, y: f.y, dir: [...f.dir] })));
   const cfg = () => ({ h: state.h, doorsOpen: state.doorsOpen, furniture: state.furniture, uRef: U_REF, ac: { on: state.acSpeed > 0, speed: state.acSpeed, louvre: state.louvre }, fans: fans() });
+  // anything that stops the simulation (no module workers, a crashed worker, a device too slow to produce a frame)
+  // shows in the note rather than leaving a blank plan; the figure then offers a retry
+  let watchdog = 0;
+  const diag = () => `[${(navigator.userAgent.match(/(SamsungBrowser|Firefox|Chrome|Safari)\/[\d.]+/) || ['browser'])[0]}, ${navigator.hardwareConcurrency || '?'} cores, ${navigator.deviceMemory || '?'} GB]`;
+  function fail(msg, err) {
+    console.error('airflow:', msg, err);
+    clearTimeout(watchdog);
+    try { worker?.terminate(); } catch { /* already gone */ }
+    worker = null; field = null;
+    const n = $('.hair-note'); n.hidden = false; n.textContent = `${msg} ${diag()}`;
+    const b = $('.hair-start'); b.textContent = 'Try again'; b.hidden = false;
+  }
   function start() {
     if (worker) return;
-    worker = new Worker(new URL('./airflow-worker.js', import.meta.url), { type: 'module' });
+    try { worker = new Worker(new URL('./airflow-worker.js', import.meta.url), { type: 'module' }); }
+    catch (err) { fail('This browser could not start the simulation (module web workers are needed).', err); return; }
+    worker.onerror = (e) => { e.preventDefault?.(); fail('The simulation worker could not load or crashed.', e.message || e); };
+    worker.onmessageerror = (e) => fail('The simulation worker sent data this browser could not read.', e);
     worker.onmessage = (e) => {
       const m = e.data;
-      if (m.type === 'grid') { grid = m; field = null; buildBase(); resetTracers(); lastSim = 0; }
+      if (m.type === 'error') fail(`The simulation stopped: ${m.message}.`, m.stack);
+      else if (m.type === 'grid') { grid = m; field = null; buildBase(); resetTracers(); lastSim = 0; }
       else if (m.type === 'field') {
         const now = performance.now();
+        clearTimeout(watchdog);
         if (lastMsgT && m.simTime > lastSim && now - lastMsgT > 4) simRate = simRate * 0.8 + 0.2 * ((m.simTime - lastSim) / ((now - lastMsgT) / 1000));
         lastMsgT = now; lastSim = m.simTime; field = m;
         $('[data-o="clock"]').textContent = `${m.simTime.toFixed(1)} s simulated`;
@@ -48,6 +65,8 @@ export function startHouseAirflow(fig, presets) {
     };
     worker.postMessage({ type: 'init', plan, cfg: cfg() });
     $('.hair-start').hidden = true;
+    clearTimeout(watchdog);
+    watchdog = setTimeout(() => { if (!field && worker) fail('The simulation has not produced anything after 12 seconds: this device may be too slow, or its browser blocks web workers.'); }, 12000);
     kick();
   }
   const send = (reset = false) => worker?.postMessage({ type: 'config', cfg: cfg(), reset });
@@ -306,12 +325,18 @@ export function startHouseAirflow(fig, presets) {
   size();
   addEventListener('resize', relayout);
   syncFanUi();
-  new IntersectionObserver(([e]) => {
-    visible = e.isIntersecting;
+  // run only while the figure is on screen and the tab is in front (a phone in a pocket should not keep solving)
+  let inView = false;
+  function syncRun() {
+    visible = inView && !document.hidden;
     worker?.postMessage({ type: 'pause', paused: !visible });
     if (visible && !reduce) start();
     if (visible && worker) { last = performance.now(); kick(); }
-  }, { rootMargin: '100px' }).observe(cv);
+  }
+  new IntersectionObserver(([e]) => { inView = e.isIntersecting; syncRun(); }, { rootMargin: '100px' }).observe(cv);
+  document.addEventListener('visibilitychange', syncRun);
   ctx.drawImage(base, 0, 0, W, H); drawFans();
-  if (reduce) { const b = $('.hair-start'); b.hidden = false; b.addEventListener('click', () => { visible = true; start(); }); }
+  const startBtn = $('.hair-start');
+  startBtn.addEventListener('click', () => { visible = true; $('.hair-note').hidden = true; start(); });
+  if (reduce) startBtn.hidden = false;
 }

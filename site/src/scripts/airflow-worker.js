@@ -1,7 +1,7 @@
 // Runs the floor-plan airflow solver off the main thread and streams the velocity field back.
 import { createSim, acFan } from './airflow.js';
 
-let sim = null, plan = null, running = true, cfg = null;
+let sim = null, plan = null, running = true, failed = false, cfg = null, timer = 0;
 const STEP_BUDGET_MS = 14; // per tick, so a tick plus the post fits comfortably in a frame
 let simTime = 0, dt = 0;
 
@@ -23,23 +23,33 @@ function configure(c, hard) {
   postMessage({ type: 'grid', NX: sim.NX, NY: sim.NY, h: sim.h, extent: sim.extent, solid: sim.solid, block: sim.block });
 }
 
+// a failure here (an allocation a phone refuses, a driver quirk) must reach the page, not die silently
+function fail(err) {
+  running = false; failed = true;
+  postMessage({ type: 'error', message: String((err && err.message) || err), stack: String((err && err.stack) || '').slice(0, 600) });
+}
+
 function tick() {
-  if (!sim) return;
-  if (running) {
+  timer = 0;
+  if (!sim || !running || failed) return; // paused: no timer at all until the page resumes us
+  try {
     const t0 = performance.now(); let n = 0;
-    while (performance.now() - t0 < STEP_BUDGET_MS) { sim.step(); n++; }
+    while (n < 1 || performance.now() - t0 < STEP_BUDGET_MS) { sim.step(); n++; }
     simTime += n * dt;
     const scale = cfg.uRef / sim.uLat; // lattice -> m/s
     const rs = sim.roomSpeeds(); for (const k in rs) rs[k] *= scale;
     const ux = sim.ux.slice(), uy = sim.uy.slice();
     postMessage({ type: 'field', ux, uy, scale, simTime, stepsPerSec: n / ((performance.now() - t0) / 1000), dt, rooms: rs }, [ux.buffer, uy.buffer]);
-  }
-  setTimeout(tick, 0);
+  } catch (err) { return fail(err); }
+  timer = setTimeout(tick, 0);
 }
+const kick = () => { if (!timer && running && !failed) timer = setTimeout(tick, 0); };
 
 onmessage = (e) => {
   const m = e.data;
-  if (m.type === 'init') { plan = m.plan; configure(m.cfg, true); tick(); }
-  else if (m.type === 'config') configure(m.cfg, m.reset);
-  else if (m.type === 'pause') running = !m.paused;
+  try {
+    if (m.type === 'init') { plan = m.plan; configure(m.cfg, true); kick(); }
+    else if (m.type === 'config') configure(m.cfg, m.reset);
+    else if (m.type === 'pause') { running = !m.paused; kick(); }
+  } catch (err) { fail(err); }
 };

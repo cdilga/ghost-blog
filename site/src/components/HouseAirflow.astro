@@ -9,6 +9,7 @@ const { preset = 'gap', caption = '' } = Astro.props;
 ---
 <figure class="chart wide hair" data-preset={preset}>
   <h3 style="margin:0 0 6px;font-size:1rem">Live: the split system and a Dreo fan, on the actual floor plan</h3>
+  <p class="hair-note mono" hidden></p>
   <div class="hair-stage">
     <canvas class="hair-canvas" aria-label="Top-down floor plan of the house with the simulated airflow drawn as glowing streaks" role="img"></canvas>
     <div class="hair-hud mono"><span data-o="clock">0.0 s</span><span data-o="rate"></span></div>
@@ -47,6 +48,7 @@ const { preset = 'gap', caption = '' } = Astro.props;
   .hair.placing .hair-canvas { cursor: crosshair; touch-action: none; }
   .hair-hud { position: absolute; left: 10px; top: 8px; display: flex; gap: 12px; font-size: .72rem; color: var(--sand-dim); pointer-events: none; }
   .hair-hud span:first-child { color: var(--sand); }
+  .hair-note { font-size: .74rem; color: var(--orange-hot); margin: 0 0 8px; }
   .hair-start { position: absolute; inset: 0; margin: auto; width: max-content; height: max-content; padding: 10px 18px; border-radius: 99px; border: 0; background: var(--orange); color: #1a0d00; font: 600 .95rem var(--font); cursor: pointer; }
   .hair-presets, .hair-fans { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; align-items: center; }
   .hair-fans { margin-top: 6px; font-size: .78rem; color: var(--sand-dim); }

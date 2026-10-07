@@ -10,6 +10,9 @@ const SPEED_MAX = 1.5;        // m/s at full heat colour
 const AC_MAX = 0.5;           // AC-air share at full colour
 const SECTION_LEN = { default: 6.3, Media: 4.9 };
 const MAX_FANS = 4, HIT_PX = 14;
+// cooling carried by a flow of AC air: rho (1.2 kg/m^3) x cp (1005 J/kg/K) x the supply air's 8 K, per L/s
+const W_PER_LS = 1.2 * 1005 * 8 / 1000;
+const MIN_LAYERS = 8, MIN_RATE = 1;  // the coarsest grid we will drop to, and the speed (x real time) below which we do
 // where Add fan puts a new fan: in the hall, blowing into a bedroom (the first spot not already taken)
 const SPOTS = [{ x: 7.36, y: 4.2, yaw: -90 }, { x: 14.17, y: 4.1, yaw: -90 }, { x: 3.7, y: 4.2, yaw: -90 }, { x: 9.4, y: 5.6, yaw: -90 }, { x: 16.7, y: 3.9, yaw: -90 }, { x: 12.4, y: 4.1, yaw: 180 }];
 
@@ -19,12 +22,13 @@ export function startHouseAirflow3D(fig) {
   const cv = $('.h3d-plan'), ctx = cv.getContext('2d');
   const sv = $('.h3d-sec'), sctx = sv.getContext('2d');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const small = innerWidth < 700 || (navigator.hardwareConcurrency || 4) <= 4;
+  const small = innerWidth < 700 || (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 8) <= 4;
   const sectionDoors = house.doors.filter((d) => /^(Bed \d Door|Media)$/.test(d.name)).map((d) => ({ ...d, label: d.name.replace(' Door', '') }));
   const state = {
     preset: fig.dataset.preset || 'hall', custom: [], fanSpeed: 4.5, fanZ: 0.9, fanTilt: 0,
     acFlow: 0.3, louvre: 15, doorsOpen: true, cold: true, z: 1.2, colour: 'speed', door: 'Bed 2',
     layers: small ? 10 : 12, view: 'slices', thr: 0.16, den: 1.4, cut: 1,
+    decayMin: 10, lapse: small ? 4 : 8,
   };
   const pad = 0.15, [ex0, ey0, ex1, ey1] = house.extent, CEIL = house.ceiling_z;
   let W = 0, H = 0, S = 1, dpr = 1;
@@ -38,31 +42,69 @@ export function startHouseAirflow3D(fig) {
   const door = () => sectionDoors.find((d) => d.label === state.door) || sectionDoors[0];
   const secAt = () => { const d = door().b; return (d[0] + d[3]) / 2; };
   const cfg = () => ({
-    layers: state.layers, doorsOpen: state.doorsOpen, furniture: true, dT: state.cold ? 8 : 0,
+    layers: state.layers, doorsOpen: state.doorsOpen, furniture: true, dT: state.cold ? 8 : 0, decay: state.decayMin * 60, lapse: state.lapse,
     ac: { on: state.acFlow > 0, flow: state.acFlow, speed: state.acFlow / SLOT_AREA, louvre: state.louvre },
     fans: fanList(), sliceZ: state.z, section: { axis: 'x', at: secAt() },
   });
+  // Anything that stops the simulation (no module workers, a crashed or out-of-memory worker, a device too slow to
+  // produce a frame) shows here rather than leaving a blank plan; the figure then offers a retry
+  let watchdog = 0, gridAt = 0, nanResets = 0, slowNoted = false;
+  const diag = () => {
+    const ua = (navigator.userAgent.match(/(SamsungBrowser|Firefox|Chrome|Safari)\/[\d.]+/) || ['browser'])[0];
+    return `[${ua}, ${navigator.hardwareConcurrency || '?'} cores, ${navigator.deviceMemory || '?'} GB, ${grid ? `${grid.NX}x${grid.NY}x${grid.NZ} cells` : 'no grid yet'}]`;
+  };
+  function fail(msg, err) {
+    console.error('airflow3d:', msg, err);
+    clearTimeout(watchdog);
+    try { worker?.terminate(); } catch { /* already gone */ }
+    worker = null; field = null;
+    showNote(`${msg} ${diag()}`);
+    const b = $('.h3d-start'); b.textContent = 'Try again'; b.hidden = false;
+  }
   function start() {
     if (worker) return;
-    worker = new Worker(new URL('./airflow3d-worker.js', import.meta.url), { type: 'module' });
+    try { worker = new Worker(new URL('./airflow3d-worker.js', import.meta.url), { type: 'module' }); }
+    catch (err) { fail('This browser could not start the simulation (module web workers are needed).', err); return; }
+    worker.onerror = (e) => { e.preventDefault?.(); fail('The simulation worker could not load or crashed.', e.message || e); };
+    worker.onmessageerror = (e) => fail('The simulation worker sent data this browser could not read.', e);
     worker.onmessage = (e) => {
       const m = e.data;
-      if (m.type === 'grid') { grid = m; field = null; lastSim = 0; lastMsgT = 0; buildBase(); buildSecBase(); resetTracers(); vol?.setGrid(m); out('grid', `${m.NX}×${m.NY}×${m.NZ} cells, ${(m.h * 100).toFixed(0)} cm`); }
+      if (m.type === 'error') fail(`The simulation stopped: ${m.message}.`, m.stack);
+      else if (m.type === 'grid') { grid = m; gridAt = performance.now(); field = null; lastSim = 0; lastMsgT = 0; buildBase(); buildSecBase(); resetTracers(); vol?.setGrid(m); out('grid', `${m.NX}×${m.NY}×${m.NZ} cells, ${(m.h * 100).toFixed(0)} cm`); }
       else if (m.type === 'volume') vol?.setData(m.sc, m.vel);
       else if (m.type === 'field') {
         const now = performance.now();
+        clearTimeout(watchdog);
         if (lastMsgT && m.simTime > lastSim && now - lastMsgT > 4) simRate = simRate * 0.85 + 0.15 * ((m.simTime - lastSim) / ((now - lastMsgT) / 1000));
-        if (m.simTime < lastSim) simRate = 0;
+        if (m.simTime < lastSim) { simRate = 0; smooth.clear(); }
         if (!lastMsgT || now - lastMsgT > 4 || m.simTime < lastSim) { lastMsgT = now; lastSim = m.simTime; } field = m;
         out('clock', `${m.simTime.toFixed(1)} s simulated`);
         out('rate', simRate ? `${simRate.toFixed(2)}× real time` : '');
+        out('acclk', `AC air clock ${(m.scalarTime / 60).toFixed(0)} min`);
         readouts(m);
+        if (m.nan && nanResets++ < 2) { send(true); resetTracers(); } // the solver blew up (a slow device can take a long step): restart it
+        else adapt(m, now);
       }
     };
     worker.postMessage({ type: 'init', house, cfg: cfg() });
     if (state.view === 'volume') worker.postMessage({ type: 'volume', on: true });
     $('.h3d-start').hidden = true;
+    clearTimeout(watchdog);
+    watchdog = setTimeout(() => { if (!field && worker) fail('The simulation has not produced anything after 12 seconds: this device may be too slow, or its browser blocks web workers.'); }, 12000);
     kick();
+  }
+  // Keep up with real time or give up detail: a phone that manages less than MIN_RATE x real time gets a coarser grid
+  // (down to MIN_LAYERS). The AC-air time-lapse stays as it is: it is the cheap part, and it is what makes the figure settle
+  function adapt(m, now) {
+    if (!m.msPerStep || now - gridAt < 3000) return;
+    const rate = m.dt / (m.msPerStep / 1000);
+    if (rate >= MIN_RATE) return;
+    if (state.layers > MIN_LAYERS) {
+      state.layers = Math.max(MIN_LAYERS, state.layers - 2);
+      showNote(`This device runs the simulation at ${rate.toFixed(1)}× real time, so it now uses a coarser grid (${(100 * CEIL / state.layers).toFixed(0)} cm cells). The pattern is the same, with less fine detail.`);
+      send(true); gridAt = now; return;
+    }
+    if (!slowNoted) { slowNoted = true; showNote(`This device runs the simulation at ${rate.toFixed(1)}× real time: it works, but the AC air takes a while to settle.`); }
   }
   const send = (reset = false) => worker?.postMessage({ type: 'config', cfg: cfg(), reset });
 
@@ -332,16 +374,33 @@ export function startHouseAirflow3D(fig) {
 
   // ---------- read-outs ----------
   const roomsEl = $('.h3d-rooms');
-  roomsEl.innerHTML = ROOMS_SHOWN.map((r) => `<div data-room="${r}">${r}<b data-k="ac">0% AC air</b><span data-k="sp">0.00 m/s</span><i class="ac" style="width:0"></i><i class="sp" style="width:0"></i></div>`).join('');
+  roomsEl.innerHTML = ROOMS_SHOWN.map((r) => `<div data-room="${r}">${r}<b data-k="ac">0% AC air</b><span data-k="sp">0.00 m/s</span><em data-k="cool"></em><i class="ac" style="width:0"></i><i class="sp" style="width:0"></i></div>`).join('');
+  // read-outs are smoothed (about 2.5 s) so the doorway flows, which are gusty, can be read
+  const smooth = new Map();
+  let lastRd = 0;
+  const sm = (k, v, a) => { const o = smooth.get(k), n = o === undefined ? v : o + (v - o) * a; smooth.set(k, n); return n; };
   function readouts(m) {
+    const now = performance.now(), a = lastRd ? 1 - Math.exp(-(now - lastRd) / 2500) : 1;
+    lastRd = now;
+    let bedW = 0, beds = 0;
     for (const el of roomsEl.children) {
-      const r = m.rooms[el.dataset.room]; if (!r) continue;
-      const d = m.doors.find((q) => q.room === el.dataset.room && /^Bed|^Media/.test(q.name));
-      el.querySelector('[data-k="ac"]').textContent = `${(100 * r.ac).toFixed(r.ac < 0.1 ? 1 : 0)}% AC air`;
-      el.querySelector('[data-k="sp"]').textContent = `${r.speed.toFixed(2)} m/s` + (d ? ` · door ${d.inLs.toFixed(0)} L/s` : '');
-      el.querySelector('i.ac').style.width = `${Math.min(100, (100 * r.ac) / AC_MAX)}%`;
+      const name = el.dataset.room, r = m.rooms[name]; if (!r) continue;
+      const d = m.doors.find((q) => q.room === name && /^Bed|^Media/.test(q.name));
+      const ac = sm(`ac:${name}`, r.ac, a);
+      el.querySelector('[data-k="ac"]').textContent = `${(100 * ac).toFixed(ac < 0.1 ? 1 : 0)}% AC air`;
+      el.querySelector('[data-k="sp"]').textContent = `${r.speed.toFixed(2)} m/s` + (d ? ` · door ${sm(`in:${name}`, d.inLs, a).toFixed(0)} L/s` : '');
+      // cool air delivered through the door: the doorway's flow into the room, weighted by its AC-air share
+      const cool = el.querySelector('[data-k="cool"]');
+      if (d) { const w = sm(`w:${name}`, d.acInLs, a) * W_PER_LS; bedW += w; beds++; cool.textContent = `≈ ${Math.round(w / 10) * 10} W of cooling`; }
+      else cool.textContent = '';
+      el.querySelector('i.ac').style.width = `${Math.min(100, (100 * ac) / AC_MAX)}%`;
       el.querySelector('i.sp').style.width = `${Math.min(100, (r.speed / 0.5) * 100)}%`;
     }
+    const acW = state.acFlow * 1000 * W_PER_LS;
+    out('deliv', !acW ? 'AC is off' : beds ? `Bedrooms get ≈ ${(bedW / 1000).toFixed(1)} kW of the AC's ${(acW / 1000).toFixed(1)} kW (${Math.round((100 * bedW) / acW)}%)` : '');
+    const settle = $('[data-o="settle"]');
+    settle.textContent = m.settled ? 'AC air: steady' : 'AC air: settling';
+    settle.dataset.settled = String(!!m.settled);
   }
 
   // ---------- controls ----------
@@ -366,6 +425,7 @@ export function startHouseAirflow3D(fig) {
   const fmtLouvre = (v) => (v === 0 ? 'level' : v > 0 ? `${v}° down` : `${-v}° up`);
   bind('z', (v) => { state.z = v; out('z', `${v.toFixed(1)} m`); buildBase(); tctx.clearRect(0, 0, W, H); for (let n = 0; n < NT; n++) spawn(n); });
   bind('ac', (v) => { state.acFlow = v / 1000; out('ac', v ? `${v} L/s` : 'off'); volOpts(); });
+  bind('decay', (v) => { state.decayMin = v; out('decay', v ? `${v} min` : 'never'); });
   bind('louvre', (v) => { state.louvre = v; out('louvre', fmtLouvre(v)); });
   bind('fan', (v) => { state.fanSpeed = v; out('fan', `${v.toFixed(1)} m/s`); });
   bind('fanz', (v) => { state.fanZ = v; out('fanz', `${v.toFixed(1)} m`); });
@@ -376,7 +436,7 @@ export function startHouseAirflow3D(fig) {
   $('[data-i="doors"]').addEventListener('change', (e) => { state.doorsOpen = e.target.checked; buildBase(); buildSecBase(); send(true); resetTracers(); volOpts(); });
   $('[data-i="cold"]').addEventListener('change', (e) => { state.cold = e.target.checked; send(false); });
   $('[data-i="reset"]').addEventListener('click', () => { send(true); resetTracers(); });
-  out('z', `${state.z.toFixed(1)} m`); out('ac', `${Math.round(state.acFlow * 1000)} L/s`); out('louvre', fmtLouvre(state.louvre));
+  out('z', `${state.z.toFixed(1)} m`); out('ac', `${Math.round(state.acFlow * 1000)} L/s`); out('louvre', fmtLouvre(state.louvre)); out('decay', `${state.decayMin} min`);
   out('fan', `${state.fanSpeed.toFixed(1)} m/s`); out('fanz', `${state.fanZ.toFixed(1)} m`); out('tilt', 'level');
   pressed('.h3d-presets button', 'preset', state.preset); pressed('.h3d-colour button', 'colour', state.colour); pressed('.h3d-doors button', 'door', state.door);
 
@@ -474,17 +534,18 @@ export function startHouseAirflow3D(fig) {
 
   // ---------- view: slices or the 3D volume ----------
   const vcv = $('.h3d-vol'), note = $('.h3d-note');
+  function showNote(t) { note.hidden = false; note.textContent = t; }
   let vol = null, volTried = false;
   function ensureVol() {
     if (volTried) return vol;
     volTried = true;
     try { vol = createVolumeView({ canvas: vcv, labels: $('.h3d-vlab'), house, small }); } catch (err) { console.warn(err); vol = null; }
     if (!vol) {
-      note.hidden = false; note.textContent = 'This browser has no WebGL2, so the 3D volume view is not available here: showing the slices.';
+      showNote('This browser has no WebGL2, so the 3D volume view is not available here: showing the slices.');
       $('[data-view="volume"]').disabled = true;
       return null;
     }
-    vcv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); setView('slices'); note.hidden = false; note.textContent = 'The 3D view lost its graphics context: showing the slices.'; });
+    vcv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); setView('slices'); showNote('The 3D view lost its graphics context: showing the slices.'); });
     if (grid) vol.setGrid(grid);
     volOpts();
     return vol;
@@ -591,14 +652,20 @@ export function startHouseAirflow3D(fig) {
   const queueFit = () => { if (!fitRaf) fitRaf = requestAnimationFrame(() => refit(false)); };
   if ('ResizeObserver' in window) new ResizeObserver(queueFit).observe(fig);
   addEventListener('resize', queueFit);
-  new IntersectionObserver(([e]) => {
-    visible = e.isIntersecting;
+  // run only while the figure is on screen and the tab is in front (a phone in a pocket should not keep solving)
+  let inView = false;
+  function syncRun() {
+    visible = inView && !document.hidden;
     worker?.postMessage({ type: 'pause', paused: !visible });
     if (visible && !reduce) start();
     if (visible) { last = performance.now(); kick(); }
-  }, { rootMargin: '100px' }).observe(fig);
+  }
+  new IntersectionObserver(([e]) => { inView = e.isIntersecting; syncRun(); }, { rootMargin: '100px' }).observe(fig);
+  document.addEventListener('visibilitychange', syncRun);
   ctx.drawImage(base, 0, 0, W, H); sctx.drawImage(sbase, 0, 0, SW, SH); sctx.drawImage(ssol, 0, 0, SW, SH); drawFans(); fanUi();
-  if (reduce) { const b = $('.h3d-start'); b.hidden = false; b.addEventListener('click', () => { visible = true; start(); }); }
+  const startBtn = $('.h3d-start');
+  startBtn.addEventListener('click', () => { visible = true; note.hidden = true; nanResets = 0; start(); });
+  if (reduce) startBtn.hidden = false;
 }
 
 function inPoly(x, y, poly) {
