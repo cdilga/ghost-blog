@@ -1,9 +1,18 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getCollection } from 'astro:content';
+import houseData from '../data/house-3d.json';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const allPosts = (await getCollection('blog', (p) => !p.data.draft)).sort((a, b) => +b.data.date - +a.data.date);
 const img = (p) => (p ? `${base}${p}` : '');
+const r2 = (a) => a.map((v) => Math.round(v * 100) / 100);
+const house3 = JSON.stringify({
+  rooms: houseData.rooms.map((r) => ({ poly: r.poly.map(r2) })),
+  solids: houseData.solids.map((x) => ({ b: r2(x.b) })),
+  joinery: houseData.joinery.map((x) => ({ b: r2(x.b) })),
+  furniture: houseData.furniture.map((x) => ({ b: r2(x.b) })),
+  ac: { b: r2(houseData.ac.b) },
+});
 
 // Scene lengths are in viewport-heights of scroll. Total drives the track height in CSS.
 const scenes = [
@@ -110,6 +119,7 @@ const term = [
 
       <!-- 1. PLAN: beads -->
       <section class="scene" data-scene="plan" data-bg="a>b" data-bg-dim=".62" data-len={S('plan').len} aria-label="Planning with beads">
+        <div class="marquee" data-hook="marquee" aria-hidden="true"><div class="mq-row">{'plan · depend · claim · review · merge · '.repeat(3)}</div><div class="mq-row alt">{'bd ready · bd ready · bd ready · '.repeat(3)}</div></div>
         <div class="content">
           <p class="kicker" data-fx="fade" data-a="0" data-d=".1">01 · Plan</p>
           <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Every idea becomes a bead first.</h2>
@@ -175,6 +185,7 @@ const term = [
             <a class="cta" data-fx="rise" data-a=".32" data-d=".15" href="https://physicalsoccer.dilger.dev">physicalsoccer.dilger.dev</a>
           </div>
           <div class="duo" data-fx="tilt" data-a=".05" data-d=".5">
+            <div class="scoreboard" data-hook="score" data-goals=".24:r,.38:b,.52:b,.66:r,.8:r" aria-hidden="true"><span class="sb-team red">RED ◆</span><span class="flap" data-team="red"><span class="flap-cur">0</span><span class="flap-next">0</span></span><b>:</b><span class="flap" data-team="blue"><span class="flap-cur">0</span><span class="flap-next">0</span></span><span class="sb-team blue">BLUE ●</span><span class="sb-goal">GOAL!</span></div>
             <div class="browser"><div class="chrome"><i></i><i></i><i></i><span>physicalsoccer.dilger.dev</span></div><div class="shot"><img src={`${base}/shots/physicalsoccer-d.jpg`} alt="A Physical Soccer match: blocky red and blue footballers tangle near the ball in a cartoon stadium" loading="lazy" /></div></div>
             <div class="phone" data-fx="rise" data-a=".3" data-d=".2"><img src={`${base}/shots/physicalsoccer-m.jpg`} alt="The phone join screen: scan the host QR or enter a room code" loading="lazy" /></div>
           </div>
@@ -199,6 +210,11 @@ const term = [
 
       <!-- 5. BOOKS -->
       <section class="scene" data-scene="books" data-len={S('books').len} aria-label="Aviation ABCs">
+        <svg class="flightpath" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice" data-hook="plane" aria-hidden="true">
+          <path class="fp-path" d="M-40 150 C 120 110, 260 40, 400 95 S 560 190, 650 120 C 720 60, 660 10, 610 40 C 565 70, 610 130, 700 110 C 820 80, 900 30, 1060 15" />
+          <path class="fp-trail" d="M-40 150 C 120 110, 260 40, 400 95 S 560 190, 650 120 C 720 60, 660 10, 610 40 C 565 70, 610 130, 700 110 C 820 80, 900 30, 1060 15" />
+          <g class="fp-plane"><path d="M14 0 L-12 -9 L-6 0 L-12 9 Z" /><path d="M14 0 L-6 0 L-12 9 Z" class="fp-fold" /></g>
+        </svg>
         <div class="content split">
           <div class="copy">
             <p class="kicker" data-fx="fade" data-a="0" data-d=".1">06 · Dilger Books</p>
@@ -215,6 +231,7 @@ const term = [
 
       <!-- 6. DISHMATE -->
       <section class="scene" data-scene="dishmate" data-len={S('dishmate').len} aria-label="Dishmate">
+        <canvas class="bubbles" data-hook="bubbles" aria-hidden="true"></canvas>
         <div class="content split flip">
           <div class="duo" data-fx="tilt" data-a=".05" data-d=".5">
             <div class="browser"><div class="chrome"><i></i><i></i><i></i><span>dishmate</span></div><div class="shot"><img data-fx="pan" src={`${base}/shots/dishmate-d.jpg`} alt="Dishmate load advisor: pick what is in the load, the soil type and water hardness" loading="lazy" /></div></div>
@@ -241,24 +258,7 @@ const term = [
           </div>
           <div class="duo homeduo" data-fx="tilt" data-a=".05" data-d=".5">
             <div class="browser"><div class="chrome"><i></i><i></i><i></i><span>private viewer</span></div><div class="shot morph"><img src={`${base}/shots/home-street-model.jpg`} alt="The house twin from across the street: the generated model with stand-in trees" loading="lazy" /><img class="morph-to" data-fx="fade" data-a=".42" data-d=".2" src={`${base}/shots/home-street-muse.jpg`} alt="The same camera pose turned into a photographic garden visualisation by an image model" loading="lazy" /><span class="morph-tag mono" data-fx="out" data-a=".42" data-d=".12">engine frame</span><span class="morph-tag mono" data-fx="fade" data-a=".5" data-d=".12">AI visualisation · draft proposal</span></div></div>
-            <svg viewBox="0 0 520 340" class="house inset" role="img" aria-label="House model moving from slab to frame to finished" data-hook="house">
-            <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1a12" /><stop offset="1" stop-color="#120d0a" /></linearGradient></defs>
-            <rect width="520" height="340" rx="16" fill="url(#sky)" stroke="rgba(242,230,211,.18)" />
-            <path d="M30 270 L260 310 L490 270 L260 230 Z" fill="#2c1e15" stroke="rgba(242,230,211,.25)" />
-            <g class="slab"><path d="M120 262 L260 290 L400 262 L260 234 Z" fill="#6b5846" /><path d="M120 262 L260 290 L260 300 L120 272 Z" fill="#4c3d30" /><path d="M260 290 L400 262 L400 272 L260 300 Z" fill="#574736" /></g>
-            <g class="frame" fill="none" stroke="#ff9a4d" stroke-width="2">
-              {[0, 1, 2, 3, 4, 5].map((i) => <line x1={130 + i * 24} y1={256 - i * 5.6} x2={130 + i * 24} y2={176 - i * 5.6} />)}
-              {[0, 1, 2, 3, 4, 5].map((i) => <line x1={270 + i * 24} y1={286 - i * 5.6 - 28} x2={270 + i * 24} y2={206 - i * 5.6 - 28} />)}
-              <path d="M120 176 L260 204 L400 176 M120 176 L260 148 L400 176 M260 148 L260 204" />
-            </g>
-            <g class="finished">
-              <path d="M120 262 L260 290 L260 200 L120 172 Z" fill="#d9c4a4" /><path d="M260 290 L400 262 L400 172 L260 200 Z" fill="#b89f7c" />
-              <path d="M110 176 L260 142 L410 176 L260 206 Z" fill="#8a3b1d" /><path d="M110 176 L260 206 L260 218 L110 188 Z" fill="#5d2813" />
-              <rect x="150" y="204" width="34" height="30" fill="#2e4150" transform="skewY(11)" /><rect x="296" y="242" width="38" height="34" fill="#2e4150" transform="skewY(-11)" />
-            </g>
-            <g class="marks">{[[200, 232], [330, 244], [276, 256]].map(([x, y], i) => <g data-i={i}><circle cx={x} cy={y} r="7" fill="#ff7a1a" /><circle cx={x} cy={y} r="14" fill="none" stroke="#ff7a1a" stroke-opacity=".5" /></g>)}</g>
-            <text class="stagelabel" x="28" y="44" fill="#f2e6d3" font-size="15" font-family="JetBrains Mono, monospace">SLAB</text>
-          </svg>
+            <div class="house3d inset"><canvas data-hook="house3d" role="img" aria-label="The house model assembling in 3D: slab, then walls, then furniture, then air flowing from the split system down the hall"></canvas><span class="h3-label mono">SLAB</span><script type="application/json" is:inline set:html={house3}></script></div>
           </div>
         </div>
       </section>
