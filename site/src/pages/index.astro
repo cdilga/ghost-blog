@@ -5,17 +5,6 @@ import houseData from '../data/house-3d.json';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const allPosts = (await getCollection('blog', (p) => !p.data.draft)).sort((a, b) => +b.data.date - +a.data.date);
 const img = (p) => (p ? `${base}${p}` : '');
-// a tumbleweed: a tangle of looping arcs, different every build
-const weed = (() => {
-  let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const d = [];
-  for (let i = 0; i < 26; i++) {
-    const a = rnd() * 6.283, r1 = 18 + rnd() * 26, b = a + 1.2 + rnd() * 2.4, r2 = 14 + rnd() * 30;
-    const p = (ang, r) => `${(50 + Math.cos(ang) * r).toFixed(1)} ${(50 + Math.sin(ang) * r).toFixed(1)}`;
-    d.push(`M${p(a, r1)} Q${p((a + b) / 2 + (rnd() - 0.5), 8 + rnd() * 40)} ${p(b, r2)}`);
-  }
-  return d.join(' ');
-})();
 const r2 = (a) => a.map((v) => Math.round(v * 100) / 100);
 const house3 = JSON.stringify({
   rooms: houseData.rooms.map((r) => ({ poly: r.poly.map(r2) })),
@@ -45,12 +34,12 @@ const total = scenes.reduce((a, s) => a + s.len, 0);
 const S = (id) => scenes.find((s) => s.id === id);
 
 const beads = [
-  { id: 'bd-12', t: 'Lobby + QR join', x: 20, y: 30, done: 0.12 },
-  { id: 'bd-13', t: 'Phone as joystick', x: 20, y: 120, done: 0.2 },
-  { id: 'bd-14', t: 'Race physics', x: 250, y: 75, done: 0.38 },
-  { id: 'bd-15', t: 'Demolition mode', x: 480, y: 30, done: 0.55 },
-  { id: 'bd-16', t: 'Playtest round', x: 480, y: 120, done: 0.68 },
-  { id: 'bd-17', t: 'Ship build', x: 710, y: 75, done: 0.85 },
+  { id: 'br-7f3a', t: 'Lobby + QR join', x: 20, y: 30, done: 0.12 },
+  { id: 'br-e9b1', t: 'Phone as joystick', x: 20, y: 120, done: 0.2 },
+  { id: 'br-c41d', t: 'Race physics', x: 250, y: 75, done: 0.38 },
+  { id: 'br-2a8e', t: 'Demolition mode', x: 480, y: 30, done: 0.55 },
+  { id: 'br-91fb', t: 'Playtest round', x: 480, y: 120, done: 0.68 },
+  { id: 'br-d05c', t: 'Ship build', x: 710, y: 75, done: 0.85 },
 ];
 // The development story, oldest first. Links go to the archived posts from each era.
 const timeline = [
@@ -65,14 +54,14 @@ const timeline = [
 ];
 const edges = [[0, 2], [1, 2], [2, 3], [2, 4], [3, 5], [4, 5]];
 const term = [
-  ['claude-1', 'bd-12 lobby + QR join', 'tests green'],
-  ['claude-2', 'bd-13 phone as joystick', 'tilt calibration'],
-  ['codex-3', 'bd-14 race physics', 'tuning grip curve'],
-  ['claude-4', 'bd-15 demolition', 'collision damage'],
-  ['claude-5', 'bd-16 playtest notes', 'summarising round 22'],
-  ['claude-6', 'bd-21 books checkout', 'stripe sandbox ok'],
-  ['codex-7', 'bd-30 house model', 'rebuilding stage: frame'],
-  ['claude-8', 'bd-31 blog charts', 'plotting jet decay'],
+  ['claude-1', 'br-7f3a lobby + QR join', 'tests green'],
+  ['claude-2', 'br-e9b1 phone as joystick', 'tilt calibration'],
+  ['codex-3', 'br-c41d race physics', 'tuning grip curve'],
+  ['claude-4', 'br-2a8e demolition', 'collision damage'],
+  ['claude-5', 'br-91fb playtest notes', 'summarising round 22'],
+  ['claude-6', 'br-6b2e books checkout', 'stripe sandbox ok'],
+  ['codex-7', 'br-30aa house model', 'rebuilding stage: frame'],
+  ['claude-8', 'br-f4c7 blog charts', 'plotting jet decay'],
 ];
 ---
 <Base title="Chris Dilger | Building with a fleet of agents" intro>
@@ -84,7 +73,7 @@ const term = [
       <div class="motion-ui mono" id="motion-ui" hidden>
         <button type="button" class="mu-pill" data-i="pill" aria-expanded="false" aria-controls="mu-panel">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.8l1.4-2h6.6l1.4 2h1.8A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /><circle cx="12" cy="13" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
-          <span data-o="label">why enable camera?</span><i class="mu-live" aria-hidden="true"></i>
+          <span data-o="label">camera</span><i class="mu-live" aria-hidden="true"></i>
         </button>
         <div class="mu-panel" id="mu-panel" role="dialog" aria-label="Camera and motion" hidden>
           <p class="mu-title">Why enable the camera?</p>
@@ -94,11 +83,7 @@ const term = [
           <div class="mu-actions"><button type="button" data-i="camera">Enable camera</button><button type="button" data-i="tilt" hidden>Use tilt instead</button></div>
           <p class="mu-src">now moving with <b data-o="src">scroll</b></p>
         </div>
-        <div class="mu-nudge" role="note" hidden>
-          <span class="mu-nudge-tag">site tip</span>
-          <p>This page can follow your head through your camera, on your device only.</p>
-          <div><button type="button" data-i="nudge-yes">Show me</button><button type="button" data-i="nudge-no">Not now</button></div>
-        </div>
+        <button type="button" class="mu-ask" data-i="ask" hidden>what's this?</button>
       </div>
       <nav class="rail" id="rail" aria-label="Sections">
         {scenes.map((s) => <button type="button" data-goto={s.id} aria-label={s.label}><span>{s.label}</span></button>)}
@@ -113,8 +98,14 @@ const term = [
           <canvas class="sandstorm" aria-hidden="true"></canvas>
           <h1 class="hn" aria-label="Chris Dilger"><span class="hn-line" data-t="CHRIS">CHRIS</span><span class="hn-line" data-t="DILGER">DILGER</span></h1>
           <p class="hn-sub mono">software engineer · builds with a fleet of agents</p>
-          <svg class="tumbleweed" viewBox="0 0 100 100" aria-hidden="true"><path d={weed} /></svg>
-          <p class="hn-hint mono" aria-hidden="true">↑ pull past the top to replay</p>
+          <svg class="lizard" viewBox="0 0 160 92" aria-hidden="true">
+            <g class="frill"><path d="M60 34 L37 42 A23 23 0 1 1 79 49 Z" /><path class="ribs" d="M60 34 L38 30 M60 34 L44 17 M60 34 L58 11 M60 34 L72 14 M60 34 L81 24 M60 34 L83 38" /></g>
+            <path class="body" d="M92 58 C118 60 140 66 158 74 C140 71 118 67 95 66 Z M99 65 C91 51 77 39 63 35 C58 41 62 49 70 55 C80 63 90 69 99 65 Z M65 37 C59 31 51 27 41 26 C35 26 31 28 31 30 C37 32 45 34 53 39 Z" />
+            <circle class="eye" cx="45" cy="28.5" r="1.4" />
+            <path class="arm" d="M70 45 L63 53 L59 52" />
+            <path class="leg a" d="M96 62 L105 74 L95 86 L90 87" />
+            <path class="leg b" d="M96 62 L88 74 L99 85 L104 86" />
+          </svg>
           <svg width="0" height="0" aria-hidden="true" style="position:absolute"><filter id="heat" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.008 0.05" numOctaves="2" seed="4"><animate attributeName="baseFrequency" dur="1.6s" values="0.008 0.05;0.011 0.08;0.008 0.05" repeatCount="indefinite" /></feTurbulence><feDisplacementMap in="SourceGraphic" scale="7" /></filter></svg>
         </div>
         <div class="content">
@@ -150,11 +141,11 @@ const term = [
 
       <!-- 1. PLAN: beads -->
       <section class="scene" data-scene="plan" data-bg="a>b" data-bg-dim=".62" data-len={S('plan').len} aria-label="Planning with beads">
-        <div class="marquee" data-hook="marquee" aria-hidden="true"><div class="mq-row">{'plan · depend · claim · review · merge · '.repeat(3)}</div><div class="mq-row alt">{'bd ready · bd ready · bd ready · '.repeat(3)}</div></div>
+        <div class="marquee" data-hook="marquee" aria-hidden="true"><div class="mq-row">{'plan · depend · claim · review · merge · '.repeat(3)}</div><div class="mq-row alt">{'br ready · br ready · br ready · '.repeat(3)}</div></div>
         <div class="content">
           <p class="kicker" data-fx="fade" data-a="0" data-d=".1">01 · Plan</p>
           <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Every idea becomes a bead first.</h2>
-          <p class="lede" data-fx="reveal" data-a=".15" data-d=".36"><b>Beads</b> is an issue tracker that lives in git, with real dependencies. <code class="mono">bd ready</code> lists what is unblocked, so any agent can pick up the next piece without me explaining the plan again.</p>
+          <p class="lede" data-fx="reveal" data-a=".15" data-d=".36"><b>Beads</b> (Jeffrey Emanuel's <code class="mono">br</code>, beads in Rust) is an issue tracker that lives in git, with real dependencies. <code class="mono">br ready</code> lists what is unblocked, so any agent can pick up the next piece without me explaining the plan again.</p>
           <p class="stat mono" data-fx="rise" data-a=".1" data-d=".1"><span data-ready>0</span> ready to claim</p>
           <svg class="graph" viewBox="0 0 900 190" role="img" aria-label="A dependency graph of tasks being completed" data-hook="beads" style="margin-top:20px">
             {edges.map(([a, b], i) => {

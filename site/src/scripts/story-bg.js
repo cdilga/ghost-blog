@@ -57,14 +57,14 @@ function motionUI() {
   const pill = ui.querySelector('[data-i="pill"]'), label = ui.querySelector('[data-o="label"]'), src = ui.querySelector('[data-o="src"]');
   const panel = ui.querySelector('.mu-panel'), view = ui.querySelector('.mu-view'), pv = view.querySelector('canvas'), pctx = pv.getContext('2d');
   const camBtn = ui.querySelector('[data-i="camera"]'), tiltBtn = ui.querySelector('[data-i="tilt"]'), title = ui.querySelector('.mu-title');
-  const nudge = ui.querySelector('.mu-nudge');
+  const ask = ui.querySelector('.mu-ask');
   const names = { pointer: 'your pointer', tilt: 'tilt', camera: 'the camera', none: 'scroll' };
   const open = (v) => { panel.hidden = !v; pill.setAttribute('aria-expanded', String(v)); if (v) { hideNudge(); drawView(); } };
   const refresh = (s) => {
     const on = s.source === 'camera';
     ui.hidden = !(s.available.camera || s.available.tilt);
     ui.classList.toggle('cam-on', on);
-    label.textContent = on ? 'camera on' : s.available.camera ? 'why enable camera?' : 'tilt to look around';
+    label.textContent = on ? 'camera on' : s.available.camera ? 'camera' : 'tilt to look around';
     title.textContent = on ? 'The camera is on' : 'Why enable the camera?';
     camBtn.textContent = on ? 'Turn camera off' : 'Enable camera';
     camBtn.hidden = !s.available.camera;
@@ -94,20 +94,18 @@ function motionUI() {
     pctx.fillStyle = '#ff7a1a'; pctx.fillRect(15 + d.x * 14, 15 + d.y * 14, 2, 2);
     requestAnimationFrame(drawView);
   }
-  // first visit only: a small, clearly-labelled tip pointing at the pill, after the opening has played
+  // a tiny "what's this?" bubble over the pill, until the visitor has looked once
   const SEEN = 'cd-camera-tip';
   const seen = () => { try { return localStorage.getItem(SEEN); } catch { return '1'; } };
-  function hideNudge() { if (!nudge.hidden) { nudge.classList.remove('show'); setTimeout(() => { nudge.hidden = true; }, 300); } }
+  function hideNudge() { if (!ask.hidden) { ask.classList.remove('show'); setTimeout(() => { ask.hidden = true; }, 250); } try { localStorage.setItem(SEEN, '1'); } catch {} }
   function showNudge() {
     const s = getMotion();
     if (seen() || !s.available.camera || s.source === 'camera' || !panel.hidden) return;
-    try { localStorage.setItem(SEEN, '1'); } catch {}
-    nudge.hidden = false; requestAnimationFrame(() => nudge.classList.add('show'));
-    setTimeout(hideNudge, 14000);
+    ask.hidden = false; requestAnimationFrame(() => ask.classList.add('show'));
+    setTimeout(() => { if (!ask.hidden) { ask.classList.remove('show'); setTimeout(() => { ask.hidden = true; }, 250); } }, 12000);
   }
-  ui.querySelector('[data-i="nudge-yes"]').addEventListener('click', () => { hideNudge(); open(true); });
-  ui.querySelector('[data-i="nudge-no"]').addEventListener('click', hideNudge);
-  addEventListener('intro-done', () => setTimeout(showNudge, 1600), { once: true });
+  ask.addEventListener('click', () => open(true));
+  addEventListener('intro-done', () => setTimeout(showNudge, 1200), { once: true });
   restoreCamera();
 }
 

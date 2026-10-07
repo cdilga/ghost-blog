@@ -34,11 +34,13 @@ function start() {
       state.ty = clamp((e.clientY / innerHeight) * 2 - 1);
     }, { passive: true });
   }
-  // tilt: available everywhere DeviceOrientationEvent exists; on iOS 13+ it needs a user gesture
-  if ('DeviceOrientationEvent' in window) {
-    state.available.tilt = coarse;
+  // tilt: the default on phones, but only offered once it demonstrably works. Some browsers (Brave, for one)
+  // expose DeviceOrientationEvent yet never deliver readings, so we listen first and only then call it available.
+  // iOS 13+ needs a tap to ask permission, so there it is offered as a button.
+  if (coarse && 'DeviceOrientationEvent' in window) {
     const needsPermission = typeof DeviceOrientationEvent.requestPermission === 'function';
-    if (coarse && !needsPermission) enableTilt();
+    if (needsPermission) state.available.tilt = true;
+    else enableTilt();
   }
   state.available.camera = !!navigator.mediaDevices?.getUserMedia;
   // smoothing loop (critically damped follow)
@@ -66,6 +68,7 @@ export async function enableTilt() {
   tiltOn = true;
   addEventListener('deviceorientation', (e) => {
     if (e.beta == null || e.gamma == null) return;
+    if (!state.available.tilt) { state.available.tilt = true; emit(); }
     if (state.source === 'camera') return;
     if (!base) base = { b: e.beta, g: e.gamma };
     // slowly re-centre so a change in how the phone is held does not pin the scene to one side

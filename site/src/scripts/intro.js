@@ -5,7 +5,7 @@
 //   2.0s   the sand hardens into sandstone (the real, selectable heading fades in under the grains)
 //   2.15s  the whole name rears up... and SLAMS into the dune: squash, screen shake, a plume of dust
 //          thrown up from the baseline, a shockwave rippling out across the sand and a flare of sun
-//   2.7s   heat haze shimmers through the letters, a tumbleweed bounces through, the subtitle lands
+//   2.7s   heat haze shimmers through the letters, a frilled-neck lizard sprints through, the subtitle lands
 // Scrolling then erodes the name back into sand, blown right to left by the wind (reversible), and pulling
 // past the top of the page replays the whole thing. Reduced motion and ?static skip straight to the name.
 //
@@ -17,7 +17,7 @@ const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const easeOut3 = (t) => 1 - (1 - t) ** 3;
 const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches || new URLSearchParams(location.search).has('static');
-const SAND = ['#ffe2b0', '#f7c483', '#efa45c', '#d9803f', '#b85d2c', '#8e3f1e'];
+const SAND = ['#fff3e0', '#f7e4c6', '#efd0a2', '#e6b67f', '#d89a5e', '#c27c45']; // sand that settles to the name's flat off-white
 // ?introAt=1200 freezes the timeline at that moment (for checking each phase in screenshots)
 const FREEZE = +new URLSearchParams(location.search).get('introAt') || 0;
 const T = { storm: 250, harden: 2050, lift: 2300, slam: 2520, impact: 2640, settle: 3000, end: 4500 };
@@ -52,7 +52,7 @@ export function heroHook(el) {
   const ctx = cv.getContext('2d');
   const name = el.querySelector('.hn');
   const lines = [...name.querySelectorAll('.hn-line')];
-  const sub = el.querySelector('.hn-sub'), hint = el.querySelector('.hn-hint'), weed = el.querySelector('.tumbleweed');
+  const sub = el.querySelector('.hn-sub'), lizard = el.querySelector('.lizard');
   const stage = el.closest('.stage');
   let W = 0, H = 0, dpr = 1, P = null, dust = null, plume = [], clouds = [], t0 = -1, raf = 0, lastLp = 0, eroding = false, played = false;
 
@@ -239,16 +239,21 @@ export function heroHook(el) {
     eroding = false; plume = []; clouds = []; t0 = performance.now();
     name.style.opacity = 0; if (sub) sub.style.opacity = 0;
     el.classList.remove('played');
-    if (weed) { weed.getAnimations().forEach((a) => a.cancel()); setTimeout(() => tumble(), T.impact + 150); }
+    if (lizard) { lizard.getAnimations().forEach((a) => a.cancel()); clearTimeout(lizT); lizT = setTimeout(run, T.impact + 250); }
     raf = requestAnimationFrame(frame);
   }
 
-  function tumble() {
-    if (!weed || reduce) return;
-    const w = W + 240, kf = [];
-    for (let i = 0; i <= 12; i++) { const f = i / 12; kf.push({ transform: `translate(${(W + 120 - w * f).toFixed(0)}px, ${(-Math.abs(Math.sin(f * Math.PI * 5)) * 70 * (1 - f * 0.5)).toFixed(0)}px) rotate(${(-f * 1080).toFixed(0)}deg)`, offset: f }); }
-    weed.animate(kf, { duration: 3200, easing: 'linear', fill: 'both' });
+  // a frilled-neck lizard, startled by the impact, sprints across the sand on its hind legs, frill out
+  let lizT = 0;
+  function run() {
+    if (!lizard || reduce) return;
+    const kf = [];
+    for (let i = 0; i <= 16; i++) { const f = i / 16; kf.push({ transform: `translate(${(W + 60 - (W + 320) * f).toFixed(0)}px, ${(-Math.abs(Math.sin(f * Math.PI * 9)) * 7).toFixed(1)}px)`, offset: f }); }
+    lizard.classList.add('running');
+    const a = lizard.animate(kf, { duration: 2600, easing: 'cubic-bezier(.3,.1,.6,1)', fill: 'both' });
+    a.onfinish = () => lizard.classList.remove('running');
   }
+
 
   // scroll erosion: grains lift off right to left as the wind takes the name (fully reversible)
   function erode(lp) {
@@ -289,8 +294,9 @@ export function heroHook(el) {
 
   return (lp) => {
     lastLp = lp;
-    if (hint) hint.style.opacity = played && lp < 0.03 ? 1 : 0;
     if (reduce) { name.style.opacity = 1 - clamp((lp - 0.14) / 0.12); if (sub) sub.style.opacity = name.style.opacity; return; }
+    // scrolling on before the opening has finished: skip straight to its end so the name can erode away
+    if (raf && lp > 0.1) { cancelAnimationFrame(raf); raf = 0; finish(); }
     if (raf || !played || !P) return;
     erode(lp);
   };

@@ -31,7 +31,7 @@ img, svg, video { max-width: 100%; display: block; } img { height: auto; }
    collapsing toolbar never resizes it. Content is laid out in the svh-safe inner frame. */
 .story { position: relative; }
 .stage { position: sticky; top: 0; height: 100vh; height: 100lvh; overflow: hidden; contain: layout paint; background: var(--ink); }
-.frame { position: absolute; inset: 0 0 auto 0; height: 100vh; height: 100svh; /* always-visible area */ }
+.frame { position: absolute; inset: 0 0 auto 0; height: 100vh; height: 100svh; height: 100dvh; transition: height .3s ease; /* the visible area: grows smoothly when a mobile toolbar hides */ }
 .scene { position: absolute; inset: 0; grid-template-columns: minmax(0, 1fr); opacity: 0; visibility: hidden; will-change: opacity; display: grid; place-items: center; padding: clamp(72px, 12svh, 120px) clamp(18px, 5vw, 64px) clamp(56px, 10svh, 96px); }
 .scene.on { visibility: visible; }
 /* content taller than the frame: anchor to the top and let the engine pan it through */
@@ -246,24 +246,20 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .mu-view { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; font: .66rem var(--mono); color: var(--sand-dim); }
 .mu-view canvas { width: 72px; height: 72px; image-rendering: pixelated; border-radius: 6px; border: 1px solid var(--line); }
 .mu-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
-.mu-actions button, .mu-nudge button { font: 600 .76rem Inter, system-ui, sans-serif; padding: 6px 12px; border-radius: 99px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--sand); }
+.mu-actions button { font: 600 .76rem Inter, system-ui, sans-serif; padding: 6px 12px; border-radius: 99px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--sand); }
 .mu-actions button:first-child { background: var(--orange); border-color: var(--orange); color: var(--ink); }
 .cam-on .mu-actions button:first-child { background: transparent; color: var(--sand); border-color: var(--line); }
 .mu-panel .mu-src { margin: 0; font: .66rem var(--mono); color: var(--sand-dim); }
 .mu-src b { color: var(--sand); font-weight: 500; }
-/* the first-visit tip: styled as an annotation pinned to the page, not as part of the design */
-.mu-nudge { position: absolute; left: 4px; bottom: 46px; width: min(250px, calc(100vw - 30px)); padding: 12px 12px 10px; border-radius: 10px; background: #fbf4e6; color: #2a1d14; border: 1.5px dashed #b07a45; box-shadow: 0 14px 34px -10px rgba(0, 0, 0, .7); font: .78rem/1.45 Inter, system-ui, sans-serif; letter-spacing: 0; opacity: 0; transform: translateY(8px) rotate(-1deg); transition: opacity .3s, transform .3s; }
-.mu-nudge.show { opacity: 1; transform: translateY(0) rotate(-1deg); }
-.mu-nudge::after { content: ''; position: absolute; left: 18px; bottom: -9px; width: 14px; height: 14px; background: #fbf4e6; border-right: 1.5px dashed #b07a45; border-bottom: 1.5px dashed #b07a45; transform: rotate(45deg); }
-.mu-nudge-tag { display: inline-block; font: 600 .6rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: #8a5a2b; background: #f1e1c4; padding: 2px 6px; border-radius: 4px; }
-.mu-nudge p { margin: 6px 0 8px; }
-.mu-nudge div { display: flex; gap: 6px; }
-.mu-nudge button { border-color: #c9a275; color: #2a1d14; }
-.mu-nudge button:first-child { background: #2a1d14; color: #fbf4e6; border-color: #2a1d14; }
+/* a very small "what's this?" speech bubble pointing down at the pill */
+.mu-ask { position: absolute; left: 6px; bottom: 40px; padding: 3px 8px; border: 0; border-radius: 6px; background: #0b0806; color: var(--sand-dim); font: 500 .64rem var(--mono); letter-spacing: .02em; white-space: nowrap; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, .5); opacity: 0; transform: translateY(4px); transition: opacity .25s, transform .25s; }
+.mu-ask::after { content: ''; position: absolute; left: 14px; bottom: -4px; width: 8px; height: 8px; background: #0b0806; transform: rotate(45deg); }
+.mu-ask.show { opacity: 1; transform: translateY(0); }
+.mu-ask:hover { color: var(--sand); }
 @media (max-width: 700px) { .motion-ui { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 26px); } }
 .morphphone img { object-fit: cover; object-position: center; }
 /* TV shutoff / turn-on */
-.crt-black { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 0; }
+.crt-black { position: absolute; inset: 0 0 calc(-1 * (100lvh - 100svh)) 0; background: #000; opacity: 0; pointer-events: none; z-index: 0; }
 .crt-line { position: absolute; left: 50%; top: 50%; width: min(90vw, 1100px); height: 3px; transform: translate(-50%, -50%); opacity: 0; z-index: 2; pointer-events: none; border-radius: 3px;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.35) 12%, #fff 50%, rgba(255,255,255,.35) 88%, transparent);
   box-shadow: 0 0 18px #fff, 0 0 40px rgba(200,200,255,.9), 0 0 80px rgba(150,150,255,.7); }
@@ -382,9 +378,9 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .sd-chips button { font: 500 .75rem var(--mono); padding: 4px 9px; border-radius: 999px; border: 1px solid transparent; background: none; color: var(--sand-dim); cursor: pointer; }
 .sd-chips button[aria-checked="true"] { color: var(--ink); background: var(--orange); }
 .sd-chips button:hover:not([aria-checked="true"]) { border-color: var(--line); color: var(--sand); }
-.sd-list { list-style: none; margin: 0; padding: 6px; overflow-y: auto; flex: 1; overscroll-behavior: contain; }
-.sd-list li a { display: grid; gap: 3px; padding: 10px 12px; border-radius: 10px; color: inherit; text-decoration: none; }
-.sd-list li[aria-selected="true"] a { background: rgba(255,122,26,.12); box-shadow: inset 2px 0 0 var(--orange); }
+.sd-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; overscroll-behavior: contain; }
+.sd-list li a { display: grid; gap: 3px; padding: 12px 18px; color: inherit; text-decoration: none; border-bottom: 1px solid rgba(242, 230, 211, .06); }
+.sd-list li[aria-selected="true"] a { background: rgba(255, 122, 26, .1); }
 .sd-k { font: 500 .66rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--orange-hot); }
 .sd-t { font-weight: 600; font-size: .98rem; line-height: 1.3; }
 .sd-h { font-weight: 500; color: var(--sand-dim); }
@@ -405,22 +401,24 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .foot-search:hover { color: var(--orange-hot); }
 
 /* ---------- the opening: CHRIS DILGER out of a sandstorm (intro.js) ---------- */
-.hero-name { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; justify-items: center; text-align: center; pointer-events: none; }
+.hero-name { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center start; justify-items: start; text-align: left; padding: 0 max(clamp(18px, 5vw, 64px), calc((100% - 1180px) / 2)); pointer-events: none; }
 .sandstorm { position: absolute; inset: 0; width: 100%; height: 100%; }
-.hn { position: relative; margin: 0; font-family: Inter, system-ui, sans-serif; font-weight: 900; font-size: min(25vw, 33svh); line-height: .86; letter-spacing: -.045em; opacity: 0; transform-origin: 50% 100%; will-change: transform, opacity; }
-/* the span itself is the rock's dark mass, extruded downwards like a mesa; its ::after is the sunlit,
-   layered sandstone face */
-.hn-line { display: block; position: relative; color: #3f1709; text-shadow: 0 .012em 0 #62260f, 0 .024em 0 #58210d, 0 .036em 0 #4d1c0b, 0 .048em 0 #42180a, 0 .06em 0 #381408, 0 .16em .2em rgba(0, 0, 0, .55); }
-.hn-line::after { content: attr(data-t); position: absolute; inset: 0; color: transparent; text-shadow: none;
-  background:
-    repeating-linear-gradient(177deg, transparent 0 .07em, rgba(120, 44, 14, .22) .07em .085em, transparent .085em .13em, rgba(255, 236, 200, .12) .13em .14em),
-    linear-gradient(180deg, #ffe9c2 0%, #f8c27b 28%, #e8944d 52%, #c4652e 76%, #8f3b18 100%);
-  -webkit-background-clip: text; background-clip: text; }
+.hn { position: relative; margin: 0 0 0 -.04em; font-family: Inter, system-ui, sans-serif; font-weight: 900; font-size: min(25vw, 33svh); line-height: .86; letter-spacing: -.045em; color: #f4e7d2; opacity: 0; transform-origin: 30% 100%; will-change: transform, opacity; text-shadow: 0 2px 40px rgba(0, 0, 0, .35); }
+.hn-line { display: block; }
 .hn.haze { filter: url(#heat); }
 .hn-sub { margin: clamp(14px, 3svh, 28px) 0 0; font-size: clamp(.7rem, 1.6vw, .9rem); letter-spacing: .28em; text-transform: uppercase; color: var(--sand); opacity: 0; text-shadow: 0 1px 12px rgba(0, 0, 0, .8); }
 .hero-name.played .hn-sub { opacity: 1; }
-.hn-hint { position: absolute; left: 50%; top: calc(clamp(72px, 12svh, 120px) - 8px); translate: -50% 0; margin: 0; font-size: .64rem; letter-spacing: .2em; text-transform: uppercase; color: var(--sand-dim); opacity: 0; transition: opacity .6s; }
-.tumbleweed { position: absolute; left: 0; bottom: clamp(70px, 13svh, 130px); width: clamp(46px, 6vw, 92px); height: auto; transform: translate(-300px, 0); fill: none; stroke: #b98b54; stroke-width: 1.6; stroke-linecap: round; opacity: .85; filter: drop-shadow(0 10px 8px rgba(0, 0, 0, .45)); }
+/* the frilled-neck lizard */
+.lizard { position: absolute; left: 0; bottom: clamp(64px, 12svh, 124px); width: clamp(130px, 16vw, 250px); height: auto; transform: translate(-400px, 0); overflow: visible; filter: drop-shadow(0 9px 6px rgba(0, 0, 0, .45)); }
+.lizard .body { fill: #4a2a14; }
+.lizard .frill path:first-child { fill: #d9732c; }
+.lizard .ribs { fill: none; stroke: #7d3412; stroke-width: 1.6; stroke-linecap: round; }
+.lizard .eye { fill: #f4e7d2; }
+.lizard .arm, .lizard .leg { fill: none; stroke: #4a2a14; stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; }
+.lizard .leg { transform-box: view-box; transform-origin: 96px 62px; }
+.lizard.running .leg.a { animation: lizLeg .2s ease-in-out infinite alternate; }
+.lizard.running .leg.b { animation: lizLeg .2s ease-in-out infinite alternate-reverse; }
+@keyframes lizLeg { from { transform: rotate(-36deg); } to { transform: rotate(30deg); } }
 .static .hero-name { position: relative; inset: auto; min-height: 70svh; }
 .static .hn, .static .hn-sub { opacity: 1; }
-.static .sandstorm, .static .tumbleweed, .static .hn-hint { display: none; }
+.static .sandstorm, .static .lizard { display: none; }

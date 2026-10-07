@@ -60,11 +60,16 @@ function init() {
   const bar = document.getElementById('progress');
   const dots = [...document.querySelectorAll('#rail button')];
   let trackTop = 0, range = 1, width = innerWidth, stageH = 0, frameH = 0;
+  // Scene lengths come from the small (toolbar-shown) viewport, so the track never changes length while a
+  // mobile toolbar slides in and out; the visible frame itself follows the real height (100dvh in CSS).
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;top:0;left:0;width:1px;height:100vh;height:100svh;visibility:hidden;pointer-events:none';
+  stage.append(probe);
 
   // Layout pass: measure how much each scene's content overflows the always-visible frame,
   // give tall scenes extra scroll so the pan is not rushed, then size the track.
   function layout() {
-    frameH = frameEl.offsetHeight;
+    frameH = probe.offsetHeight || frameEl.offsetHeight;
     for (const s of scenes) {
       if (!s.content) continue;
       s.el.classList.remove('tall');
@@ -298,7 +303,7 @@ function wheelHook(el) {
     cards.forEach((c, i) => {
       const a = (i - pos) * step;
       const vis = Math.abs(a) < 105;
-      c.style.visibility = vis ? 'visible' : 'hidden';
+      c.style.visibility = vis ? '' : 'hidden'; // never force 'visible': it would override the hidden scene and leak into others
       if (!vis) return;
       c.style.transform = `translate(-50%, 0) rotate(${a.toFixed(2)}deg) translateY(calc(var(--R) * -1)) translateY(-100%) scale(${(Math.abs(a) < step / 2 ? 1 : 0.86).toFixed(2)})`;
       c.style.opacity = (1 - Math.min(1, Math.abs(a) / 110) * 0.75).toFixed(3);
@@ -406,7 +411,7 @@ function beadsHook(svg) {
   };
 }
 
-const LINES = (task, status) => [`$ bd ready --claim`, `› ${task}`, `… ${status}`, '✓ tests pass, PR merged'];
+const LINES = (task, status) => [`$ br ready`, `› ${task}`, `… ${status}`, '✓ br close · PR merged'];
 // Agent panes: each types at its own pace, the newest characters scramble before they settle, and the pane
 // closest to merging gets the focus glow, so the eye always has somewhere to land in the chaos.
 const GLYPHS = '#$%&*+=<>/\\|{}[]01';

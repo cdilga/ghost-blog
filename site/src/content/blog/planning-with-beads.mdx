@@ -26,7 +26,7 @@ export const jjFlow = [
 My loop for new projects is deliberately boring.
 
 1. **Write the plan.** A real document: what the thing is, who it is for, what "done" means, and how we will know.
-2. **Turn it into beads.** Every requirement becomes an issue in [beads](https://github.com/steveyegge/beads), stored in the repo next to the code, with real dependencies between them.
+2. **Turn it into beads.** Every requirement becomes an issue in beads, using Jeffrey Emanuel's [beads_rust](https://github.com/Dicklesworthstone/beads_rust) (`br`), stored in the repo next to the code, with real dependencies between them.
 3. **Let the graph decide.** `br ready` lists only the beads with no open blockers. That is the whole scheduler.
 4. **Run a herd.** With herdr and ntm I keep a few agent panes open side by side, each claiming one ready bead, so the work fans out and the graph keeps it honest.
 5. **Review, playtest, write the next beads.** My job is steering and taste.
