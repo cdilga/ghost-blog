@@ -401,32 +401,44 @@ function beadsHook(svg) {
 }
 
 const LINES = (task, status) => [`$ bd ready --claim`, `› ${task}`, `… ${status}`, '✓ tests pass, PR merged'];
+// Agent panes: each types at its own pace, the newest characters scramble before they settle, and the pane
+// closest to merging gets the focus glow, so the eye always has somewhere to land in the chaos.
+const GLYPHS = '#$%&*+=<>/\\|{}[]01';
 function termsHook(grid) {
   const terms = [...grid.querySelectorAll('.term')].map((t, i) => {
     const full = LINES(t.dataset.task, t.dataset.status).join('\n');
-    return { t, line: t.querySelector('.line'), full, i, last: -1 };
+    return { t, line: t.querySelector('.line'), full, i, last: -1, dur: 0.34 + ((i * 37) % 10) * 0.025, lag: ((i * 53) % 7) * 0.012 };
   });
   const merged = grid.parentElement.querySelector('[data-merged]');
+  let focused = null;
   return (lp) => {
-    let done = 0;
+    let done = 0, best = null, bestP = -1;
     for (const x of terms) {
       const appear = c01((lp - 0.06 - x.i * 0.03) / 0.1);
       x.t.style.opacity = appear; x.t.style.transform = `translate3d(0,${(1 - appear) * 24}px,0)`;
-      const chars = Math.floor(c01((lp - 0.14 - x.i * 0.03) / 0.5) * x.full.length);
+      const p = c01((lp - 0.14 - x.lag - x.i * 0.02) / x.dur);
+      const chars = Math.floor(p * x.full.length);
       const okAt = x.full.indexOf('✓');
       if (chars >= x.full.length) done++;
+      else if (p > 0 && p > bestP) { bestP = p; best = x; }
       if (chars !== x.last) {
         x.last = chars;
         const txt = x.full.slice(0, chars);
         x.line.textContent = '';
         const pre = document.createElement('span'); pre.style.whiteSpace = 'pre-wrap';
-        pre.textContent = chars > okAt ? txt.slice(0, okAt) : txt;
+        const typing = chars < x.full.length;
+        // the last two characters are still "arriving": show noise in their place
+        const settled = typing ? txt.slice(0, Math.max(0, chars - 2)) : txt;
+        const noise = typing ? [...txt.slice(settled.length)].map((ch, k) => (ch === '\n' ? ch : GLYPHS[(chars * 7 + k * 13) % GLYPHS.length])).join('') : '';
+        pre.textContent = settled.length > okAt && okAt >= 0 ? settled.slice(0, okAt) : settled;
         x.line.append(pre);
-        if (chars > okAt) { const ok = document.createElement('span'); ok.className = 'ok'; ok.textContent = txt.slice(okAt); x.line.append(ok); }
-        if (chars < x.full.length) { const c = document.createElement('span'); c.className = 'cur'; x.line.append(c); }
-        x.t.classList.toggle('finished', chars >= x.full.length);
+        if (settled.length > okAt && okAt >= 0) { const ok = document.createElement('span'); ok.className = 'ok'; ok.textContent = settled.slice(okAt); x.line.append(ok); }
+        if (noise) { const n = document.createElement('span'); n.className = 'noise'; n.textContent = noise; x.line.append(n); }
+        if (typing) { const c = document.createElement('span'); c.className = 'cur'; x.line.append(c); }
+        x.t.classList.toggle('finished', !typing);
       }
     }
+    if (best !== focused) { focused?.t.classList.remove('focus'); best?.t.classList.add('focus'); focused = best; }
     if (merged) merged.textContent = done;
   };
 }

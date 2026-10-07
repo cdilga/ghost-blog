@@ -284,3 +284,8 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .stagegal figcaption { position: absolute; white-space: nowrap; left: 10px; bottom: 8px; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: #fff; background: rgba(0,0,0,.55); padding: 3px 7px; border-radius: 6px; opacity: calc(.3 + var(--lit)); }
 .stagegal .spotlight { position: absolute; inset: 0; z-index: 4; pointer-events: none; mix-blend-mode: screen; background: radial-gradient(ellipse 42% 56% at var(--sx) var(--sy), rgba(255,190,120,.22), rgba(255,140,60,.06) 55%, transparent 75%); }
 @media (max-aspect-ratio: 1/1), (max-width: 560px) { .stagegal { max-height: 40svh; aspect-ratio: 16 / 11; } }
+
+/* fleet: the pane closest to merging glows; fresh characters arrive as noise */
+.term { transition: border-color .3s, box-shadow .35s, color .35s; }
+.term.focus { border-color: rgba(255,122,26,.7); color: var(--sand); box-shadow: 0 0 0 1px rgba(255,122,26,.35), 0 0 28px -4px rgba(255,122,26,.55); }
+.term .noise { color: var(--orange); opacity: .8; }
