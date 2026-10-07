@@ -291,7 +291,7 @@ const term = [
         <div class="content wheelwrap">
           <p class="kicker" data-fx="fade" data-a="0" data-d=".06">10 · Writing</p>
           <h2 class="mid" data-fx="words" data-a=".01" data-d=".12">Notes with the workings shown.</h2>
-          <p class="wheel-hint mono" data-fx="fade" data-a=".08" data-d=".08">scroll or drag to turn · {allPosts.length} posts</p>
+          <p class="wheel-hint mono" data-fx="fade" data-a=".08" data-d=".08"><span class="turnhint">scroll or drag to turn · </span>{allPosts.length} posts</p>
           <div class="wheel" data-hook="wheel" role="list" aria-label="All posts, newest first">
             {allPosts.map((p) => (
               <a class={`wcard${p.data.legacy ? ' old' : ''}`} role="listitem" href={`${base}/blog/${p.id}/`} draggable="false">

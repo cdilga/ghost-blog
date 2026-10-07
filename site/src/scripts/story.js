@@ -39,6 +39,8 @@ function init() {
   }));
   if (reduce || new URLSearchParams(location.search).has('static')) {
     root.classList.add('static');
+    // no motion: show the agent panes in their finished state rather than empty
+    document.querySelectorAll('[data-hook="terms"]').forEach((h) => termsHook(h)(1));
     return;
   }
 

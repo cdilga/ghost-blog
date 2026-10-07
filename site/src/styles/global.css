@@ -272,7 +272,7 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .wcard.active { box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--orange), 0 24px 50px -16px rgba(0,0,0,.9); }
 .wheel-all { margin-left: 0; position: relative; z-index: 2; }
 @media (max-height: 620px) { .wheel { height: 40svh; } .wcard .wimg { aspect-ratio: 16 / 7; } }
-.static .wheel { height: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; } .static .wcard { position: static; transform: none !important; visibility: visible !important; opacity: 1 !important; }
+.static .wheel { height: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; } .static .wheel-hint .turnhint { display: none; } .static .wcard { position: static; width: auto; transform: none !important; visibility: visible !important; opacity: 1 !important; }
 
 /* stage: fanned talk photos with a spotlight that walks across them */
 .stagegal { position: relative; aspect-ratio: 4 / 3; width: 100%; max-height: 62svh; --sx: 30%; --sy: 40%; }
