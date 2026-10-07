@@ -5,6 +5,7 @@ date: 2026-10-07
 tags: [physics, hardware, working-draft]
 ---
 import Chart from '../../components/Chart.astro';
+import Term from '../../components/Term.astro';
 import JetExplorer from '../../components/JetExplorer.astro';
 import HouseAirflow from '../../components/HouseAirflow.astro';
 
@@ -14,6 +15,14 @@ export const speeds = [3, 5, 8];
 export const xs = [0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 8];
 export const decay = speeds.map((U) => ({ name: `exit ${U} m/s`, data: xs.map((x) => [x, +Math.min(U, (B * d * U) / x).toFixed(3)]) }));
 export const reData = [1, 2, 3, 5, 8].map((U) => [`${U} m/s`, Math.round((U * d) / nu)]);
+export const reHouse = [
+  ['fan', Math.round((5 * 0.25) / nu)],
+  ['AC jet', Math.round((3.5 * 0.08) / nu)],
+  ['hallway', Math.round((0.5 * 1.1) / nu)],
+  ['doorway', Math.round((0.3 * 0.87) / nu)],
+  ['under door', Math.round((0.3 * 0.012) / nu)],
+];
+export const archi = [0.25, 0.5, 1, 2, 3, 5].map((u) => [`${u} m/s`, +((9.81 * (8 / 300) * 1) / (u * u)).toFixed(2)]);
 export const T = 0.5;
 export const diams = [0.08, 0.1, 0.12, 0.16, 0.2, 0.25, 0.3];
 export const exitU = (dia) => Math.sqrt((4 * T) / (Math.PI * rho * dia * dia));
@@ -49,13 +58,49 @@ export const power513 = [{ name: '513S noise (LanOC)', data: [[3.2, 32.1], [4.6,
 
 I want a fan that moves air across a room without sounding like one. The marketing numbers (CFM, dB at some unspecified distance) do not say much about how it will *feel* three metres away. A cleaner way to think about it is to treat the fan outlet as a **turbulent jet** and ask what physics sets how far it carries.
 
+## A short physics lesson: the equations air obeys
+
+Everything below rests on one set of equations, so it is worth meeting them properly. Air in a room moves slowly compared with the speed of sound, so we can treat it as incompressible, and then its motion is governed by the **Navier–Stokes equations**:
+
+<p class="eq">∂u/∂t + (u·∇)u = −∇p/ρ + ν∇²u + f,&nbsp;&nbsp;&nbsp; ∇·u = 0</p>
+
+Read it as Newton's second law for a small parcel of air, per unit mass. On the left is how the parcel's velocity **u** changes: partly with time, and partly because it is carried into a region where the flow is different (the **(u·∇)u** term). On the right are the forces that cause that change: pressure differences (**−∇p/ρ**), viscous friction (**ν∇²u**), and any body force **f**, such as a fan pushing or cold air sinking. The second equation says no air is created or destroyed: whatever flows into a region flows out.
+
+<Term name="Advection (inertia)" symbol="(u·∇)u">Air carrying its own momentum along with it. This term is what makes a jet keep going after it leaves the fan, and it is the source of almost all the difficulty: it is non-linear, so small disturbances can grow into eddies.</Term>
+
+<Term name="Kinematic viscosity" symbol="ν">How strongly a fluid resists being sheared, per unit density. For air at room temperature ν ≈ 1.5×10⁻⁵ m²/s. Honey is about a million times more viscous.</Term>
+
+Which of those terms actually matters? Scale everything by a typical speed U and size L, and the equation becomes
+
+<p class="eq">∂u*/∂t* + (u*·∇*)u* = −∇*p* + (1/Re)·∇*²u*</p>
+
+so the only thing that decides the *kind* of flow is a single number in front of the viscous term.
+
+<Term name="Reynolds number" symbol="Re = U·L/ν">The ratio of inertial forces to viscous forces. Small Re (below about 2,000 in a pipe) means smooth, layered, *laminar* flow, where viscosity damps any wobble. Large Re means inertia wins, small disturbances grow, and the flow becomes *turbulent*: a chaotic tangle of eddies of every size.</Term>
+
+Here is Re for the flows that matter in our house:
+
+<Chart type="bar" title="Reynolds numbers around the house" series={[{ name: 'Re', data: reHouse }]} yLabel="Re" logY yMin={1} caption="Fan: 5 m/s from a 25 cm outlet. AC jet: 3.5 m/s from an 8 cm louvre slot. Hallway: 0.5 m/s drift down a 1.1 m wide hall. Doorway: 0.3 m/s through a 0.87 m door. Under door: 0.3 m/s through a 12 mm undercut. Pipe flow turns turbulent near Re ≈ 2,000, so almost every flow in a house is far into the turbulent range. The exception is air squeezing under a closed door: at Re ≈ 240 it is laminar, viscosity dominates, and the gap behaves like a narrow pipe. That is why a door undercut is a poor return path, and why the 3D simulation further down has to model doors properly." />
+
+At high Re you might think viscosity simply drops out. It does not, quite. Turbulence passes energy from big eddies to smaller ones (the **energy cascade**) until the eddies are so small that viscosity can finally turn their motion into heat.
+
+<Term name="Kolmogorov scale" symbol="η ≈ L·Re^(−3/4)">The size of the smallest eddies, where viscosity takes over. For a fan jet with L = 25 cm and Re ≈ 80,000 it is about 0.05 mm. No simulation of a whole house can resolve that, so we model the effect of the small eddies instead.</Term>
+
+<Term name="Eddy viscosity" symbol="ν_t">The extra mixing that turbulent eddies cause, treated as if it were a much larger viscosity. In a fan jet ν_t is roughly a thousand times bigger than ν. The simulations on this page use the Smagorinsky model, which sets ν_t from how fast the resolved flow is being sheared.</Term>
+
+The practical consequence is lovely: once a jet is turbulent, its spreading is set by its own eddies, not by the air's viscosity, so the jet's shape stops depending on Re at all. Here is Re for a 12 cm outlet at various speeds, just to show how quickly we leave the laminar world:
+
+<Chart type="bar" title="Jet Reynolds number for a 12 cm outlet" series={[{ name: 'Re', data: reData }]} yLabel="Re" logY yMin={3} caption="Laminar pipe flow breaks down near Re ≈ 2,000. Even a gentle 1 m/s outlet is far past it." />
+
+One more force matters in a house with an air conditioner: cold air is heavier than warm air.
+
+<Term name="Archimedes number" symbol="Ar = g·β·ΔT·L / U²">Buoyancy forces divided by inertial forces (β is the expansion coefficient, about 1/300 per kelvin for air). When Ar is small the jet goes where it is pointed. When Ar approaches 1, cold air sinks and warm air rises faster than the jet can carry them sideways.</Term>
+
+<Chart type="bar" title="Archimedes number for air 8 °C colder than the room, over 1 m" series={[{ name: 'Ar', data: archi }]} yLabel="Ar" logY caption="Fast air goes where it is aimed. Below about 0.5 m/s buoyancy is as strong as inertia, so cold air leaving the split system drops to the floor before it reaches the hall unless something keeps it moving. That is the job of the fan." />
+
 ## Momentum wins, viscosity barely matters
 
-Compare the two effects with the jet Reynolds number, `Re = U·d/ν`. For a 12 cm outlet and air with ν ≈ 1.5×10⁻⁵ m²/s:
-
-<Chart type="bar" title="Jet Reynolds number for a 12 cm outlet" series={[{ name: 'Re', data: reData }]} yLabel="Re" logY yMin={3} caption="Laminar pipe flow breaks down near Re ≈ 2,000. Even a gentle 1 m/s outlet is already far past it, so the jet is turbulent and its spreading is set by momentum, not by the air's viscosity." />
-
-In that regime the far field of a round jet is self-similar and, usefully, **independent of Reynolds number**. The centreline speed falls as
+For a turbulent round jet, the far field is self-similar and independent of Re. The centreline speed falls as
 
 <p class="eq">u_c(x) ≈ B·d·U / x, with B ≈ 6.2</p>
 

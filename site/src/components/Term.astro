@@ -1,0 +1,18 @@
+---
+/**
+ * A defined term, shown clearly in the flow of a teaching post.
+ * <Term name="Reynolds number" symbol="Re">The ratio of ...</Term>
+ */
+const { name, symbol = '' } = Astro.props;
+---
+<aside class="term-def" role="note">
+  <dfn>{name}</dfn>{symbol && <code class="term-sym">{symbol}</code>}
+  <div class="term-body"><slot /></div>
+</aside>
+<style>
+  .term-def { margin: 1.4em 0; padding: 12px 16px 12px 18px; border-left: 3px solid var(--orange); background: rgba(255, 122, 26, .06); border-radius: 0 10px 10px 0; }
+  .term-def dfn { font-style: normal; font-weight: 700; color: var(--sand); font-size: 1.02rem; letter-spacing: -.01em; }
+  .term-sym { margin-left: 8px; font-size: .85em; color: var(--orange-hot); background: rgba(255, 255, 255, .06); padding: 1px 6px; border-radius: 5px; }
+  .term-body { margin-top: 4px; color: #d9cbb5; font-size: .98rem; }
+  .term-body :global(p) { margin: .3em 0 0; font-size: inherit; }
+</style>
