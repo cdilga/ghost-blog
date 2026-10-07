@@ -132,7 +132,9 @@ function init() {
     }
     if (cur !== active) { active = cur; dots.forEach((d, i) => d.setAttribute('aria-current', i === cur)); root.dataset.scene = scenes[cur].id; }
     stats.P = P; stats.target = target; stats.scene = scenes[cur].id;
+    for (const fn of frameFns) fn(P, scenes, cur);
   }
+  const frameFns = [];
 
   // Dots navigate natively
   const byId = Object.fromEntries(scenes.map((s) => [s.id, s]));
@@ -152,7 +154,7 @@ function init() {
     if (dir) { const i = clamp(active + dir, 0, scenes.length - 1); goto(scenes[i].id); }
   });
 
-  window.__story = { scenes, stats, goto, get progress() { return shown; }, get target() { return target; }, measure, layout, snap() { target = clamp((scrollY - trackTop) / range); shown = target; render(shown); } };
+  window.__story = { scenes, stats, goto, onFrame(fn) { frameFns.push(fn); }, get progress() { return shown; }, get target() { return target; }, measure, layout, snap() { target = clamp((scrollY - trackTop) / range); shown = target; render(shown); } };
   root.dataset.storyReady = '1';
   requestAnimationFrame((t) => { last = t; frame(t); });
   if (location.hash && byId[location.hash.slice(1)]) setTimeout(() => goto(location.hash.slice(1), false), 50);

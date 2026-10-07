@@ -55,15 +55,23 @@ const term = [
 <Base title="Chris Dilger | Building with a fleet of agents">
 <div class="story" id="story" data-total={total} style={`--total:${total}`}>
   <div class="stage">
+    <canvas id="depth" class="depth" aria-hidden="true"></canvas>
     <div class="progress" id="progress"></div>
     <div class="frame">
+      <div class="motion-ui mono" id="motion-ui" hidden>
+        <span class="mu-src">moving with <b data-o="src">scroll</b></span>
+        <button type="button" data-i="tilt" hidden>tilt to look around</button>
+        <button type="button" data-i="camera" hidden>use camera</button>
+        <button type="button" data-i="info" hidden aria-label="What the camera sees">?</button>
+        <div class="mu-panel" hidden><canvas width="32" height="32"></canvas><p>This is everything the camera code sees: a 32 by 32 pixel edge image, compared frame to frame to estimate how your head moved. Nothing is stored or sent anywhere.</p></div>
+      </div>
       <nav class="rail" id="rail" aria-label="Sections">
         {scenes.map((s) => <button type="button" data-goto={s.id} aria-label={s.label}><span>{s.label}</span></button>)}
       </nav>
 
       <!-- 0. HERO -->
-      <section class="scene" data-scene="top" data-len={S('top').len} aria-label="Introduction">
-        <div class="bg" data-fx="bgzoom"><img src={`${base}/desert.jpg`} alt="" style="width:100%;height:100%;object-fit:cover;filter:brightness(.5) saturate(1.1)" /></div>
+      <section class="scene" data-scene="top" data-bg="a" data-bg-dim=".22" data-len={S('top').len} aria-label="Introduction">
+        <div class="bg photo" data-fx="bgzoom"><img src={`${base}/bg/dune.jpg`} alt="" style="width:100%;height:100%;object-fit:cover;filter:brightness(.5) saturate(1.1)" /></div>
         <div class="bg" style="background:radial-gradient(120% 90% at 30% 30%, transparent 30%, var(--ink) 95%)"></div>
         <div class="beadfield" aria-hidden="true"><i data-fx="drift" data-speed="160" style="left:8%;top:22%;width:12px;height:12px"></i><i data-fx="drift" data-speed="90" style="left:18%;top:70%;width:8px;height:8px"></i><i data-fx="drift" data-speed="260" style="left:27%;top:38%;width:18px;height:18px"></i><i data-fx="drift" data-speed="120" style="left:41%;top:82%;width:10px;height:10px"></i><i data-fx="drift" data-speed="70" style="left:55%;top:15%;width:6px;height:6px"></i><i data-fx="drift" data-speed="200" style="left:63%;top:60%;width:14px;height:14px"></i><i data-fx="drift" data-speed="110" style="left:72%;top:30%;width:8px;height:8px"></i><i data-fx="drift" data-speed="300" style="left:81%;top:76%;width:20px;height:20px"></i><i data-fx="drift" data-speed="150" style="left:88%;top:45%;width:10px;height:10px"></i><i data-fx="drift" data-speed="80" style="left:94%;top:18%;width:6px;height:6px"></i><i data-fx="drift" data-speed="180" style="left:35%;top:90%;width:12px;height:12px"></i><i data-fx="drift" data-speed="60" style="left:12%;top:48%;width:6px;height:6px"></i><i data-fx="drift" data-speed="140" style="left:50%;top:55%;width:8px;height:8px"></i><i data-fx="drift" data-speed="220" style="left:76%;top:90%;width:10px;height:10px"></i></div>
         <div class="content">
@@ -77,7 +85,7 @@ const term = [
       </section>
 
       <!-- 0b. STORY: how I got here -->
-      <section class="scene" data-scene="story" data-len={S('story').len} aria-label="How I got here">
+      <section class="scene" data-scene="story" data-bg="a" data-bg-dim=".72" data-len={S('story').len} aria-label="How I got here">
         <div class="content tl" data-hook="timeline">
           <div class="tl-head">
             <p class="kicker" data-fx="fade" data-a="0" data-d=".06">How I got here</p>
@@ -98,7 +106,7 @@ const term = [
       </section>
 
       <!-- 1. PLAN: beads -->
-      <section class="scene" data-scene="plan" data-len={S('plan').len} aria-label="Planning with beads">
+      <section class="scene" data-scene="plan" data-bg="a>b" data-bg-dim=".62" data-len={S('plan').len} aria-label="Planning with beads">
         <div class="content">
           <p class="kicker" data-fx="fade" data-a="0" data-d=".1">01 · Plan</p>
           <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Every idea becomes a bead first.</h2>
@@ -121,7 +129,7 @@ const term = [
       </section>
 
       <!-- 2. FLEET: herdr / ntm -->
-      <section class="scene" data-scene="fleet" data-len={S('fleet').len} aria-label="A fleet of agents">
+      <section class="scene" data-scene="fleet" data-bg="b" data-bg-dim=".6" data-len={S('fleet').len} aria-label="A fleet of agents">
         <div class="content">
           <p class="kicker" data-fx="fade" data-a="0" data-d=".1">02 · Build</p>
           <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Then a herd picks them up.</h2>
@@ -251,7 +259,7 @@ const term = [
       </section>
 
       <!-- 9. CONTACT -->
-      <section class="scene" data-scene="contact" data-len={S('contact').len} aria-label="Contact">
+      <section class="scene" data-scene="contact" data-bg="b" data-bg-dim=".45" data-len={S('contact').len} aria-label="Contact">
         <div class="content" style="text-align:center">
           <h2 class="big" data-fx="words" data-a=".02" data-d=".35">Say hello.</h2>
           <p class="lede" style="margin-inline:auto" data-fx="reveal" data-a=".2" data-d=".36">Building something with agents, games or models of real places? I like talking about it.</p>
@@ -267,5 +275,5 @@ const term = [
   </div>
 </div>
 <footer class="foot">© Chris Dilger · Built with Astro, beads and a herd of agents.</footer>
-<script>import "../scripts/story.js";</script>
+<script>import "../scripts/story.js"; import "../scripts/story-bg.js";</script>
 </Base>
