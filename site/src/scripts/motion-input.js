@@ -78,6 +78,20 @@ export async function enableTilt() {
 }
 
 // ---------- camera optical flow ----------
+// The choice is remembered: if this browser already granted the camera to the site (Permissions API), or,
+// where that API is missing, if the visitor turned it on last time (localStorage), it comes back on by itself.
+// Turning it off is remembered too, and wins.
+const PREF = 'cd-camera';
+const pref = { get: () => { try { return localStorage.getItem(PREF); } catch { return null; } }, set: (v) => { try { localStorage.setItem(PREF, v); } catch {} } };
+export async function cameraPermission() {
+  try { return (await navigator.permissions.query({ name: 'camera' })).state; } catch { return 'unknown'; }
+}
+export async function restoreCamera() {
+  if (reduce || !navigator.mediaDevices?.getUserMedia || pref.get() === 'off') return false;
+  const perm = await cameraPermission();
+  if (perm === 'granted' || (perm === 'unknown' && pref.get() === 'on')) return enableCamera();
+  return false;
+}
 const N = 32;
 let cam = null;
 export async function enableCamera() {
@@ -85,13 +99,14 @@ export async function enableCamera() {
   let stream;
   try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 160, height: 120 }, audio: false }); }
   catch { return false; }
+  pref.set('on');
   const video = document.createElement('video');
   video.playsInline = true; video.muted = true; video.srcObject = stream; await video.play();
   const cv = document.createElement('canvas'); cv.width = N; cv.height = N;
   const cx = cv.getContext('2d', { willReadFrequently: true });
   const grey = new Float32Array(N * N), edge = new Float32Array(N * N), prev = new Float32Array(N * N);
   let have = false, px = 0, py = 0, fx = 0, fy = 0;
-  cam = { stream, video, grey, edge, stop() { stream.getTracks().forEach((t) => t.stop()); cam = null; setSource(coarse ? (tiltOn ? 'tilt' : 'none') : 'pointer'); } };
+  cam = { stream, video, grey, edge, stop() { stream.getTracks().forEach((t) => t.stop()); cam = null; pref.set('off'); setSource(coarse ? (tiltOn ? 'tilt' : 'none') : 'pointer'); } };
   setSource('camera');
   const step = () => {
     if (!cam) return;

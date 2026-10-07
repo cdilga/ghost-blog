@@ -2,7 +2,7 @@
 // Scenes opt in with data-bg="a" | "b" | "a>b" (the wind sweeps from a to b across the scene's exit) and
 // data-bg-dim (0 = full photo, 1 = black). Scenes without data-bg let the background fade away.
 import { createDepthBackground } from './depth-bg.js';
-import { subscribe, getMotion, enableTilt, enableCamera, disableCamera, cameraDebug } from './motion-input.js';
+import { subscribe, getMotion, enableTilt, enableCamera, disableCamera, cameraDebug, restoreCamera } from './motion-input.js';
 
 const root = document.documentElement;
 const base = (document.querySelector('meta[name="base"]')?.content || '').replace(/\/$/, '');
@@ -17,6 +17,8 @@ async function boot() {
   try {
     bg = await createDepthBackground(canvas, { a: `${base}/bg/dune.jpg`, da: `${base}/bg/dune-depth.jpg`, b: `${base}/bg/sunset.jpg`, db: `${base}/bg/sunset-depth.jpg` });
   } catch (e) { console.warn('depth background unavailable', e); }
+  window.__depthState = bg ? 'ready' : 'failed';
+  dispatchEvent(new Event(bg ? 'depth-ready' : 'depth-failed'));
   if (!bg) return;
   root.classList.add('depth-on');
   const cfg = story.scenes.map((s) => {
@@ -47,33 +49,42 @@ async function boot() {
   motionUI();
 }
 
-// Small control in the corner: shows what is driving the scene and offers tilt / camera.
+// One small control in the corner: a camera pill. Off, it asks "why enable camera?" and explains; on, it shows
+// exactly what the camera code sees. A granted camera comes back on by itself on later visits.
 function motionUI() {
   const ui = document.getElementById('motion-ui');
   if (!ui) return;
-  const label = ui.querySelector('[data-o="src"]');
-  const tilt = ui.querySelector('[data-i="tilt"]'), camera = ui.querySelector('[data-i="camera"]'), info = ui.querySelector('[data-i="info"]');
-  const panel = ui.querySelector('.mu-panel'), pv = panel.querySelector('canvas'), pctx = pv.getContext('2d');
-  const names = { pointer: 'pointer', tilt: 'tilt', camera: 'camera', none: 'scroll' };
+  const pill = ui.querySelector('[data-i="pill"]'), label = ui.querySelector('[data-o="label"]'), src = ui.querySelector('[data-o="src"]');
+  const panel = ui.querySelector('.mu-panel'), view = ui.querySelector('.mu-view'), pv = view.querySelector('canvas'), pctx = pv.getContext('2d');
+  const camBtn = ui.querySelector('[data-i="camera"]'), tiltBtn = ui.querySelector('[data-i="tilt"]'), title = ui.querySelector('.mu-title');
+  const nudge = ui.querySelector('.mu-nudge');
+  const names = { pointer: 'your pointer', tilt: 'tilt', camera: 'the camera', none: 'scroll' };
+  const open = (v) => { panel.hidden = !v; pill.setAttribute('aria-expanded', String(v)); if (v) { hideNudge(); drawView(); } };
   const refresh = (s) => {
-    ui.hidden = false;
-    label.textContent = names[s.source] || s.source;
-    tilt.hidden = !s.available.tilt || s.source === 'tilt' || s.source === 'camera';
-    camera.textContent = s.source === 'camera' ? 'camera off' : 'use camera';
-    camera.hidden = !s.available.camera;
-    info.hidden = s.source !== 'camera';
-    if (s.source !== 'camera') panel.hidden = true;
+    const on = s.source === 'camera';
+    ui.hidden = !(s.available.camera || s.available.tilt);
+    ui.classList.toggle('cam-on', on);
+    label.textContent = on ? 'camera on' : s.available.camera ? 'why enable camera?' : 'tilt to look around';
+    title.textContent = on ? 'The camera is on' : 'Why enable the camera?';
+    camBtn.textContent = on ? 'Turn camera off' : 'Enable camera';
+    camBtn.hidden = !s.available.camera;
+    tiltBtn.hidden = !s.available.tilt || s.source === 'tilt' || on;
+    view.hidden = !on;
+    src.textContent = names[s.source] || s.source;
+    if (on) hideNudge();
   };
   subscribe(refresh); refresh(getMotion());
-  tilt.addEventListener('click', async () => { if (!(await enableTilt())) tilt.textContent = 'tilt blocked'; });
-  camera.addEventListener('click', async () => {
+  pill.addEventListener('click', () => open(panel.hidden));
+  document.addEventListener('click', (e) => { if (!panel.hidden && !ui.contains(e.target)) open(false); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) open(false); });
+  camBtn.addEventListener('click', async () => {
     if (getMotion().source === 'camera') { disableCamera(); return; }
-    camera.textContent = 'asking...';
-    if (!(await enableCamera())) camera.textContent = 'camera blocked';
+    camBtn.textContent = 'asking...';
+    if (!(await enableCamera())) camBtn.textContent = 'Camera blocked';
+    else drawView();
   });
-  info.addEventListener('click', () => { panel.hidden = !panel.hidden; if (!panel.hidden) drawPanel(); });
-  // live view of exactly what the camera code sees: a 32x32 edge image and where it thinks you moved
-  function drawPanel() {
+  tiltBtn.addEventListener('click', async () => { if (!(await enableTilt())) tiltBtn.textContent = 'Tilt blocked'; });
+  function drawView() {
     const c = cameraDebug();
     if (panel.hidden || !c) return;
     const N = 32, img = pctx.createImageData(N, N);
@@ -81,8 +92,23 @@ function motionUI() {
     pctx.putImageData(img, 0, 0);
     const d = c.dot || { x: 0, y: 0 };
     pctx.fillStyle = '#ff7a1a'; pctx.fillRect(15 + d.x * 14, 15 + d.y * 14, 2, 2);
-    requestAnimationFrame(drawPanel);
+    requestAnimationFrame(drawView);
   }
+  // first visit only: a small, clearly-labelled tip pointing at the pill, after the opening has played
+  const SEEN = 'cd-camera-tip';
+  const seen = () => { try { return localStorage.getItem(SEEN); } catch { return '1'; } };
+  function hideNudge() { if (!nudge.hidden) { nudge.classList.remove('show'); setTimeout(() => { nudge.hidden = true; }, 300); } }
+  function showNudge() {
+    const s = getMotion();
+    if (seen() || !s.available.camera || s.source === 'camera' || !panel.hidden) return;
+    try { localStorage.setItem(SEEN, '1'); } catch {}
+    nudge.hidden = false; requestAnimationFrame(() => nudge.classList.add('show'));
+    setTimeout(hideNudge, 14000);
+  }
+  ui.querySelector('[data-i="nudge-yes"]').addEventListener('click', () => { hideNudge(); open(true); });
+  ui.querySelector('[data-i="nudge-no"]').addEventListener('click', hideNudge);
+  addEventListener('intro-done', () => setTimeout(showNudge, 1600), { once: true });
+  restoreCamera();
 }
 
 const wait = () => (window.__story ? boot() : setTimeout(wait, 50));

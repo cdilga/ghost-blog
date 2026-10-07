@@ -1,3 +1,4 @@
+import { heroHook } from './intro.js';
 import { marqueeHook, scoreHook, planeHook, bubblesHook, house3dHook } from './story-gfx.js';
 // Scroll story engine.
 //
@@ -42,12 +43,12 @@ function init() {
     root.classList.add('static');
     // no motion: show the agent panes in their finished state rather than empty
     document.querySelectorAll('[data-hook="terms"]').forEach((h) => termsHook(h)(1));
-    const fin = { score: scoreHook, plane: planeHook, house3d: house3dHook };
-    document.querySelectorAll('[data-hook]').forEach((h) => { const f = fin[h.dataset.hook]; if (f) requestAnimationFrame(() => f(h)(h.dataset.hook === 'house3d' ? 0.64 : 1)); });
+    const fin = { score: scoreHook, plane: planeHook, house3d: house3dHook, hero: heroHook };
+    document.querySelectorAll('[data-hook]').forEach((h) => { const f = fin[h.dataset.hook]; if (f) requestAnimationFrame(() => f(h)({ house3d: 0.64, hero: 0 }[h.dataset.hook] ?? 1)); });
     return;
   }
 
-  const hooks = { beads: beadsHook, terms: termsHook, rack: rackHook, house: houseHook, timeline: timelineHook, crt: crtHook, tvon: tvOnHook, wheel: wheelHook, spot: spotHook, marquee: marqueeHook, score: scoreHook, plane: planeHook, bubbles: bubblesHook, house3d: house3dHook };
+  const hooks = { beads: beadsHook, terms: termsHook, rack: rackHook, house: houseHook, timeline: timelineHook, crt: crtHook, tvon: tvOnHook, wheel: wheelHook, spot: spotHook, marquee: marqueeHook, score: scoreHook, plane: planeHook, bubbles: bubblesHook, house3d: house3dHook, hero: heroHook };
   for (const s of scenes) {
     const runs = s.hooksEl.map((h) => hooks[h.dataset.hook]?.(h)).filter(Boolean);
     if (!runs.length) continue;

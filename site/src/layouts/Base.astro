@@ -1,13 +1,16 @@
 ---
 import '../styles/global.css';
-const { title = 'Chris Dilger', description = 'Chris Dilger builds software with a fleet of AI agents: games, tools and a digital twin of a house.', image = '/desert.jpg' } = Astro.props;
+const { intro = false, title = 'Chris Dilger', description = 'Chris Dilger builds software with a fleet of AI agents: games, tools and a digital twin of a house.', image = '/desert.jpg' } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const ogImage = image && !/^https?:/.test(image) ? new URL(`${base}${image}`, Astro.site).href : image;
 ---
 <!doctype html>
-<html lang="en-AU" class="no-js">
+<html lang="en-AU" class="no-js" data-intro={intro ? 'manual' : undefined}>
 <head>
   <meta charset="utf-8" />
+  <!-- black from the first byte: the page fades in once it is ready, however slow the connection -->
+  <style is:inline>html,body{background:#000}#curtain{position:fixed;inset:0;z-index:2147483000;background:#000;pointer-events:none}</style>
+  <noscript><style is:inline>#curtain{display:none}</style></noscript>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#120d0a" />
   <meta name="base" content={base} />
@@ -22,11 +25,12 @@ const ogImage = image && !/^https?:/.test(image) ? new URL(`${base}${image}`, As
   <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href} />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
   <link rel="alternate" type="application/rss+xml" title="Chris Dilger" href={`${base}/rss.xml`} />
 </head>
 <body>
+  <div id="curtain" aria-hidden="true"></div>
   <a class="skip" href="#main">Skip to content</a>
   <header class="bar">
     <a href={`${base}/`}>Chris Dilger</a>
@@ -40,5 +44,17 @@ const ogImage = image && !/^https?:/.test(image) ? new URL(`${base}${image}`, As
   </header>
   <main id="main"><slot /></main>
   <script>import '../scripts/search.js';</script>
+  <script is:inline>
+    // Lift the black curtain. Text pages: once fonts are in (2.5 s cap). The home page lifts it itself when the
+    // desert has loaded; this is only its safety net, so a script failure can never leave the page black.
+    (function () {
+      var c = document.getElementById('curtain'); if (!c) return;
+      var manual = document.documentElement.dataset.intro === 'manual', done = false;
+      function lift() { if (done || !c.isConnected || c.dataset.lifting) return; done = true; c.style.transition = 'opacity .5s ease'; c.style.opacity = '0'; setTimeout(function () { c.remove(); }, 560); }
+      if (manual) { setTimeout(lift, 16000); return; }
+      (document.fonts ? document.fonts.ready : Promise.resolve()).then(lift);
+      setTimeout(lift, 2500);
+    })();
+  </script>
 </body>
 </html>

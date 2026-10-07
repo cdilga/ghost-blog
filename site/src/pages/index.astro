@@ -5,6 +5,17 @@ import houseData from '../data/house-3d.json';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const allPosts = (await getCollection('blog', (p) => !p.data.draft)).sort((a, b) => +b.data.date - +a.data.date);
 const img = (p) => (p ? `${base}${p}` : '');
+// a tumbleweed: a tangle of looping arcs, different every build
+const weed = (() => {
+  let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const d = [];
+  for (let i = 0; i < 26; i++) {
+    const a = rnd() * 6.283, r1 = 18 + rnd() * 26, b = a + 1.2 + rnd() * 2.4, r2 = 14 + rnd() * 30;
+    const p = (ang, r) => `${(50 + Math.cos(ang) * r).toFixed(1)} ${(50 + Math.sin(ang) * r).toFixed(1)}`;
+    d.push(`M${p(a, r1)} Q${p((a + b) / 2 + (rnd() - 0.5), 8 + rnd() * 40)} ${p(b, r2)}`);
+  }
+  return d.join(' ');
+})();
 const r2 = (a) => a.map((v) => Math.round(v * 100) / 100);
 const house3 = JSON.stringify({
   rooms: houseData.rooms.map((r) => ({ poly: r.poly.map(r2) })),
@@ -16,7 +27,7 @@ const house3 = JSON.stringify({
 
 // Scene lengths are in viewport-heights of scroll. Total drives the track height in CSS.
 const scenes = [
-  { id: 'top', label: 'Start', len: 1.1 },
+  { id: 'top', label: 'Start', len: 1.8 },
   { id: 'story', label: 'How I got here', len: 2.4 },
   { id: 'plan', label: 'Plan with beads', len: 1.5 },
   { id: 'fleet', label: 'A fleet of agents', len: 1.8 },
@@ -64,18 +75,30 @@ const term = [
   ['claude-8', 'bd-31 blog charts', 'plotting jet decay'],
 ];
 ---
-<Base title="Chris Dilger | Building with a fleet of agents">
+<Base title="Chris Dilger | Building with a fleet of agents" intro>
 <div class="story" id="story" data-total={total} style={`--total:${total}`}>
   <div class="stage">
     <canvas id="depth" class="depth" aria-hidden="true"></canvas>
     <div class="progress" id="progress"></div>
     <div class="frame">
       <div class="motion-ui mono" id="motion-ui" hidden>
-        <span class="mu-src">moving with <b data-o="src">scroll</b></span>
-        <button type="button" data-i="tilt" hidden>tilt to look around</button>
-        <button type="button" data-i="camera" hidden>use camera</button>
-        <button type="button" data-i="info" hidden aria-label="What the camera sees">?</button>
-        <div class="mu-panel" hidden><canvas width="32" height="32"></canvas><p>This is everything the camera code sees: a 32 by 32 pixel edge image, compared frame to frame to estimate how your head moved. Nothing is stored or sent anywhere.</p></div>
+        <button type="button" class="mu-pill" data-i="pill" aria-expanded="false" aria-controls="mu-panel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.8l1.4-2h6.6l1.4 2h1.8A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /><circle cx="12" cy="13" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
+          <span data-o="label">why enable camera?</span><i class="mu-live" aria-hidden="true"></i>
+        </button>
+        <div class="mu-panel" id="mu-panel" role="dialog" aria-label="Camera and motion" hidden>
+          <p class="mu-title">Why enable the camera?</p>
+          <p>The desert photos are 3D: each has a depth map. With your camera on, the scene follows your head like a window, so the near dunes slide against the far ones as you move.</p>
+          <p>It all happens in this tab. Each frame is shrunk to 32 by 32 pixels and turned into edges; only the direction you moved is kept. Nothing is recorded or sent.</p>
+          <div class="mu-view" hidden><canvas width="32" height="32"></canvas><span>what the camera code sees</span></div>
+          <div class="mu-actions"><button type="button" data-i="camera">Enable camera</button><button type="button" data-i="tilt" hidden>Use tilt instead</button></div>
+          <p class="mu-src">now moving with <b data-o="src">scroll</b></p>
+        </div>
+        <div class="mu-nudge" role="note" hidden>
+          <span class="mu-nudge-tag">site tip</span>
+          <p>This page can follow your head through your camera, on your device only.</p>
+          <div><button type="button" data-i="nudge-yes">Show me</button><button type="button" data-i="nudge-no">Not now</button></div>
+        </div>
       </div>
       <nav class="rail" id="rail" aria-label="Sections">
         {scenes.map((s) => <button type="button" data-goto={s.id} aria-label={s.label}><span>{s.label}</span></button>)}
@@ -83,15 +106,23 @@ const term = [
 
       <!-- 0. HERO -->
       <section class="scene" data-scene="top" data-bg="a" data-bg-dim=".22" data-len={S('top').len} aria-label="Introduction">
-        <div class="bg photo" data-fx="bgzoom"><img src={`${base}/bg/dune.jpg`} alt="" style="width:100%;height:100%;object-fit:cover;filter:brightness(.5) saturate(1.1)" /></div>
+        <div class="bg photo" data-fx="bgzoom"><img src={`${base}/bg/dune.jpg`} alt="" loading="eager" fetchpriority="high" style="width:100%;height:100%;object-fit:cover;filter:brightness(.5) saturate(1.1)" /></div>
         <div class="bg" style="background:radial-gradient(120% 90% at 30% 30%, transparent 30%, var(--ink) 95%)"></div>
         <div class="beadfield" aria-hidden="true"><i data-fx="drift" data-speed="160" style="left:8%;top:22%;width:12px;height:12px"></i><i data-fx="drift" data-speed="90" style="left:18%;top:70%;width:8px;height:8px"></i><i data-fx="drift" data-speed="260" style="left:27%;top:38%;width:18px;height:18px"></i><i data-fx="drift" data-speed="120" style="left:41%;top:82%;width:10px;height:10px"></i><i data-fx="drift" data-speed="70" style="left:55%;top:15%;width:6px;height:6px"></i><i data-fx="drift" data-speed="200" style="left:63%;top:60%;width:14px;height:14px"></i><i data-fx="drift" data-speed="110" style="left:72%;top:30%;width:8px;height:8px"></i><i data-fx="drift" data-speed="300" style="left:81%;top:76%;width:20px;height:20px"></i><i data-fx="drift" data-speed="150" style="left:88%;top:45%;width:10px;height:10px"></i><i data-fx="drift" data-speed="80" style="left:94%;top:18%;width:6px;height:6px"></i><i data-fx="drift" data-speed="180" style="left:35%;top:90%;width:12px;height:12px"></i><i data-fx="drift" data-speed="60" style="left:12%;top:48%;width:6px;height:6px"></i><i data-fx="drift" data-speed="140" style="left:50%;top:55%;width:8px;height:8px"></i><i data-fx="drift" data-speed="220" style="left:76%;top:90%;width:10px;height:10px"></i></div>
+        <div class="hero-name" data-hook="hero">
+          <canvas class="sandstorm" aria-hidden="true"></canvas>
+          <h1 class="hn" aria-label="Chris Dilger"><span class="hn-line" data-t="CHRIS">CHRIS</span><span class="hn-line" data-t="DILGER">DILGER</span></h1>
+          <p class="hn-sub mono">software engineer · builds with a fleet of agents</p>
+          <svg class="tumbleweed" viewBox="0 0 100 100" aria-hidden="true"><path d={weed} /></svg>
+          <p class="hn-hint mono" aria-hidden="true">↑ pull past the top to replay</p>
+          <svg width="0" height="0" aria-hidden="true" style="position:absolute"><filter id="heat" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.008 0.05" numOctaves="2" seed="4"><animate attributeName="baseFrequency" dur="1.6s" values="0.008 0.05;0.011 0.08;0.008 0.05" repeatCount="indefinite" /></feTurbulence><feDisplacementMap in="SourceGraphic" scale="7" /></filter></svg>
+        </div>
         <div class="content">
-          <p class="kicker" data-fx="fade" data-a="0" data-d=".12">Chris Dilger · software engineer</p>
-          <h1 class="big" data-fx="words" data-a=".02" data-d=".4">I plan in beads and ship with a fleet of agents.</h1>
-          <p class="lede" data-fx="reveal" data-a=".3" data-d=".36">Games you play with your phone, a book printed to order, and a digital twin of a house. Scroll for how it gets built.</p>
-          <a class="cta" data-fx="rise" data-a=".4" data-d=".2" href="#projects">See the projects</a>
-          <a class="cta ghost" data-fx="rise" data-a=".45" data-d=".2" href={`${base}/blog/`}>Read the writing</a>
+          <p class="kicker" data-fx="fade" data-a=".42" data-d=".1">How I build</p>
+          <h2 class="big" data-fx="words" data-a=".44" data-d=".32">I plan in beads and ship with a fleet of agents.</h2>
+          <p class="lede" data-fx="reveal" data-a=".6" data-d=".3">Games you play with your phone, a book printed to order, and a digital twin of a house. Scroll for how it gets built.</p>
+          <a class="cta" data-fx="rise" data-a=".72" data-d=".14" href="#projects">See the projects</a>
+          <a class="cta ghost" data-fx="rise" data-a=".75" data-d=".14" href={`${base}/blog/`}>Read the writing</a>
         </div>
         <div class="cue mono" data-fx="out" data-a=".05" data-d=".2" aria-hidden="true">scroll<i></i></div>
       </section>
