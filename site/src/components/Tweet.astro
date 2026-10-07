@@ -1,0 +1,24 @@
+---
+/**
+ * X/Twitter post embed. Renders a plain link (works with no JS and for privacy-minded readers),
+ * then loads X's widget script only when the embed scrolls near the viewport.
+ * <Tweet url="https://x.com/user/status/123" label="Dreo replying about Australian stock" />
+ */
+const { url, label = 'View the post on X' } = Astro.props;
+const href = url.replace('://x.com/', '://twitter.com/').replace(/\?.*$/, '');
+---
+<div class="tweet-embed">
+  <blockquote class="twitter-tweet" data-dnt="true" data-theme="dark"><a href={href}>{label}</a></blockquote>
+</div>
+<style>
+  .tweet-embed { margin: 1.6em 0; display: flex; justify-content: center; }
+  .tweet-embed blockquote { margin: 0; padding: 14px 18px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.02); }
+</style>
+<script>
+  const el = document.querySelector('.tweet-embed');
+  if (el) new IntersectionObserver((entries, io) => {
+    if (!entries[0].isIntersecting) return;
+    io.disconnect();
+    const s = document.createElement('script'); s.src = 'https://platform.twitter.com/widgets.js'; s.async = true; document.body.append(s);
+  }, { rootMargin: '400px' }).observe(el);
+</script>
