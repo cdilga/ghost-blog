@@ -3,13 +3,56 @@ import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const posts = (await getCollection('blog', (p) => !p.data.draft)).sort((a, b) => +b.data.date - +a.data.date);
+const byYear = (list) => {
+  const m = new Map();
+  for (const p of list) { const y = p.data.date.getUTCFullYear(); m.set(y, [...(m.get(y) ?? []), p]); }
+  return [...m.entries()];
+};
+const fresh = byYear(posts.filter((p) => !p.data.legacy));
+const archive = byYear(posts.filter((p) => p.data.legacy));
+const fmt = (d) => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 ---
-<Base title="Writing | Chris Dilger">
+<Base title="Writing | Chris Dilger" description="Writing by Chris Dilger: building with AI agents, plus an archive of older posts on travel, hackathons and software.">
   <div class="list">
     <h1>Writing</h1>
-    <div class="cards" style="grid-template-columns:1fr">
-      {posts.map((p) => <a class="card" href={`${base}/blog/${p.id}/`}><small>{p.data.date.toISOString().slice(0, 10)}</small><h3>{p.data.title}</h3><p>{p.data.description}</p></a>)}
-    </div>
+    {fresh.map(([year, list]) => (
+      <section class="year">
+        <h2 class="year-label">{year}</h2>
+        <div class="cards" style="grid-template-columns:1fr">
+          {list.map((p) => (
+            <a class="card" href={`${base}/blog/${p.id}/`}>
+              <small>{p.data.date.toISOString().slice(0, 10)}</small>
+              <h3>{p.data.title}</h3>
+              <p>{p.data.description}</p>
+              {p.data.tags.length > 0 && <div class="tags">{p.data.tags.map((t) => <span class="pill">{t}</span>)}</div>}
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
+
+    {archive.length > 0 && (
+      <section class="archive" aria-labelledby="archive-h">
+        <h2 id="archive-h" class="archive-h">Archive</h2>
+        <p class="archive-note">Older posts from the previous blog, 2018 to 2026: travel, study abroad, hackathons and early software notes.</p>
+        {archive.map(([year, list]) => (
+          <div class="year">
+            <h3 class="year-label">{year}</h3>
+            <ul class="archive-list">
+              {list.map((p) => (
+                <li>
+                  <a href={`${base}/blog/${p.id}/`}>
+                    <time datetime={p.data.date.toISOString()}>{fmt(p.data.date)}</time>
+                    <span class="t">{p.data.title}</span>
+                    {p.data.tags.length > 0 && <span class="tags">{p.data.tags.map((t) => <span class="pill">{t}</span>)}</span>}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+    )}
   </div>
   <footer class="foot">© Chris Dilger</footer>
 </Base>

@@ -72,18 +72,38 @@ for (const dev of devices) {
       shots.push({ f, P });
     }
   }
-  // clipped-content check at every active scene's mid point: text/CTA boxes must sit inside the visible viewport
+  // clipped-content check: every key element must be fully inside the viewport at SOME point
+  // while its scene is the active one (tall scenes pan, so a single mid-point sample is not enough).
   const clipped = await page.evaluate(([top, range]) => {
-    const bad = [];
+    const sel = 'h1,h2,.lede,.cta,.browser,.term,.card,svg.graph,svg.house,.tl-year';
+    const seen = new Map();
     window.__story.scenes.forEach((s) => {
-      scrollTo(0, top + (s.start + (s.end - s.start) * 0.55) * range); window.__story.measure(); window.__story.snap();
-      s.el.querySelectorAll('h1,h2,.lede,.cta,.browser,.term,.card,svg.graph,svg.house').forEach((el) => {
-        const r = el.getBoundingClientRect(); const o = parseFloat(getComputedStyle(el).opacity);
-        if (r.width && o > 0.5 && (r.bottom > innerHeight + 2 || r.top < -2 || r.right > innerWidth + 2 || r.left < -2)) bad.push(`${s.id}:${el.tagName.toLowerCase()}.${(el.className.baseVal ?? el.className).toString().split(' ')[0]} top=${Math.round(r.top)} bottom=${Math.round(r.bottom)} vh=${innerHeight}`);
-      });
+      const els = [...s.el.querySelectorAll(sel)];
+      els.forEach((el) => seen.set(el, { s: s.id, ok: false, worst: '' }));
+      for (let k = 0; k <= 12; k++) {
+        const lp = 0.08 + (k / 12) * 0.8;
+        scrollTo(0, top + (s.start + (s.end - s.start) * lp) * range); window.__story.measure(); window.__story.snap();
+        els.forEach((el) => {
+          const r = el.getBoundingClientRect(); const rec = seen.get(el);
+          if (!r.width || getComputedStyle(el).display === 'none') { rec.ok = true; return; }
+          if (r.bottom <= innerHeight + 2 && r.top >= -2 && r.right <= innerWidth + 2 && r.left >= -2) rec.ok = true;
+          else rec.worst = `top=${Math.round(r.top)} bottom=${Math.round(r.bottom)} left=${Math.round(r.left)} right=${Math.round(r.right)} vw=${innerWidth} vh=${innerHeight}`;
+        });
+      }
     });
-    return bad;
+    return [...seen].filter(([, v]) => !v.ok).map(([el, v]) => `${v.s}:${el.tagName.toLowerCase()}.${(el.className.baseVal ?? el.className).toString().split(' ')[0]} ${v.worst}`);
   }, [info.top, info.range]);
+
+  // hold time: share of each scene where the scene is fully opaque and every text block is fully revealed
+  const holds = await page.evaluate(([top, range]) => window.__story.scenes.map((s) => {
+    let held = 0; const N = 40;
+    for (let k = 0; k < N; k++) {
+      scrollTo(0, top + (s.start + (s.end - s.start) * (k + 0.5) / N) * range); window.__story.measure(); window.__story.snap();
+      const textOk = [...s.el.querySelectorAll('h1 .w, h2 .w, .lede .w')].every((w) => parseFloat(w.style.opacity || 1) > 0.95);
+      if ((s.o ?? 0) > 0.95 && textOk) held++;
+    }
+    return { id: s.id, len: +s.len.toFixed(2), hold: +(held / N).toFixed(2) };
+  }), [info.top, info.range]);
 
   // dead air: stretches of progress where the strongest scene is dim
   let dead = 0; for (const r of timeline) if (Math.max(...r.o) < 0.55) dead++;
@@ -110,9 +130,9 @@ for (const dev of devices) {
   const perf = await page.evaluate(() => { const s = window.__story.stats; const d = [...s.dts].sort((a, b) => a - b); return { frames: s.frames, long: s.long, worst: +s.worst.toFixed(1), p50: d[Math.floor(d.length * 0.5)], p95: d[Math.floor(d.length * 0.95)] }; });
   perf.seconds = +((Date.now() - t0) / 1000).toFixed(1);
 
-  report.push({ dev, shots, timeline, clipped, dead, maxDP: +maxDP.toFixed(4), perf, errors, sceneIds: await page.evaluate(() => window.__story.scenes.map((s) => [s.id, s.start, s.end])) });
+  report.push({ dev, shots, timeline, clipped, holds, dead, maxDP: +maxDP.toFixed(4), perf, errors, sceneIds: await page.evaluate(() => window.__story.scenes.map((s) => [s.id, s.start, s.end])) });
   await ctx.close();
-  console.log(`${dev.name.padEnd(24)} clipped=${clipped.length} dead=${dead}% jitterΔP=${maxDP.toFixed(4)} p95=${perf.p95}ms worst=${perf.worst}ms errors=${errors.length}`);
+  console.log(`${dev.name.padEnd(24)} clipped=${clipped.length} holds=${holds.map((h) => h.id + ':' + h.len + 'vh/' + Math.round(h.hold * 100) + '%').join(' ')} dead=${dead}% jitterΔP=${maxDP.toFixed(4)} p95=${perf.p95}ms worst=${perf.worst}ms errors=${errors.length}`);
 }
 await browser.close(); server.close();
 
@@ -123,7 +143,7 @@ const chart = (r) => {
   const labels = r.sceneIds.map(([id, s, e], si) => `<text x="${((s + e) / 2) * W}" y="${H + 14}" fill="${colours[si % 10]}" font-size="10" text-anchor="middle">${id}</text>`).join('');
   return `<svg viewBox="0 0 ${W} ${H + 20}" style="width:100%;background:#1c1410;border-radius:8px">${lines}${labels}</svg>`;
 };
-const html = `<!doctype html><meta charset=utf-8><title>Story harness</title><style>body{background:#120d0a;color:#f2e6d3;font:14px system-ui;margin:20px}h2{margin-top:40px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}.grid figure{margin:0;font:10px monospace;color:#b9a68f}.grid img{width:100%;border-radius:4px;display:block}.ok{color:#7ed49a}.bad{color:#ff6b6b}code{color:#ff9a4d}</style><h1>Scroll story harness</h1><p>Scene opacity vs progress (each colour is a scene). Smooth overlaps are good; gaps below 0.55 are dead air.</p>${report.map((r) => `<h2>${r.dev.name} <small>${r.dev.w}×${r.dev.h} @${r.dev.dpr}x</small></h2><p>clipped: <b class="${r.clipped.length ? 'bad' : 'ok'}">${r.clipped.length}</b> · dead air: <b class="${r.dead > 3 ? 'bad' : 'ok'}">${r.dead}%</b> · stale-measure ΔP: <b class="${r.maxDP > 0.01 ? 'bad' : 'ok'}">${r.maxDP}</b> · frame p50/p95/worst: ${r.perf.p50}/${r.perf.p95}/${r.perf.worst} ms (${r.perf.long} >24ms of ${r.perf.frames}) · console errors: <b class="${r.errors.length ? 'bad' : 'ok'}">${r.errors.length}</b></p>${r.clipped.length ? `<pre>${r.clipped.join('\n')}</pre>` : ''}${r.errors.length ? `<pre>${r.errors.join('\n').replace(/</g, '&lt;')}</pre>` : ''}${chart(r)}<div class="grid">${r.shots.map((s) => `<figure><img loading=lazy src="${r.dev.name}/${s.f}"><figcaption>${(s.P * 100).toFixed(0)}%</figcaption></figure>`).join('')}</div>`).join('')}`;
+const html = `<!doctype html><meta charset=utf-8><title>Story harness</title><style>body{background:#120d0a;color:#f2e6d3;font:14px system-ui;margin:20px}h2{margin-top:40px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}.grid figure{margin:0;font:10px monospace;color:#b9a68f}.grid img{width:100%;border-radius:4px;display:block}.ok{color:#7ed49a}.bad{color:#ff6b6b}code{color:#ff9a4d}</style><h1>Scroll story harness</h1><p>Scene opacity vs progress (each colour is a scene). Smooth overlaps are good; gaps below 0.55 are dead air.</p>${report.map((r) => `<h2>${r.dev.name} <small>${r.dev.w}×${r.dev.h} @${r.dev.dpr}x</small></h2><p>clipped: <b class="${r.clipped.length ? 'bad' : 'ok'}">${r.clipped.length}</b> · dead air: <b class="${r.dead > 3 ? 'bad' : 'ok'}">${r.dead}%</b> · stale-measure ΔP: <b class="${r.maxDP > 0.01 ? 'bad' : 'ok'}">${r.maxDP}</b> · frame p50/p95/worst: ${r.perf.p50}/${r.perf.p95}/${r.perf.worst} ms (${r.perf.long} >24ms of ${r.perf.frames}) · console errors: <b class="${r.errors.length ? 'bad' : 'ok'}">${r.errors.length}</b></p><p>Readable hold per scene (scroll length in viewport heights / share fully revealed): ${r.holds.map((h) => `<code>${h.id}</code> ${h.len}vh <b class="${h.hold < 0.3 ? 'bad' : 'ok'}">${Math.round(h.hold * 100)}%</b>`).join(' · ')}</p>${r.clipped.length ? `<pre>${r.clipped.join('\n')}</pre>` : ''}${r.errors.length ? `<pre>${r.errors.join('\n').replace(/</g, '&lt;')}</pre>` : ''}${chart(r)}<div class="grid">${r.shots.map((s) => `<figure><img loading=lazy src="${r.dev.name}/${s.f}"><figcaption>${(s.P * 100).toFixed(0)}%</figcaption></figure>`).join('')}</div>`).join('')}`;
 fs.writeFileSync(path.join(out, 'report.html'), html);
-fs.writeFileSync(path.join(out, 'summary.json'), JSON.stringify(report.map((r) => ({ device: r.dev.name, clipped: r.clipped, dead: r.dead, jitter: r.maxDP, perf: r.perf, errors: r.errors })), null, 1));
+fs.writeFileSync(path.join(out, 'summary.json'), JSON.stringify(report.map((r) => ({ device: r.dev.name, clipped: r.clipped, holds: r.holds, dead: r.dead, jitter: r.maxDP, perf: r.perf, errors: r.errors })), null, 1));
 console.log('report:', path.join(out, 'report.html'));

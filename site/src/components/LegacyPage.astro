@@ -1,0 +1,10 @@
+---
+// Renders an entry from the `pages` collection (ported Ghost pages) in the post layout.
+import { getEntry, render } from 'astro:content';
+import Post from '../layouts/Post.astro';
+const { slug } = Astro.props;
+const page = await getEntry('pages', slug);
+if (!page) throw new Error(`missing src/content/pages/${slug}.md`);
+const { Content } = await render(page);
+---
+<Post {...page.data}><Content /></Post>

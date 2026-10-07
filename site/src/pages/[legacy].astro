@@ -1,0 +1,26 @@
+---
+// Old Ghost posts lived at /<slug>/. Each legacy post gets a tiny redirect page to /blog/<slug>/.
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  // top-level routes that already exist (or are reserved) must never be shadowed by a redirect
+  const RESERVED = new Set(['blog', 'rss.xml', 'reading-list', 'cv', 'photography', 'contact', 'img', 'shots', 'tag', 'author', 'rss', '404']);
+  const posts = await getCollection('blog', (p) => p.data.legacy && !p.data.draft);
+  return posts.filter((p) => !RESERVED.has(p.id)).map((p) => ({ params: { legacy: p.id }, props: { title: p.data.title } }));
+}
+const { legacy } = Astro.params;
+const { title } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const to = `${base}/blog/${legacy}/`;
+---
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8" />
+  <title>{title} | Chris Dilger</title>
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href={new URL(to, Astro.site)} />
+  <meta http-equiv="refresh" content={`0;url=${to}`} />
+</head>
+<body><p>This post has moved to <a href={to}>{title}</a>.</p></body>
+</html>

@@ -7,6 +7,7 @@ const posts = (await getCollection('blog', (p) => !p.data.draft)).sort((a, b) =>
 // Scene lengths are in viewport-heights of scroll. Total drives the track height in CSS.
 const scenes = [
   { id: 'top', label: 'Start', len: 1.1 },
+  { id: 'story', label: 'How I got here', len: 2.4 },
   { id: 'plan', label: 'Plan with beads', len: 1.5 },
   { id: 'fleet', label: 'A fleet of agents', len: 1.5 },
   { id: 'projects', label: 'Physical Soccer', len: 1.25 },
@@ -28,6 +29,17 @@ const beads = [
   { id: 'bd-16', t: 'Playtest round', x: 480, y: 120, done: 0.68 },
   { id: 'bd-17', t: 'Ship build', x: 710, y: 75, done: 0.85 },
 ];
+// The development story, oldest first. Links go to the archived posts from each era.
+const timeline = [
+  { year: 2018, era: 'University', title: 'Evolutionary algorithms', body: 'Studying at Swinburne. My first research write-up: a genetic algorithm that reduces data sets without losing what matters.', href: '/blog/data-reduction-efficency/' },
+  { year: 2018, era: 'Abroad', title: 'Sarawak, Brunei, Boston', body: 'A social innovation project in Kampung Stutong Baru, then an exchange to Northeastern. Learning to build for people who are not me.', href: '/blog/social-innovation-project/' },
+  { year: 2019, era: 'Hackathons', title: 'Checkface', body: 'We turned hash checking into something your brain does for free: a hash becomes a generated face you recognise at a glance.', href: '/blog/checkface/' },
+  { year: 2020, era: 'Teaching', title: 'Explaining things', body: 'Data engineering bootcamps and plain-English explainers like "What is an API?". Teaching is how I check I actually understand something.', href: '/blog/what-is-an-api/' },
+  { year: 2021, era: 'Measuring', title: 'M1 vs i7 4790k', body: 'Benchmarking a new Mac against an old desktop, published in English and Chinese. Opinions are cheap, numbers are better.', href: '/blog/new-mac-m1-or-old-intel-i7-4790k-which-would-win/' },
+  { year: 2023, era: 'Consulting', title: 'Data and platforms', body: 'Data engineering and consulting for teams who need systems that keep working after the consultant leaves.' },
+  { year: 2025, era: 'Agents', title: 'Claude in a loop', body: 'continuous-claude: an agent running unattended, opening pull requests while I sleep. The bottleneck moved from typing to deciding.', href: 'https://github.com/cdilga/continuous-claude' },
+  { year: 2026, era: 'Now', title: 'Post SaaS, not prompts', body: 'Plans live as beads, a herd of agents builds, I steer. Games, a book, a house twin, all shipping in parallel.', href: '/blog/your-prompts-do-not-matter-anymore/' },
+];
 const edges = [[0, 2], [1, 2], [2, 3], [2, 4], [3, 5], [4, 5]];
 const term = [
   ['claude-1', 'bd-12 lobby + QR join', 'tests green'],
@@ -44,10 +56,10 @@ const term = [
 <div class="story" id="story" data-total={total} style={`--total:${total}`}>
   <div class="stage">
     <div class="progress" id="progress"></div>
-    <nav class="rail" id="rail" aria-label="Sections">
-      {scenes.map((s) => <button type="button" data-goto={s.id} aria-label={s.label}><span>{s.label}</span></button>)}
-    </nav>
     <div class="frame">
+      <nav class="rail" id="rail" aria-label="Sections">
+        {scenes.map((s) => <button type="button" data-goto={s.id} aria-label={s.label}><span>{s.label}</span></button>)}
+      </nav>
 
       <!-- 0. HERO -->
       <section class="scene" data-scene="top" data-len={S('top').len} aria-label="Introduction">
@@ -56,9 +68,30 @@ const term = [
         <div class="content">
           <p class="kicker" data-fx="fade" data-a="0" data-d=".12">Chris Dilger · software engineer</p>
           <h1 class="big" data-fx="words" data-a=".02" data-d=".4">I plan in beads and ship with a fleet of agents.</h1>
-          <p class="lede" data-fx="rise" data-a=".3" data-d=".25">Games you play with your phone, a book printed to order, and a digital twin of a house. Scroll for how it gets built.</p>
+          <p class="lede" data-fx="reveal" data-a=".3" data-d=".36">Games you play with your phone, a book printed to order, and a digital twin of a house. Scroll for how it gets built.</p>
           <a class="cta" data-fx="rise" data-a=".4" data-d=".2" href="#projects">See the projects</a>
           <a class="cta ghost" data-fx="rise" data-a=".45" data-d=".2" href={`${base}/blog/`}>Read the writing</a>
+        </div>
+      </section>
+
+      <!-- 0b. STORY: how I got here -->
+      <section class="scene" data-scene="story" data-len={S('story').len} aria-label="How I got here">
+        <div class="content tl" data-hook="timeline">
+          <div class="tl-head">
+            <p class="kicker" data-fx="fade" data-a="0" data-d=".06">How I got here</p>
+            <h2 class="mid" data-fx="words" data-a=".0" data-d=".12">From one algorithm to a herd of agents.</h2>
+          </div>
+          <div class="tl-year mono" aria-hidden="true">2018</div>
+          <div class="tl-rule" aria-hidden="true"><i class="tl-fill"></i></div>
+          <ol class="tl-track">
+            {timeline.map((m) => (
+              <li class="tl-item" data-year={m.year}>
+                <small class="mono">{m.year} · {m.era}</small>
+                <h3>{m.href ? <a href={m.href.startsWith('/') ? `${base}${m.href}` : m.href}>{m.title}</a> : m.title}</h3>
+                <p>{m.body}</p>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
@@ -67,7 +100,8 @@ const term = [
         <div class="content">
           <p class="kicker" data-fx="fade" data-a="0" data-d=".1">01 · Plan</p>
           <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Every idea becomes a bead first.</h2>
-          <p class="lede" data-fx="rise" data-a=".15" data-d=".2"><b>Beads</b> is an issue tracker that lives in git, with real dependencies. <code class="mono">bd ready</code> lists what is unblocked, so any agent can pick up the next piece without me explaining the plan again.</p>
+          <p class="lede" data-fx="reveal" data-a=".15" data-d=".36"><b>Beads</b> is an issue tracker that lives in git, with real dependencies. <code class="mono">bd ready</code> lists what is unblocked, so any agent can pick up the next piece without me explaining the plan again.</p>
+          <p class="stat mono" data-fx="rise" data-a=".1" data-d=".1"><span data-ready>0</span> ready to claim</p>
           <svg class="graph" viewBox="0 0 900 190" role="img" aria-label="A dependency graph of tasks being completed" data-hook="beads" style="margin-top:20px">
             {edges.map(([a, b], i) => {
               const A = beads[a], B = beads[b];
@@ -89,7 +123,8 @@ const term = [
         <div class="content">
           <p class="kicker" data-fx="fade" data-a="0" data-d=".1">02 · Build</p>
           <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Then a herd picks them up.</h2>
-          <p class="lede" data-fx="rise" data-a=".12" data-d=".2"><b>herdr</b> and <b>ntm</b> keep eight agent panes running side by side, each claiming a ready bead. I review, steer and merge. They type.</p>
+          <p class="lede" data-fx="reveal" data-a=".12" data-d=".36"><b>herdr</b> and <b>ntm</b> keep eight agent panes running side by side, each claiming a ready bead. I review, steer and merge. They type.</p>
+          <p class="stat mono" data-fx="rise" data-a=".1" data-d=".1"><span data-merged>0</span>/8 merged</p>
           <div class="terms" data-hook="terms" style="margin-top:22px">
             {term.map(([n, task, status], i) => (
               <div class="term" data-i={i} data-task={task} data-status={status}><b>{n}</b><span class="line"></span></div>
@@ -104,7 +139,7 @@ const term = [
           <div class="copy">
             <p class="kicker" data-fx="fade" data-a="0" data-d=".1">03 · Physical Soccer</p>
             <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Anything can be a controller.</h2>
-            <p class="lede" data-fx="rise" data-a=".18" data-d=".2">A football game where the thing in your hand, or on the table, becomes the pad. Built in short playtest rounds; every round is a retained build you can open.</p>
+            <p class="lede" data-fx="reveal" data-a=".18" data-d=".36">A football game where the thing in your hand, or on the table, becomes the pad. Built in short playtest rounds; every round is a retained build you can open.</p>
             <div data-fx="rise" data-a=".28" data-d=".15"><span class="pill">phones</span><span class="pill">realtime</span><span class="pill">playtest builds</span></div>
             <a class="cta" data-fx="rise" data-a=".32" data-d=".15" href="https://physicalsoccer.dilger.dev">physicalsoccer.dilger.dev</a>
           </div>
@@ -122,7 +157,7 @@ const term = [
           <div class="copy">
             <p class="kicker" data-fx="fade" data-a="0" data-d=".1">04 · Joystick Jammers</p>
             <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">The TV is the arena. Phones are the pads.</h2>
-            <p class="lede" data-fx="rise" data-a=".18" data-d=".2">A party racer and demolition derby. Open a room, scan the QR, race before the couch gets cold. No installs.</p>
+            <p class="lede" data-fx="reveal" data-a=".18" data-d=".36">A party racer and demolition derby. Open a room, scan the QR, race before the couch gets cold. No installs.</p>
             <a class="cta" data-fx="rise" data-a=".3" data-d=".15" href="https://jammers.dilger.dev">jammers.dilger.dev</a>
           </div>
         </div>
@@ -134,7 +169,7 @@ const term = [
           <div class="copy">
             <p class="kicker" data-fx="fade" data-a="0" data-d=".1">05 · Dilger Books</p>
             <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">26 letters. 26 flying machines.</h2>
-            <p class="lede" data-fx="rise" data-a=".18" data-d=".2"><b>Aviation ABCs</b>, written by Daniel Dilger and published by me. A hardcover picture book, printed to order, with its own storefront and checkout.</p>
+            <p class="lede" data-fx="reveal" data-a=".18" data-d=".36"><b>Aviation ABCs</b>, written by Daniel Dilger and published by me. A hardcover picture book, printed to order, with its own storefront and checkout.</p>
             <a class="cta" data-fx="rise" data-a=".3" data-d=".15" href="https://books.dilger.au">books.dilger.au</a>
           </div>
           <div class="duo" data-fx="tilt" data-a=".05" data-d=".5">
@@ -157,7 +192,7 @@ const term = [
           <div class="copy">
             <p class="kicker" data-fx="fade" data-a="0" data-d=".1">06 · Dishmate</p>
             <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">Small tools that solve a real annoyance.</h2>
-            <p class="lede" data-fx="rise" data-a=".18" data-d=".2"><b>Dishmate</b> is a dishwasher load advisor and troubleshooter. Tell it what you are washing and it tells you where it goes and why the glasses came out cloudy.</p>
+            <p class="lede" data-fx="reveal" data-a=".18" data-d=".36"><b>Dishmate</b> is a dishwasher load advisor and troubleshooter. Tell it what you are washing and it tells you where it goes and why the glasses came out cloudy.</p>
             <a class="cta" data-fx="rise" data-a=".3" data-d=".15" href="https://github.com/cdilga/dishmate">View on GitHub</a>
           </div>
         </div>
@@ -169,8 +204,8 @@ const term = [
           <div class="copy">
             <p class="kicker" data-fx="fade" data-a="0" data-d=".1">07 · home.dilger.dev</p>
             <h2 class="mid" data-fx="words" data-a=".02" data-d=".3">A digital twin of a real house, from the drawings.</h2>
-            <p class="lede" data-fx="rise" data-a=".15" data-d=".2">Walk the model and its street, switch between <b>slab</b>, <b>frame</b> and <b>finished</b>, and mark where the power points should go. It is generated from code, so every element has a stable ID and changes show up as diffs. Rust and Bevy on WebGPU, in your browser. Not public yet.</p>
-            <div data-fx="rise" data-a=".3" data-d=".15"><span class="pill">generated from a schema</span><span class="pill">construction stages</span><span class="pill">landscape + drive mode</span></div>
+            <p class="lede" data-fx="reveal" data-a=".15" data-d=".36">Walk the model and its street, switch between <b>slab</b>, <b>frame</b> and <b>finished</b>, and mark where the power points should go. It is generated from code, so every element has a stable ID and changes show up as diffs. Rust and Bevy on WebGPU, in your browser. Not public yet.</p>
+            <div data-fx="rise" data-a=".2" data-d=".15"><span class="pill" data-stage="slab">slab</span><span class="pill" data-stage="frame">frame</span><span class="pill" data-stage="finished">finished</span></div>
           </div>
           <svg viewBox="0 0 520 340" class="house" role="img" aria-label="House model moving from slab to frame to finished" data-hook="house" data-fx="tilt" data-a=".05" data-d=".5">
             <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1a12" /><stop offset="1" stop-color="#120d0a" /></linearGradient></defs>
@@ -213,7 +248,7 @@ const term = [
       <section class="scene" data-scene="contact" data-len={S('contact').len} aria-label="Contact">
         <div class="content" style="text-align:center">
           <h2 class="big" data-fx="words" data-a=".02" data-d=".35">Say hello.</h2>
-          <p class="lede" style="margin-inline:auto" data-fx="rise" data-a=".2" data-d=".2">Building something with agents, games or models of real places? I like talking about it.</p>
+          <p class="lede" style="margin-inline:auto" data-fx="reveal" data-a=".2" data-d=".36">Building something with agents, games or models of real places? I like talking about it.</p>
           <div data-fx="rise" data-a=".3" data-d=".2">
             <a class="cta" href="https://github.com/cdilga">GitHub</a>
             <a class="cta ghost" href="https://x.com/cdilga">X</a>
