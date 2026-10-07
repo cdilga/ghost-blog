@@ -1,5 +1,5 @@
 # Hosting is Cloudflare Pages (project chris-dilger-me), which builds every push itself:
-#   main -> preview.chris.dilger.me   (shared test site)
+#   main -> chris-preview.dilger.me   (shared test site)
 #   prod -> chris.dilger.me           (production; move it with the "Promote to production" workflow)
 # This workflow only checks that the site still builds, so a broken push shows up red on GitHub.
 name: Site build check

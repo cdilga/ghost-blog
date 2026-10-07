@@ -1,4 +1,4 @@
-# Promote what is on preview.chris.dilger.me (main) to production (chris.dilger.me).
+# Promote what is on chris-preview.dilger.me (main) to production (chris.dilger.me).
 # Fast-forwards the prod branch, and Cloudflare Pages deploys it. Run it from the Actions tab
 # (or `gh workflow run promote.yml`). Pass a commit to promote an earlier one instead of main's tip;
 # to undo a bad release instantly, use "Rollback" on an older production deployment in the Cloudflare

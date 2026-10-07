@@ -27,7 +27,7 @@ function cloudflarePages() {
         await walk(root);
         await writeFile(join(root, '_redirects'), lines.join('\n') + '\n');
         await writeFile(join(root, '_headers'), [
-          'https://preview.chris.dilger.me/*', '  X-Robots-Tag: noindex', '',
+          'https://chris-preview.dilger.me/*', '  X-Robots-Tag: noindex', '',
           '/_astro/*', '  Cache-Control: public, max-age=31536000, immutable', '',
         ].join('\n'));
       },
