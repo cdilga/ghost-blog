@@ -1,6 +1,6 @@
 ---
-title: "Planning with beads, building with a herd"
-description: "How I turn ideas into dependency-aware tasks and let several agents work them in parallel, with real numbers from the 99 beads that built the previous version of this site."
+title: "Planning with beads: how Physical Soccer and Joystick Jammers get built"
+description: "Two real dependency graphs: Physical Soccer, planned up front and turned into 194 beads that flowed through a herd of agents in two days, and Joystick Jammers, an ongoing polishing swarm."
 date: 2026-10-01
 tags: [workflow, agents, beads]
 ---
@@ -9,64 +9,71 @@ import BeadsGraph from '../../components/BeadsGraph.astro';
 import site from '../../data/beads-this-site.json';
 import jj from '../../data/beads-joystick-jammers.json';
 import ps from '../../data/beads-physical-soccer.json';
+import flow from '../../data/beads-flow.json';
 
-export const created = [[19, 1], [20, 1], [21, 1], [22, 17], [23, 22], [24, 48], [25, 77], [26, 91], [27, 99], [28, 99], [29, 99]];
-export const closed = [[19, 0], [20, 0], [21, 0], [22, 3], [23, 22], [24, 24], [25, 57], [26, 68], [27, 80], [28, 81], [29, 85]];
-export const open = created.map(([d, c], i) => [d, c - closed[i][1]]);
-export const ttc = [['< 1 h', 27], ['1 to 6 h', 6], ['6 to 24 h', 24], ['1 to 3 days', 22], ['> 3 days', 6]];
+export const psFlow = [
+  { name: 'created (total)', data: flow.ps.created },
+  { name: 'closed (total)', data: flow.ps.closed },
+  { name: 'open right now', data: flow.ps.open },
+];
+export const jjFlow = [
+  { name: 'created (total)', data: flow.jj.created.map(([h, v]) => [Math.round((h / 24) * 10) / 10, v]) },
+  { name: 'closed (total)', data: flow.jj.closed.map(([h, v]) => [Math.round((h / 24) * 10) / 10, v]) },
+  { name: 'open right now', data: flow.jj.open.map(([h, v]) => [Math.round((h / 24) * 10) / 10, v]) },
+];
 
 My loop for new projects is deliberately boring.
 
-1. **Capture as beads.** Every idea, bug and chore becomes an issue in [beads](https://github.com/steveyegge/beads), which stores issues in the repo itself, next to the code, with real dependencies between them.
-2. **Let the graph decide.** `bd ready` lists only the tasks with no open blockers. That is the whole scheduler.
-3. **Run a herd.** With herdr and ntm I keep several agent panes open side by side, each claiming one ready bead, so the work fans out and the dependency graph keeps it honest.
-4. **Review and merge.** My job is steering and taste: reading diffs, playtesting builds, and writing the next beads.
+1. **Write the plan.** A real document: what the thing is, who it is for, what "done" means, and how we will know.
+2. **Turn it into beads.** Every requirement becomes an issue in [beads](https://github.com/steveyegge/beads), stored in the repo next to the code, with real dependencies between them.
+3. **Let the graph decide.** `br ready` lists only the beads with no open blockers. That is the whole scheduler.
+4. **Run a herd.** With herdr and ntm I keep a few agent panes open side by side, each claiming one ready bead, so the work fans out and the graph keeps it honest.
+5. **Review, playtest, write the next beads.** My job is steering and taste.
 
-On the bigger projects the agents also coordinate with each other. Each one registers with MCP Agent Mail under a name, reserves the files it is about to edit, and announces its claim in a thread named after the bead. The swarm stays small on purpose: five ntm panes at most, including mine, with idle panes reused as worker, validator or release manager rather than adding more agents. Newer projects use `br` (beads in Rust) and `bv --robot-next` to ask the graph what matters most.
+Two of my current projects show what that looks like, and they show two quite different shapes.
 
-## What it looks like in practice
+## Physical Soccer: plan first, then let it flow
 
-These are real beads from this repository:
+Physical Soccer is a party football game where anything can be a controller: phones, pads, keyboards, half a touchscreen. Before a single bead existed, it had a plan: `plan.md`, now on its fifteenth revision. Each revision closed real gaps. Revision 3 decided who owns the room state. By revision 4 the plan had a journey matrix and dependency cuts, and it said, in so many words, that it was "ready to convert into small, testable tasks". The revisions kept coming anyway: revision 7 pinned the physics clock (the original game runs at 0.85x wall-clock, so the port carries an explicit time scale).
 
-```bash
-bd create "Terminal dock-spawn animation from navbar" --type feature --priority 2
-bd dep add ghost-blog-0tt ghost-blog-cog   # sequenced after the particle mask transition
-bd ready                                   # what can an agent pick up right now?
-bd update ghost-blog-0tt --status in_progress
-bd close ghost-blog-0tt --reason "Terminals spawn from navbar with elastic easing."
-bd sync                                    # issues travel with git
-```
+Then it was converted: a coverage index (`plan-beads-map.md`) maps every requirement to a bead ID, and every bead carries its own contract (what to build, which checks prove it, which evidence a parent bead needs from its children).
 
-Each agent session starts with `bd ready`, claims one bead, and ends by closing it with the evidence. No re-briefing. The plan is in the repo, so a fresh session picks up exactly where the last one stopped.
+<Chart type="line" title="Physical Soccer: beads created vs closed, hour by hour" series={psFlow} xLabel="hours since the first bead" yLabel="beads" caption={`About 130 beads were written in the first afternoon, straight from the plan. Closing started almost immediately and ran as a steady stream: ${ps.status.closed} closed in the first 42 hours, with the open count falling as soon as the planning burst ended. That is what a good plan buys you: agents never ran out of well-specified, unblocked work.`} />
 
-## Real numbers: the site before this one
+<BeadsGraph data={ps} height={420} title={`Physical Soccer: ${ps.beads} beads, ${ps.blocks} blocking links, ${ps.layers} layers deep`} caption={`Each dot is a bead, placed further right the more beads must close before it can start. Filled dots are closed. You can see the work moving through the graph as a wave from left to right. ${ps.blocked_by_something} of the ${ps.beads} beads wait on at least one other, and the longest chain is ${ps.layers} beads long: the real critical path, which no number of agents makes shorter. Grey outlines are ideas deferred on purpose. Titles are left out deliberately; the shape is the point.`} />
 
-The previous Ghost theme for this site was planned and built this way over about ten days in January 2026. The beads database is still in the repository, so here is what that looked like.
+Why did this one flow so well?
 
-- **99 beads**: 62 tasks, 28 features, 5 bugs and 4 epics.
-- **133 dependency links** between them. 42 beads were blocked by at least one other, and one waited on ten.
-- **85 closed** by the end; the 14 still open were deliberately parked ideas, not forgotten work.
+- **The plan did the arguing.** Fifteen revisions of a document are cheap. Fifteen revisions of code are not. By the time beads existed, the hard decisions (who owns state, how reconnection works, what the relay is allowed to see) were already made.
+- **Every bead had a contract.** "Done" meant named checks passed and evidence was recorded, so an agent could close a bead without asking me what I meant.
+- **Parents integrate, children prove.** Small child beads close with targeted checks; the parent bead re-runs the whole thing. That stops "it works on my slice" from leaking upwards.
+- **Owner beads are explicit.** The things only I can do (feel the controls on a real phone, judge whether it is fun) are beads too, assigned to me and fed by a reviewable build. They block exactly what they should and nothing more.
 
-<Chart type="line" title="Beads created vs closed, January 2026" series={[{ name: 'created (total)', data: created }, { name: 'closed (total)', data: closed }, { name: 'open right now', data: open }]} xLabel="day of January 2026" yLabel="beads" caption="Planning came in bursts (the 24th and 25th added 55 beads), and closing followed close behind. The open count never ran away: it hovered around 20, which is roughly what a herd of agents plus one reviewer can keep in flight." />
+## Joystick Jammers: an ongoing swarm
 
-<Chart type="bar" title="How long a bead stayed open" series={[{ name: 'beads', data: ttc }]} yLabel="beads closed" caption="Bimodal. A third closed within the hour: small, well-specified tasks an agent took straight off the ready queue. The rest waited on a dependency or on me, which is exactly what the graph is for. Median: about 17 hours." />
+Joystick Jammers is a party racer and demolition derby: the TV is the arena, phones are the pads. It is in a different phase. The game works, and the job now is polish: player readability, controller latency and reconnect confidence, tutorial and onboarding, wheelies and stunt payoff. That kind of work is discovered by playing, not planned up front.
 
-## Why the graph matters more than the agents
+<Chart type="line" title="Joystick Jammers: beads created vs closed" series={jjFlow} xLabel="days since the first bead" yLabel="beads" caption={`A small start in mid June, then a single review day (day 15) that filed 151 polishing beads at once. Since then the swarm has closed 10 to 27 a day, speeding up as the polishing beads got sorted and claimed. ${jj.status.open} are still open: this one is very much still going.`} />
 
-The part that surprised me is how much the graph helps *me*. Writing the plan down as small, dependent pieces forces the thinking up front, and it makes the agents interchangeable: any of them can take the next ready bead. When something goes wrong, the fix is usually a better bead (clearer acceptance criteria, a missing dependency), not a better prompt. I wrote about that shift in [Your Prompts Do Not Matter (Anymore)](/blog/your-prompts-do-not-matter-anymore/).
+<BeadsGraph data={jj} title={`Joystick Jammers: ${jj.beads} beads, ${jj.blocks} blocking links, ${jj.layers} layers deep`} caption={`A much shallower graph than Physical Soccer: ${jj.layers} layers instead of ${ps.layers}. Polish work is wide, not deep, so the herd can attack it in parallel. ${jj.creators} different authors created beads, including agent identities like OliveFox and SilverBass: the swarm files follow-up work for itself as it finds it.`} />
 
-## Bigger graphs: Joystick Jammers and Physical Soccer
+The coordination rules are written into the repo, so every agent reads them on start:
 
-The same idea scales, and the graphs get much denser. Below are the real dependency graphs of two current projects, drawn from their beads databases. Each dot is a bead. It sits further right the more beads must close before it can start. Filled dots are closed. I have left the titles out on purpose; the shape is the interesting part.
+- Register with **MCP Agent Mail** under a name, check mail before claiming work and after every edit-and-test cycle.
+- **Reserve the files** you are about to edit (specific paths, never the whole repo), and announce claims, blockers and completion in a thread named after the bead.
+- **Keep the swarm small**: at most five ntm panes including mine, and reuse idle panes as worker, validator or release manager instead of adding agents.
+- Use `br` (beads in Rust), and ask the graph what matters with `bv --robot-triage` or `bv --robot-next`.
+- Close a bead only when the change is done, the relevant tests pass, and a completion note is posted.
+- **Do not sit idle waiting for consensus.** If a ready bead is unclaimed and you can make progress, claim it, reserve, announce, start.
 
-<BeadsGraph data={jj} title={`Joystick Jammers: ${jj.beads} beads, ${jj.blocks} blocking links`} caption={`Three weeks of polishing (${jj.span[0]} to ${jj.span[1]}). ${jj.status.closed} closed. ${jj.creators} different authors created beads, including agent identities like OliveFox and SilverBass: the swarm files follow-up work for itself. Median time to close: about ${Math.round(jj.median_close_h / 24)} days, because most of it is polish waiting on playtests.`} />
+## Deep vs wide
 
-<BeadsGraph data={ps} height={420} title={`Physical Soccer: ${ps.beads} beads, ${ps.blocks} blocking links, ${ps.layers} layers deep`} caption={`Every bead in the current database was created on 24 or 25 September, straight from the written plan (plan.md, with plan-beads-map.md as the coverage index), and ${ps.blocked_by_something} of the ${ps.beads} beads wait on at least one other. The longest chain is ${ps.layers} beads long: that is the real critical path of the project, and no number of agents makes it shorter. You can watch the closed work move through it as a wave from left to right. Deferred beads (grey outline) are ideas parked on purpose.`} />
+| Project | Beads | Blocking links | Longest chain | Closed | Shape |
+|---|---|---|---|---|---|
+| Physical Soccer | {ps.beads} | {ps.blocks} | {ps.layers} | {ps.status.closed} | planned, deep |
+| Joystick Jammers | {jj.beads} | {jj.blocks} | {jj.layers} | {jj.status.closed} | polishing, wide |
+| This site (previous version) | {site.beads} | {site.blocks} | {site.layers} | {site.status.closed} | small, quick |
 
-| Project | Beads | Blocking links | Longest chain | Closed |
-|---|---|---|---|---|
-| This site (previous version) | {site.beads} | {site.blocks} | {site.layers} | {site.status.closed} |
-| Joystick Jammers | {jj.beads} | {jj.blocks} | {jj.layers} | {jj.status.closed} |
-| Physical Soccer | {ps.beads} | {ps.blocks} | {ps.layers} | {ps.status.closed} |
+The longest chain is the number I watch now. A herd of agents makes a graph *wide* cheaply: more panes, more parallel beads. Only planning makes it *shallow*, by finding the dependencies early and cutting them where they are not real. Physical Soccer's 24-deep chain is the honest critical path of a networked physics game with a relay, two hosts and owner playtests in the loop; Jammers' 10 layers is what lets a five-pane swarm close two dozen beads a day.
 
-The longest chain is the number I watch now. A herd of agents makes the graph *wide* cheaply, but only good planning makes it *shallow*.
+The part that surprised me is how much the graph helps *me*. When something goes wrong, the fix is usually a better bead (clearer acceptance checks, a missing dependency), not a better prompt. I wrote about that shift in [Your Prompts Do Not Matter (Anymore)](/blog/your-prompts-do-not-matter-anymore/).
