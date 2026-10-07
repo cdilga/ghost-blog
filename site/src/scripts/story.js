@@ -34,7 +34,7 @@ function init() {
     len: parseFloat(el.dataset.len),
     content: el.querySelector('.content'),
     fx: [...el.querySelectorAll('[data-fx]')].map(prepFx),
-    hook: el.querySelector('[data-hook]'),
+    hooksEl: [...el.querySelectorAll('[data-hook]')],
     over: 0,
   }));
   if (reduce || new URLSearchParams(location.search).has('static')) {
@@ -42,8 +42,14 @@ function init() {
     return;
   }
 
-  const hooks = { beads: beadsHook, terms: termsHook, rack: rackHook, house: houseHook, timeline: timelineHook };
-  for (const s of scenes) if (s.hook) s.run = hooks[s.hook.dataset.hook]?.(s.hook);
+  const hooks = { beads: beadsHook, terms: termsHook, rack: rackHook, house: houseHook, timeline: timelineHook, crt: crtHook, tvon: tvOnHook };
+  for (const s of scenes) {
+    const runs = s.hooksEl.map((h) => hooks[h.dataset.hook]?.(h)).filter(Boolean);
+    if (!runs.length) continue;
+    s.run = (lp, p) => { for (const r of runs) r(lp, p); };
+    const rl = runs.filter((r) => r.relayout);
+    if (rl.length) s.run.relayout = () => rl.forEach((r) => r.relayout());
+  }
 
   const bar = document.getElementById('progress');
   const dots = [...document.querySelectorAll('#rail button')];
@@ -260,6 +266,39 @@ function splitWords(el) {
 }
 
 /* ---------- scene hooks: stateless functions of local progress ---------- */
+
+// TV shutoff: the picture squashes into a bright horizontal line, the line shrinks to a dot, black.
+// Put data-hook="crt" on a wrapper around the scene's content; it needs a sibling .crt-line.
+function crtHook(el) {
+  const line = el.closest('.scene').querySelector('.crt-line');
+  const black = el.closest('.scene').querySelector('.crt-black');
+  const a = parseFloat(el.dataset.at ?? '0.7');
+  return (lp) => {
+    const squash = ease(clamp((lp - a) / 0.1));          // 0..1 picture to line
+    const shrink = ease(clamp((lp - a - 0.1) / 0.08));   // 0..1 line to dot
+    const gone = clamp((lp - a - 0.17) / 0.04);
+    if (squash <= 0) { el.style.transform = ''; el.style.filter = ''; el.style.opacity = ''; line.style.opacity = 0; black.style.opacity = 0; return; }
+    el.style.transform = `scaleY(${(1 - squash * 0.992).toFixed(4)}) scaleX(${(1 - squash * 0.05).toFixed(3)})`;
+    el.style.filter = `brightness(${(1 + squash * 3).toFixed(2)}) saturate(${(1 - squash).toFixed(2)})`;
+    el.style.opacity = squash > 0.9 ? 0 : 1;
+    black.style.opacity = Math.min(1, squash * 1.4).toFixed(3);
+    line.style.opacity = (squash > 0.85 ? 1 - gone : 0).toFixed(3);
+    line.style.transform = `translate(-50%, -50%) scaleX(${(1 - shrink * 0.985).toFixed(4)})`;
+  };
+}
+
+// TV turn-on: the screen expands from a line with a brightness flash, then settles.
+function tvOnHook(el) {
+  const a = parseFloat(el.dataset.at ?? '0.04');
+  return (lp) => {
+    const t = clamp((lp - a) / 0.24);
+    const open = easeOut(clamp(t / 0.55)), settle = clamp((t - 0.55) / 0.45);
+    el.style.transform = `scaleY(${(0.012 + open * 0.988).toFixed(4)}) scaleX(${(0.82 + open * 0.18).toFixed(4)})`;
+    const flash = t < 0.55 ? 2.6 - open * 1.2 : 1.4 - settle * 0.4;
+    el.style.filter = t >= 1 ? 'none' : `brightness(${flash.toFixed(2)})`;
+    el.style.opacity = t > 0 ? 1 : 0;
+  };
+}
 const c01 = (v) => clamp(v);
 const xy = (el) => el.getAttribute('transform').match(/-?[\d.]+/g).map(Number);
 

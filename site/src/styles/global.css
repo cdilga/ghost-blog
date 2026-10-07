@@ -243,3 +243,12 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .mu-panel p { margin: 8px 0 0; font-size: .66rem; line-height: 1.45; letter-spacing: 0; }
 @media (max-width: 700px) { .motion-ui { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 26px); } .mu-src { display: none; } }
 .morphphone img { object-fit: cover; object-position: center; }
+/* TV shutoff / turn-on */
+.crt-black { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 0; }
+.crt-line { position: absolute; left: 50%; top: 50%; width: min(90vw, 1100px); height: 3px; transform: translate(-50%, -50%); opacity: 0; z-index: 2; pointer-events: none; border-radius: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.35) 12%, #fff 50%, rgba(255,255,255,.35) 88%, transparent);
+  box-shadow: 0 0 18px #fff, 0 0 40px rgba(200,200,255,.9), 0 0 80px rgba(150,150,255,.7); }
+.crt-screen { transform-origin: 50% 50%; }
+.shot.tv { position: relative; transform-origin: 50% 50%; }
+.shot.tv::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.09) 0 1px, transparent 1px 3px), linear-gradient(165deg, rgba(255,255,255,.08), transparent 40%); mix-blend-mode: multiply; }
+.static .crt-line, .static .crt-black { display: none; }

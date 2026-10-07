@@ -71,7 +71,7 @@ function collideKernel(f, g, nb, flag, fanF, c, U, V, Wz, R, NU, n, gb, cref, le
       if (fl !== 0) {
         if (fl & 1) { Fx += fanF[3 * t]; Fy += fanF[3 * t + 1]; Fz += fanF[3 * t + 2]; }
         if (fl & 2) { Fx -= leakK * jx; Fy -= leakK * jy; Fz -= leakK * jz; }
-        if (fl & 4) { Fx += 0.3 * (fanF[3 * t] * r - jx); Fy += 0.3 * (fanF[3 * t + 1] * r - jy); Fz += 0.3 * (fanF[3 * t + 2] * r - jz); }
+        if (fl & 4) { Fx += fanF[3 * t] * r - jx; Fy += fanF[3 * t + 1] * r - jy; Fz += fanF[3 * t + 2] * r - jz; }
       }
       const ux = (jx + 0.5 * Fx) * ir, uy = (jy + 0.5 * Fy) * ir, uz = (jz + 0.5 * Fz) * ir;
       const pxx = sxx - r * (ux * ux + C13);
