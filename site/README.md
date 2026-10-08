@@ -31,6 +31,8 @@ Append `?static` (or use reduced motion) for the stacked, no-animation layout.
 ## Blog
 Markdown or MDX in `src/content/blog`. In MDX use `<Chart type="line|bar|scatter" series={[{name, data:[[x,y]]}]} />` (build-time SVG; line charts get a small hover/touch readout). `<JetExplorer />` is an example of a fully interactive figure. Tags get pages at `/blog/tag/<tag>/`.
 
+The live airflow figures (`<HouseAirflow />`, `<HouseAirflow3D />`) fall back to recorded loops of each scenario when the solver fails, stalls or runs below about 0.3x real time (Firefox with its JavaScript JIT switched off runs it at about 0.1x). Append `?simrec` to force the recordings. Re-record after changing a solver, preset or the plan drawing: `npm run build && npm run preview &` then `node harness/record-sims.mjs` (needs ffmpeg; writes `public/video/sims/`).
+
 Old Ghost content was ported with `node scripts/port-live-ghost.mjs` (scrapes the live site, downloads images to `public/img/ghost/`). Old URLs (`/<slug>/`, `/tag/<tag>/`, `/rss/`) redirect to the new ones.
 
 ## Notes

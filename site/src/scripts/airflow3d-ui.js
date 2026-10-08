@@ -1,8 +1,9 @@
 // Main-thread side of the 3D house airflow figure: plan slice, vertical section, streaks, the 3D volume view
 // (airflow3d-volume.js), fan editing, full screen, controls and room read-outs. The solver (airflow3d.js) runs in
-// airflow3d-worker.js.
+// airflow3d-worker.js. Where it cannot run at a watchable speed the figure plays a recording instead (sim-recording.js).
 import { PRESETS3D } from './airflow3d.js';
 import { createVolumeView } from './airflow3d-volume.js';
+import { createRecording, forceRecording } from './sim-recording.js';
 
 const ROOMS_SHOWN = ['Bed 1', 'Bed 2', 'Bed 3', 'Bed 4', 'Media', 'Hall', 'Living', 'Dining'];
 const SLOT_AREA = 0.3 / 3.5;  // m^2: 300 L/s leaves the louvre at 3.5 m/s
@@ -13,6 +14,7 @@ const MAX_FANS = 4, HIT_PX = 14;
 // cooling carried by a flow of AC air: rho (1.2 kg/m^3) x cp (1005 J/kg/K) x the supply air's 8 K, per L/s
 const W_PER_LS = 1.2 * 1005 * 8 / 1000;
 const MIN_LAYERS = 8, MIN_RATE = 1;  // the coarsest grid we will drop to, and the speed (x real time) below which we do
+const REC_RATE = 0.3;                // on the coarsest grid and still below this, the recording is the better figure
 // where Add fan puts a new fan: in the hall, blowing into a bedroom (the first spot not already taken)
 const SPOTS = [{ x: 7.36, y: 4.2, yaw: -90 }, { x: 14.17, y: 4.1, yaw: -90 }, { x: 3.7, y: 4.2, yaw: -90 }, { x: 9.4, y: 5.6, yaw: -90 }, { x: 16.7, y: 3.9, yaw: -90 }, { x: 12.4, y: 4.1, yaw: 180 }];
 
@@ -53,16 +55,21 @@ export function startHouseAirflow3D(fig) {
     const ua = (navigator.userAgent.match(/(SamsungBrowser|Firefox|Chrome|Safari)\/[\d.]+/) || ['browser'])[0];
     return `[${ua}, ${navigator.hardwareConcurrency || '?'} cores, ${navigator.deviceMemory || '?'} GB, ${grid ? `${grid.NX}x${grid.NY}x${grid.NZ} cells` : 'no grid yet'}]`;
   };
-  function fail(msg, err) {
-    console.error('airflow3d:', msg, err);
+  let live = false; // the reader asked for the live simulation over the recording
+  function stop() {
     clearTimeout(watchdog);
     try { worker?.terminate(); } catch { /* already gone */ }
     worker = null; field = null;
+  }
+  function fail(msg, err) {
+    console.error('airflow3d:', msg, err);
+    stop();
+    if (!live) { toRecording(`${msg.replace(/[.:]\s*$/, '')} ${diag()}`); return; }
     showNote(`${msg} ${diag()}`);
     const b = $('.h3d-start'); b.textContent = 'Try again'; b.hidden = false;
   }
   function start() {
-    if (worker) return;
+    if (worker || rec.active) return;
     try { worker = new Worker(new URL('./airflow3d-worker.js', import.meta.url), { type: 'module' }); }
     catch (err) { fail('This browser could not start the simulation (module web workers are needed).', err); return; }
     worker.onerror = (e) => { e.preventDefault?.(); fail('The simulation worker could not load or crashed.', e.message || e); };
@@ -103,6 +110,11 @@ export function startHouseAirflow3D(fig) {
       state.layers = Math.max(MIN_LAYERS, state.layers - 2);
       showNote(`This device runs the simulation at ${rate.toFixed(1)}× real time, so it now uses a coarser grid (${(100 * CEIL / state.layers).toFixed(0)} cm cells). The pattern is the same, with less fine detail.`);
       send(true); gridAt = now; return;
+    }
+    if (!live && rate < REC_RATE) {
+      stop();
+      toRecording(`this browser runs it at ${rate.toFixed(2)}× real time even on the coarsest grid, too slow to watch. Firefox does this with its JavaScript JIT switched off, a common privacy setting`);
+      return;
     }
     if (!slowNoted) { slowNoted = true; showNote(`This device runs the simulation at ${rate.toFixed(1)}× real time: it works, but the AC air takes a while to settle.`); }
   }
@@ -408,6 +420,7 @@ export function startHouseAirflow3D(fig) {
   const pressed = (sel, attr, v) => fig.querySelectorAll(sel).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset[attr] === v)));
   function setPreset(p) {
     state.preset = p;
+    rec.preset(p);
     if (p !== 'custom') sel = -1;
     pressed('.h3d-presets button', 'preset', p);
     send(true); resetTracers(); fanUi();
@@ -557,7 +570,7 @@ export function startHouseAirflow3D(fig) {
     vol?.setOptions({ mode: state.colour, thr: state.thr, den: state.den, cut: state.cut, doorsOpen: state.doorsOpen, acOn: state.acFlow > 0 });
   }
   function setView(v) {
-    if (v === 'volume' && !ensureVol()) v = 'slices';
+    if (v === 'volume' && (rec.active || !ensureVol())) v = 'slices';
     state.view = v; fig.dataset.view = v;
     pressed('.h3d-viewbar [data-view]', 'view', v);
     worker?.postMessage({ type: 'volume', on: v === 'volume' });
@@ -656,6 +669,7 @@ export function startHouseAirflow3D(fig) {
   let inView = false;
   function syncRun() {
     visible = inView && !document.hidden;
+    rec.visible(visible);
     worker?.postMessage({ type: 'pause', paused: !visible });
     if (visible && !reduce) start();
     if (visible) { last = performance.now(); kick(); }
@@ -663,6 +677,17 @@ export function startHouseAirflow3D(fig) {
   new IntersectionObserver(([e]) => { inView = e.isIntersecting; syncRun(); }, { rootMargin: '100px' }).observe(fig);
   document.addEventListener('visibilitychange', syncRun);
   ctx.drawImage(base, 0, 0, W, H); sctx.drawImage(sbase, 0, 0, SW, SH); sctx.drawImage(ssol, 0, 0, SW, SH); drawFans(); fanUi();
+  const rec = createRecording({
+    fig, name: 'h3d', slots: [{ slot: 'plan', canvas: cv }, { slot: 'sec', canvas: sv }], presets: ['ac', 'hall', 'two'], note,
+    fill: (d) => { roomsEl.innerHTML = d.rooms; out('deliv', d.deliv); out('settle', d.settle.replace('AC air:', 'AC air when recorded:')); },
+    onLive: () => { live = true; start(); },
+  });
+  function toRecording(reason) {
+    if (state.view === 'volume') setView('slices');
+    state.door = 'Bed 2'; pressed('.h3d-doors button', 'door', state.door); // the recordings cut through Bed 2's door
+    rec.show(state.preset, reason);
+  }
+  if (forceRecording()) toRecording('asked for in the address');
   const startBtn = $('.h3d-start');
   startBtn.addEventListener('click', () => { visible = true; note.hidden = true; nanResets = 0; start(); });
   if (reduce) startBtn.hidden = false;

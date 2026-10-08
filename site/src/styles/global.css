@@ -418,3 +418,36 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .static .hero-name { position: relative; inset: auto; min-height: 70svh; }
 .static .hn, .static .hn-sub { opacity: 1; }
 .static .sandstorm, .static .lizard { display: none; }
+
+/* recorded fallback for the live airflow figures (src/scripts/sim-recording.js) */
+.chart video.sim-rec { display: block; width: 100%; height: auto; background: #0b0806; }
+.chart video.sim-rec[hidden], .chart.is-rec canvas[hidden] { display: none !important; }
+.sim-rec-badge { position: absolute; left: 10px; top: 8px; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--sand-dim); pointer-events: none; display: flex; align-items: center; gap: 6px; }
+.sim-rec-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--orange); opacity: .8; }
+.sim-rec-badge[hidden] { display: none; }
+.sim-rec-live { font: 500 .74rem var(--font); margin-left: 4px; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--orange); background: transparent; color: var(--sand); cursor: pointer; }
+.sim-rec-live:hover { background: var(--orange); color: #1a0d00; }
+/* only the scenario buttons drive a recording: the rest need the live solver */
+.chart.is-rec :is(.hair-hud, .h3d-hud, .hair-start, .h3d-start) { display: none; }
+.chart.is-rec :is(.hair-fans > :not(.hair-fs), .hair-controls, .h3d-fanbar, .h3d-colour, .h3d-controls, .h3d-doors, .h3d-viewbar [data-view]) { opacity: .4; pointer-events: none; }
+
+/* post lists (Writing, tag pages): the feature image beside the text, on top on phones; small thumbnails in the archive */
+.post-card.has-thumb { display: grid; grid-template-columns: 1fr minmax(150px, 34%); gap: 22px; align-items: center; padding: 14px 14px 14px 18px; }
+.post-card-text { min-width: 0; }
+.post-card-thumb { position: relative; aspect-ratio: 16 / 10; border-radius: 9px; overflow: hidden; background: #1a130e; }
+.post-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s cubic-bezier(.2, .7, .2, 1), filter .4s; filter: saturate(.88) brightness(.94); }
+.post-card-thumb::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(242, 230, 211, .08); pointer-events: none; }
+.post-card:hover .post-card-thumb img, .post-card:focus-visible .post-card-thumb img { transform: scale(1.04); filter: none; }
+@media (max-width: 620px) {
+  .post-card.has-thumb { grid-template-columns: 1fr; gap: 12px; padding: 10px 10px 14px; }
+  .post-card-thumb { order: -1; aspect-ratio: 2 / 1; }
+  .post-card.has-thumb .post-card-text { padding: 0 4px; }
+}
+.archive-list a.has-thumb { grid-template-columns: 44px 5.5em 1fr auto; align-items: center; }
+.archive-list .thumb { width: 44px; height: 44px; border-radius: 7px; object-fit: cover; display: block; filter: saturate(.6) brightness(.85); transition: filter .3s; }
+.archive-list a:hover .thumb, .archive-list a:focus-visible .thumb { filter: none; }
+@media (max-width: 560px) {
+  .archive-list a.has-thumb { grid-template-columns: 44px 1fr; grid-template-rows: auto auto; column-gap: 12px; }
+  .archive-list a.has-thumb .thumb { grid-row: span 3; align-self: start; margin-top: 2px; }
+}
+@media (prefers-reduced-motion: reduce) { .post-card-thumb img { transition: none; } .post-card:hover .post-card-thumb img { transform: none; } }

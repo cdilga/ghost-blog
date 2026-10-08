@@ -1,4 +1,6 @@
-// Main-thread side of the house airflow figure: drawing, tracers, controls. The solver runs in a worker.
+// Main-thread side of the house airflow figure: drawing, tracers, controls. The solver runs in a worker; where it
+// cannot run at a watchable speed the figure plays a recording instead (sim-recording.js).
+import { createRecording, forceRecording } from './sim-recording.js';
 
 export const airflowPresets = {
   ac: [],
@@ -8,6 +10,8 @@ export const airflowPresets = {
 };
 const ROOMS_SHOWN = ['Dining', 'Living', 'Retreat', 'Hall', 'Bed 1', 'Bed 2', 'Bed 3', 'Bed 4', 'Media'];
 const U_REF = 5; // m/s represented by the solver's lattice speed limit
+// below this speed (x real time), measured over the first seconds, the recording is the better figure
+const REC_RATE = 0.3, REC_AFTER_MS = 8000;
 
 export function startHouseAirflow(fig, presets) {
   const plan = JSON.parse(fig.querySelector('.hair-plan').textContent);
@@ -35,16 +39,21 @@ export function startHouseAirflow(fig, presets) {
   // shows in the note rather than leaving a blank plan; the figure then offers a retry
   let watchdog = 0;
   const diag = () => `[${(navigator.userAgent.match(/(SamsungBrowser|Firefox|Chrome|Safari)\/[\d.]+/) || ['browser'])[0]}, ${navigator.hardwareConcurrency || '?'} cores, ${navigator.deviceMemory || '?'} GB]`;
-  function fail(msg, err) {
-    console.error('airflow:', msg, err);
+  let live = false, firstFieldT = 0, firstSim = 0; // live: the reader asked for the live simulation over the recording
+  function stop() {
     clearTimeout(watchdog);
     try { worker?.terminate(); } catch { /* already gone */ }
-    worker = null; field = null;
+    worker = null; field = null; simRate = 0; lastMsgT = 0; firstFieldT = 0;
+  }
+  function fail(msg, err) {
+    console.error('airflow:', msg, err);
+    stop();
+    if (!live) { rec.show(state.preset, `${msg.replace(/[.:]\s*$/, '')} ${diag()}`); return; }
     const n = $('.hair-note'); n.hidden = false; n.textContent = `${msg} ${diag()}`;
     const b = $('.hair-start'); b.textContent = 'Try again'; b.hidden = false;
   }
   function start() {
-    if (worker) return;
+    if (worker || rec.active) return;
     try { worker = new Worker(new URL('./airflow-worker.js', import.meta.url), { type: 'module' }); }
     catch (err) { fail('This browser could not start the simulation (module web workers are needed).', err); return; }
     worker.onerror = (e) => { e.preventDefault?.(); fail('The simulation worker could not load or crashed.', e.message || e); };
@@ -58,6 +67,13 @@ export function startHouseAirflow(fig, presets) {
         clearTimeout(watchdog);
         if (lastMsgT && m.simTime > lastSim && now - lastMsgT > 4) simRate = simRate * 0.8 + 0.2 * ((m.simTime - lastSim) / ((now - lastMsgT) / 1000));
         lastMsgT = now; lastSim = m.simTime; field = m;
+        if (!firstFieldT || m.simTime < firstSim) { firstFieldT = now; firstSim = m.simTime; }
+        const avgRate = (m.simTime - firstSim) / ((now - firstFieldT) / 1000);
+        if (!live && now - firstFieldT > REC_AFTER_MS && avgRate < REC_RATE) {
+          stop();
+          rec.show(state.preset, `this browser runs it at ${avgRate.toFixed(2)}× real time, too slow to watch. Firefox does this with its JavaScript JIT switched off, a common privacy setting`);
+          return;
+        }
         $('[data-o="clock"]').textContent = `${m.simTime.toFixed(1)} s simulated`;
         $('[data-o="rate"]').textContent = `${simRate.toFixed(1)}x real time`;
         rooms(m.rooms);
@@ -226,6 +242,7 @@ export function startHouseAirflow(fig, presets) {
   const presetBtns = [...fig.querySelectorAll('.hair-presets button')];
   function setPreset(p) {
     state.preset = p;
+    rec.preset(p);
     presetBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.preset === p)));
     fig.classList.toggle('placing', p === 'custom');
     send(true); resetTracers();
@@ -329,6 +346,8 @@ export function startHouseAirflow(fig, presets) {
   let inView = false;
   function syncRun() {
     visible = inView && !document.hidden;
+    rec.visible(visible);
+    firstFieldT = 0; // time spent paused off screen is not slowness
     worker?.postMessage({ type: 'pause', paused: !visible });
     if (visible && !reduce) start();
     if (visible && worker) { last = performance.now(); kick(); }
@@ -336,6 +355,12 @@ export function startHouseAirflow(fig, presets) {
   new IntersectionObserver(([e]) => { inView = e.isIntersecting; syncRun(); }, { rootMargin: '100px' }).observe(cv);
   document.addEventListener('visibilitychange', syncRun);
   ctx.drawImage(base, 0, 0, W, H); drawFans();
+  const rec = createRecording({
+    fig, name: 'hair', slots: [{ slot: 'plan', canvas: cv }], presets: Object.keys(presets), note: $('.hair-note'),
+    fill: (d) => { roomsEl.innerHTML = d.rooms; },
+    onLive: () => { live = true; start(); },
+  });
+  if (forceRecording()) rec.show(state.preset, 'asked for in the address');
   const startBtn = $('.hair-start');
   startBtn.addEventListener('click', () => { visible = true; $('.hair-note').hidden = true; start(); });
   if (reduce) startBtn.hidden = false;
