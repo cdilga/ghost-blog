@@ -1,6 +1,6 @@
 # chris.dilger.me (static)
 
-Astro site that replaces the Ghost theme. Deployed to GitHub Pages by `.github/workflows/pages.yml` on pushes to `main`.
+Astro site for chris.dilger.me. Cloudflare Pages builds `main` to https://chris-preview.dilger.me and `prod` to https://chris.dilger.me; see the [root README](../README.md) for publishing and [WRITING.md](../WRITING.md) for writing posts.
 
 ```bash
 cd site && npm ci
@@ -11,7 +11,6 @@ node harness/run.mjs --quick     # 3 devices
 node harness/run.mjs --video     # also records a webm of the scripted scroll
 node harness/montage.mjs laptop 5 2   # contact sheet for one device
 npm run shots      # re-capture project screenshots into public/shots (needs network)
-node scripts/import-ghost.mjs export.json [--download-images]   # port old Ghost posts
 ```
 
 ## How the scroll story works
@@ -29,12 +28,11 @@ Append `?static` (or use reduced motion) for the stacked, no-animation layout.
 `npm run harness` writes `harness/out/report.html`: contact sheets per device/zoom, a scene opacity timeline (dead air), a clipping check (every key element must be fully on screen at some point while its scene is active), per-scene readable hold (share of the scene where it is fully opaque and all text revealed), resize stability and frame timing.
 
 ## Blog
-Markdown or MDX in `src/content/blog`. In MDX use `<Chart type="line|bar|scatter" series={[{name, data:[[x,y]]}]} />` (build-time SVG; line charts get a small hover/touch readout). `<JetExplorer />` is an example of a fully interactive figure. Tags get pages at `/blog/tag/<tag>/`.
+How to write posts, with every component: [WRITING.md](../WRITING.md). In short: Markdown or MDX in `src/content/blog`. In MDX use `<Chart type="line|bar|scatter" series={[{name, data:[[x,y]]}]} />` (build-time SVG; line charts get a small hover/touch readout). `<JetExplorer />` is an example of a fully interactive figure. Tags get pages at `/blog/tag/<tag>/`.
 
 The live airflow figures (`<HouseAirflow />`, `<HouseAirflow3D />`) fall back to recorded loops of each scenario when the solver fails, stalls or runs below about 0.3x real time (Firefox with its JavaScript JIT switched off runs it at about 0.1x). Append `?simrec` to force the recordings. Re-record after changing a solver, preset or the plan drawing: `npm run build && npm run preview &` then `node harness/record-sims.mjs` (needs ffmpeg; writes `public/video/sims/`).
 
-Old Ghost content was ported with `node scripts/port-live-ghost.mjs` (scrapes the live site, downloads images to `public/img/ghost/`). Old URLs (`/<slug>/`, `/tag/<tag>/`, `/rss/`) redirect to the new ones.
+Old Ghost posts were ported once (they carry `legacy: true`, images under `public/img/ghost/`; the porting script is in git history). Old URLs (`/<slug>/`, `/tag/<tag>/`, `/rss/`) redirect to the new ones.
 
 ## Notes
 - `books.dilger.au` is still "coming soon"; the story uses `test.books.dilger.au` shots. Re-run `npm run shots` after launch.
-- Set the repo's Pages source to "GitHub Actions" and point the `chris.dilger.me` DNS at Pages when ready to cut over from Ghost.

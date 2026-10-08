@@ -5,9 +5,6 @@ node_modules/
 .DS_Store
 *.log
 
-# Ghost local data (use docker volume instead)
-ghost-data/
-
 # IDE
 .idea/
 .vscode/
@@ -28,7 +25,6 @@ playwright-report/
 
 # Backup files
 *.backup
-remotion-video/out/
 
 # bv (beads viewer) local config and caches
 .bv/

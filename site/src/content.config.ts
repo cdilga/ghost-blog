@@ -7,11 +7,12 @@ const blog = defineCollection({
     title: z.string(),
     description: z.string(),
     date: z.coerce.date(),
+    // unlisted preview-only page: kept out of lists, feeds and search, never built for prod
     draft: z.boolean().default(false),
     tags: z.array(z.string()).default([]),
     // feature image, e.g. /img/ghost/<slug>/cover.webp
     image: z.string().optional(),
-    // ported from the old Ghost blog (scripts/port-live-ghost.mjs); also gets a /<slug>/ redirect
+    // ported from the old Ghost blog; also gets a /<slug>/ redirect
     legacy: z.boolean().default(false),
   }),
 });
