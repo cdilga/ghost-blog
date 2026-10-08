@@ -64,7 +64,7 @@ export async function collect(root) {
     const u = url.replace(/\/+/g, '/');
     if (SKIP.some((r) => r.test(u))) continue;
     const html = await readFile(f, 'utf8');
-    if (/http-equiv="refresh"/i.test(html)) continue;
+    if (/http-equiv="refresh"/i.test(html) || /<meta name="robots" content="noindex"/i.test(html)) continue;
     const title = decode(html.match(/<title>([^<]*)<\/title>/)?.[1] || u).replace(/\s*[|·]\s*Chris Dilger$/, '');
     const desc = decode(attr(html.match(/<meta name="description"[^>]*>/)?.[0] || '', 'content') || '');
     if (u === '/') {

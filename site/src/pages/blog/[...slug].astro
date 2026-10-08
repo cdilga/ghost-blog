@@ -2,7 +2,9 @@
 import { getCollection, render } from 'astro:content';
 import Post from '../../layouts/Post.astro';
 export async function getStaticPaths() {
-  const posts = await getCollection('blog');
+  // drafts get an unlisted page on the preview site so they can be read before publishing, but are never built for
+  // production (Cloudflare Pages sets CF_PAGES_BRANCH; prod is chris.dilger.me)
+  const posts = await getCollection('blog', (p) => !p.data.draft || process.env.CF_PAGES_BRANCH !== 'prod');
   return posts.map((p) => ({ params: { slug: p.id }, props: { post: p } }));
 }
 const { post } = Astro.props;

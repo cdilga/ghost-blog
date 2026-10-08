@@ -192,11 +192,11 @@ h1, h2, h3 { line-height: 1.04; letter-spacing: -.03em; margin: 0; }
 .prose img { height: auto; border-radius: 8px; margin: 1.4em auto; }
 .prose figure { margin: 1.8em 0; } .prose figure img { margin: 0 auto; }
 .prose figcaption { color: var(--sand-dim); font-size: .88rem; margin-top: 8px; text-align: center; }
-.prose .ghost-gallery .gallery-row { display: flex; gap: 8px; margin-bottom: 8px; } .prose .ghost-gallery .gallery-row img { flex: 1 1 0; min-width: 0; object-fit: cover; }
-.prose .ghost-embed iframe { display: block; width: 100%; border: 1px solid var(--line); border-radius: 10px; background: #0b0806; }
-.prose .ghost-embed iframe:not([height]) { height: 600px; }
-.prose .ghost-embed.video iframe { aspect-ratio: 16 / 9; height: auto; }
-.prose .ghost-embed video { width: 100%; border-radius: 10px; }
+.prose :is(.ghost-gallery, .gallery) .gallery-row { display: flex; gap: 8px; margin-bottom: 8px; } .prose :is(.ghost-gallery, .gallery) .gallery-row img { flex: 1 1 0; min-width: 0; object-fit: cover; }
+.prose :is(.ghost-embed, .embed) iframe { display: block; width: 100%; border: 1px solid var(--line); border-radius: 10px; background: #0b0806; }
+.prose :is(.ghost-embed, .embed) iframe:not([height]) { height: 600px; }
+.prose :is(.ghost-embed, .embed).video iframe { aspect-ratio: 16 / 9; height: auto; }
+.prose :is(.ghost-embed, .embed) video { width: 100%; border-radius: 10px; }
 .prose hr { border: 0; border-top: 1px solid var(--line); margin: 2.4em 0; }
 .prose table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; } .prose th, .prose td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
 /* wide figures break out of the prose column (must beat .prose figure) */
