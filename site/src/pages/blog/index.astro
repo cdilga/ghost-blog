@@ -1,5 +1,6 @@
 ---
 import Footer from '../../components/Footer.astro';
+import PostCard from '../../components/PostCard.astro';
 import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -20,14 +21,7 @@ const fmt = (d) => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short
       <section class="year">
         <h2 class="year-label">{year}</h2>
         <div class="cards" style="grid-template-columns:1fr">
-          {list.map((p) => (
-            <a class="card" href={`${base}/blog/${p.id}/`}>
-              <small>{p.data.date.toISOString().slice(0, 10)}</small>
-              <h3>{p.data.title}</h3>
-              <p>{p.data.description}</p>
-              {p.data.tags.length > 0 && <div class="tags">{p.data.tags.map((t) => <span class="pill">{t}</span>)}</div>}
-            </a>
-          ))}
+          {list.map((p) => <PostCard post={p} />)}
         </div>
       </section>
     ))}
@@ -42,7 +36,8 @@ const fmt = (d) => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short
             <ul class="archive-list">
               {list.map((p) => (
                 <li>
-                  <a href={`${base}/blog/${p.id}/`}>
+                  <a href={`${base}/blog/${p.id}/`} class:list={{ 'has-thumb': p.data.image }}>
+                    {p.data.image && <img class="thumb" src={`${base}${p.data.image}`} alt="" loading="lazy" decoding="async" sizes="56px" />}
                     <time datetime={p.data.date.toISOString()}>{fmt(p.data.date)}</time>
                     <span class="t">{p.data.title}</span>
                     {p.data.tags.length > 0 && <span class="tags">{p.data.tags.map((t) => <span class="pill">{t}</span>)}</span>}

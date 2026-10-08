@@ -1,0 +1,19 @@
+---
+/**
+ * A post in a list (Writing, tag pages): text on the left, the post's feature image on the right, stacked on phones.
+ * The build's image pass (scripts/optimise-images.mjs) gives the thumbnail a srcset; `sizes` keeps it to a small file.
+ */
+const { post, tags = true } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const { title, description, date, image } = post.data;
+const src = (p) => (p && p.startsWith('/') ? `${base}${p}` : p);
+---
+<a class:list={['card', 'post-card', { 'has-thumb': image }]} href={`${base}/blog/${post.id}/`}>
+  <div class="post-card-text">
+    <small>{date.toISOString().slice(0, 10)}</small>
+    <h3>{title}</h3>
+    <p>{description}</p>
+    {tags && post.data.tags.length > 0 && <div class="tags">{post.data.tags.map((t) => <span class="pill">{t}</span>)}</div>}
+  </div>
+  {image && <div class="post-card-thumb"><img src={src(image)} alt="" loading="lazy" decoding="async" sizes="(max-width: 620px) calc(100vw - 62px), 280px" /></div>}
+</a>

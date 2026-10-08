@@ -9,9 +9,9 @@ const iw = W - m.l - m.r, ih = H - m.t - m.b;
 const L = Math.max(1, data.layers - 1);
 const x = (n) => m.l + (n.l / L) * iw;
 const y = (n) => m.t + n.p * ih;
-const fill = { closed: '#ff7a1a', in_progress: '#ffd166', blocked: '#ff6b6b', open: 'none', deferred: 'none' };
-const stroke = { closed: '#ff7a1a', in_progress: '#ffd166', blocked: '#ff6b6b', open: '#f2e6d3', deferred: 'rgba(185,166,143,.5)' };
-const label = { closed: 'closed', in_progress: 'in progress', blocked: 'blocked', open: 'open', deferred: 'deferred' };
+const fill = { closed: '#ff7a1a', batch_pending: 'rgba(255,209,102,.35)', in_progress: '#ffd166', blocked: '#ff6b6b', open: 'none', deferred: 'none' };
+const stroke = { closed: '#ff7a1a', batch_pending: '#ffd166', in_progress: '#ffd166', blocked: '#ff6b6b', open: '#f2e6d3', deferred: 'rgba(185,166,143,.5)' };
+const label = { closed: 'closed', batch_pending: 'awaiting verification', in_progress: 'in progress', blocked: 'blocked', open: 'open', deferred: 'deferred' };
 const present = Object.keys(label).filter((s) => data.status[s]);
 const f1 = (v) => v.toFixed(1);
 const paths = data.edges.map(([a, b]) => {

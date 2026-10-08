@@ -1,0 +1,116 @@
+---
+/**
+ * A beads graph as a force-directed network, with the owner's gates (design reviews, playtests, release calls) picked
+ * out and what waits on each one highlighted. Data from scripts/beads-force.py (structure only, gates by short name).
+ * <BeadsForce data={json} title caption />
+ */
+const { data, title = '', caption = '' } = Astro.props;
+const W = 760, H = 500, m = 18;
+const X = (n) => (m + n.x * (W - 2 * m)).toFixed(1), Y = (n) => (m + n.y * (H - 2 * m)).toFixed(1);
+const KIND = { review: 'design and taste review', playtest: 'playtest', release: 'release call' };
+const r = (n) => (n.h ? 6.5 + Math.min(7, Math.sqrt(n.d) * 1.3) : 2.4 + Math.min(3.2, Math.sqrt(n.d) * 0.35));
+const edges = data.edges.map(([a, b]) => `M${X(data.nodes[a])},${Y(data.nodes[a])}L${X(data.nodes[b])},${Y(data.nodes[b])}`).join('');
+const gates = data.gate_list.filter((g) => g.all_down > 0);
+// label the biggest gates, each above or below its dot, skipping any that would collide with one already placed
+const placed = [];
+const labels = [];
+for (const g of gates.slice(0, 7)) {
+  const n = data.nodes[g.i], w = g.name.length * 5.6 + 6, h = 13, cx = +X(n), cy = +Y(n), rr = r(n);
+  for (const y of [cy - rr - 5, cy + rr + 12, cy - rr - 18, cy + rr + 25]) {
+    const x = Math.min(W - w / 2 - 2, Math.max(w / 2 + 2, cx));
+    const box = [x - w / 2, y - h + 3, x + w / 2, y + 3];
+    if (placed.some((b) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) continue;
+    placed.push(box); labels.push({ i: g.i, x: x.toFixed(1), y: y.toFixed(1), name: g.name });
+    break;
+  }
+}
+const crit = data.nodes.map((n, i) => (n.c ? i : -1)).filter((i) => i >= 0);
+const behind = [...new Set(gates.flatMap((g) => g.down))];
+const views = [
+  { key: 'all', label: 'Everything behind my gates', down: behind, gates: gates.map((g) => g.i), text: `${data.behind_owner} of ${data.beads} beads sit downstream of at least one of my ${data.gates} gates; ${data.waiting_on_owner} of them are open and waiting on a gate I have not closed yet.` },
+  ...gates.map((g) => ({ key: String(g.i), label: g.name, down: g.down, gates: [g.i], text: `${g.name} (${KIND[g.kind]}, ${g.s === 'closed' ? 'done' : 'still mine to do'}): ${g.all_down} beads come after it, ${g.open_down} still open.` })),
+  { key: 'crit', label: 'Remaining critical path', down: crit, gates: crit.filter((i) => data.nodes[i].h), text: `The longest chain of beads still to close is ${data.crit} long${data.crit_owner ? `, and ${data.crit_owner} of its links are me` : ', and none of its links are me right now'}.` },
+];
+---
+<figure class="chart wide beadsforce" data-views={JSON.stringify(views)}>
+  {title && <h3 style="margin:0 0 6px;font-size:1rem">{title}</h3>}
+  <div class="legend">
+    <span><i style="background:#ff7a1a"></i>closed</span>
+    <span><i style="border:1.5px solid #f2e6d3"></i>open</span>
+    <span><i class="g review"></i>my design review (filled once done)</span>
+    <span><i class="g playtest"></i>my playtest</span>
+    <span><i class="g release"></i>my release call</span>
+  </div>
+  <div class="bf-views" role="group" aria-label="Highlight">
+    {views.map((v, k) => <button type="button" data-k={v.key} aria-pressed={String(k === 0)}>{v.label}</button>)}
+  </div>
+  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${title}: ${data.beads} beads drawn as a force-directed network; ${data.gates} are owner gates and ${data.behind_owner} beads sit behind them.`}>
+    <path class="bf-edges" d={edges} />
+    <g class="bf-nodes">
+      {data.nodes.map((n, i) => n.h
+        ? <circle data-i={i} class={`gate ${n.h} ${n.s}`} cx={X(n)} cy={Y(n)} r={r(n).toFixed(1)} />
+        : <circle data-i={i} class={n.s} cx={X(n)} cy={Y(n)} r={r(n).toFixed(1)} />)}
+    </g>
+    <g class="bf-labels">
+      {labels.map((l) => <text data-i={l.i} x={l.x} y={l.y} text-anchor="middle">{l.name}</text>)}
+    </g>
+  </svg>
+  <p class="bf-read mono" aria-live="polite">{views[0].text}</p>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+<style>
+  .beadsforce svg { display: block; touch-action: pan-y; }
+  .beadsforce .legend i.g { border-radius: 50%; border: 2px solid; background: transparent; }
+  .beadsforce .legend i.review { border-color: #5ec8ff; }
+  .beadsforce .legend i.playtest { border-color: #7fe0a8; }
+  .beadsforce .legend i.release { border-color: #c9a7ff; }
+  .bf-edges { fill: none; stroke: rgba(242, 230, 211, .1); stroke-width: .7; }
+  .bf-nodes circle { fill: none; stroke: rgba(242, 230, 211, .55); stroke-width: 1.1; transition: opacity .25s, fill .25s, stroke .25s; }
+  .bf-nodes circle.closed { fill: #ff7a1a; stroke: #ff7a1a; }
+  .bf-nodes circle.in_progress, .bf-nodes circle.batch_pending { fill: #ffd166; stroke: #ffd166; }
+  .bf-nodes circle.blocked { stroke: #ff6b6b; }
+  .bf-nodes circle.deferred { stroke: rgba(185, 166, 143, .35); }
+  .bf-nodes circle.gate { stroke-width: 2.4; fill: #120d0a; }
+  .bf-nodes circle.gate.review { stroke: #5ec8ff; } .bf-nodes circle.gate.review.closed { fill: rgba(94, 200, 255, .4); }
+  .bf-nodes circle.gate.playtest { stroke: #7fe0a8; } .bf-nodes circle.gate.playtest.closed { fill: rgba(127, 224, 168, .4); }
+  .bf-nodes circle.gate.release { stroke: #c9a7ff; } .bf-nodes circle.gate.release.closed { fill: rgba(201, 167, 255, .4); }
+  .bf-labels text { fill: var(--sand); font: 500 10.5px var(--font); paint-order: stroke; stroke: #120d0a; stroke-width: 3px; pointer-events: none; transition: opacity .25s; }
+  .beadsforce.focus .bf-nodes circle:not(.on):not(.src) { opacity: .16; }
+  .beadsforce.focus .bf-nodes circle.on:not(.gate) { stroke: #f2e6d3; stroke-width: 1.6; }
+  .beadsforce.focus .bf-labels text { opacity: .35; }
+  .beadsforce.focus .bf-labels text.src { opacity: 1; }
+  .bf-views { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
+  .bf-views button { font: 500 .76rem var(--font); padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--sand); cursor: pointer; }
+  .bf-views button[aria-pressed="true"] { background: var(--orange); color: #1a0d00; border-color: var(--orange); }
+  .bf-views button:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .bf-read { font-size: .78rem; color: var(--sand); margin: 8px 0 0; min-height: 2.6em; }
+  @media (max-width: 600px) { .bf-labels { display: none; } } /* too small to read at phone width; the buttons name the gates */
+  @media (prefers-reduced-motion: reduce) { .bf-nodes circle, .bf-labels text { transition: none; } }
+</style>
+<script>
+  for (const fig of document.querySelectorAll<HTMLElement>('figure.beadsforce')) {
+    const views = JSON.parse(fig.dataset.views || '[]');
+    const circles = [...fig.querySelectorAll<SVGCircleElement>('.bf-nodes circle')];
+    const labels = [...fig.querySelectorAll<SVGTextElement>('.bf-labels text')];
+    const read = fig.querySelector('.bf-read');
+    const show = (key: string) => {
+      const v = views.find((x) => x.key === key) || views[0];
+      const on = new Set(v.down), src = new Set(v.gates);
+      fig.classList.add('focus');
+      circles.forEach((c) => { const i = +c.dataset.i!; c.classList.toggle('on', on.has(i)); c.classList.toggle('src', src.has(i)); });
+      labels.forEach((t) => t.classList.toggle('src', src.has(+t.dataset.i!)));
+      fig.querySelectorAll('.bf-views button').forEach((b) => b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.k === v.key)));
+      if (read) read.textContent = v.text;
+    };
+    fig.querySelectorAll<HTMLElement>('.bf-views button').forEach((b) => b.addEventListener('click', () => show(b.dataset.k!)));
+    // pointing at a gate on the graph shows what waits on it
+    for (const c of circles) if (c.classList.contains('gate')) {
+      const k = c.dataset.i!;
+      if (!views.some((v) => v.key === k)) continue;
+      c.style.cursor = 'pointer';
+      c.addEventListener('pointerenter', () => show(k));
+      c.addEventListener('click', () => show(k));
+    }
+    show(views[0]?.key);
+  }
+</script>

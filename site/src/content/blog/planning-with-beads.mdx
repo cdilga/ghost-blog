@@ -1,16 +1,20 @@
 ---
 title: "Planning with beads: how Physical Soccer and Joystick Jammers get built"
-description: "Two real dependency graphs: Physical Soccer, planned up front and turned into 194 beads that flowed through a herd of agents in two days, and Joystick Jammers, an ongoing polishing swarm."
+description: "Three real dependency graphs: Physical Soccer, planned up front and closed by a herd of agents in two days; Joystick Jammers 0.1, a polishing swarm; and its 0.2 rebuild, planned the Physical Soccer way."
 date: 2026-10-01
 tags: [workflow, agents, beads]
 image: /shots/beads-cover.jpg
 ---
 import Chart from '../../components/Chart.astro';
 import BeadsGraph from '../../components/BeadsGraph.astro';
+import BeadsForce from '../../components/BeadsForce.astro';
 import site from '../../data/beads-this-site.json';
 import jj from '../../data/beads-joystick-jammers.json';
+import jj2 from '../../data/beads-joystick-jammers-v02.json';
 import ps from '../../data/beads-physical-soccer.json';
 import flow from '../../data/beads-flow.json';
+import psForce from '../../data/beads-force-physical-soccer.json';
+import jj2Force from '../../data/beads-force-joystick-jammers-v02.json';
 
 export const psFlow = [
   { name: 'created (total)', data: flow.ps.created },
@@ -22,6 +26,12 @@ export const jjFlow = [
   { name: 'closed (total)', data: flow.jj.closed.map(([h, v]) => [Math.round((h / 24) * 10) / 10, v]) },
   { name: 'open right now', data: flow.jj.open.map(([h, v]) => [Math.round((h / 24) * 10) / 10, v]) },
 ];
+export const jj2Flow = [
+  { name: 'created (total)', data: flow.jj2.created },
+  { name: 'closed (total)', data: flow.jj2.closed },
+  { name: 'open right now', data: flow.jj2.open },
+];
+export const linksPer = (g) => (g.blocks / g.beads).toFixed(1);
 
 My loop for new projects is deliberately boring.
 
@@ -31,7 +41,7 @@ My loop for new projects is deliberately boring.
 4. **Run a herd.** With herdr and ntm I keep a few agent panes open side by side, each claiming one ready bead, so the work fans out and the graph keeps it honest.
 5. **Review, playtest, write the next beads.** My job is steering and taste.
 
-Two of my current projects show what that looks like, and they show two quite different shapes.
+Two of my current projects show what that looks like, and they show quite different shapes. One of them has since been rebuilt from scratch, which gave me a rare second run of the same game with a different method.
 
 ## Physical Soccer: plan first, then let it flow
 
@@ -50,7 +60,7 @@ Why did this one flow so well?
 - **Parents integrate, children prove.** Small child beads close with targeted checks; the parent bead re-runs the whole thing. That stops "it works on my slice" from leaking upwards.
 - **Owner beads are explicit.** The things only I can do (feel the controls on a real phone, judge whether it is fun) are beads too, assigned to me and fed by a reviewable build. They block exactly what they should and nothing more.
 
-## Joystick Jammers: an ongoing swarm
+## Joystick Jammers 0.1: a polishing swarm
 
 Joystick Jammers is a party racer and demolition derby: the TV is the arena, phones are the pads. It is in a different phase. The game works, and the job now is polish: player readability, controller latency and reconnect confidence, tutorial and onboarding, wheelies and stunt payoff. That kind of work is discovered by playing, not planned up front.
 
@@ -67,14 +77,45 @@ The coordination rules are written into the repo, so every agent reads them on s
 - Close a bead only when the change is done, the relevant tests pass, and a completion note is posted.
 - **Do not sit idle waiting for consensus.** If a ready bead is unclaimed and you can make progress, claim it, reserve, announce, start.
 
+## Joystick Jammers 0.2: the same game, planned the Physical Soccer way
+
+Polishing only goes so far. Jammers 0.1 was a Python server and a browser game grown feature by feature, and the next things I wanted (anyone dropping in mid-round, cars that shed doors and wheels, tracks generated from Australian places, controllers on WebRTC) wanted a different foundation. So 0.2 is a from-scratch rebuild: a Rust server, a Rust/WASM simulation running in the host's browser, Three.js on the TV and WebRTC to the phones. The 0.1 game stays playable while 0.2 is built beside it.
+
+This time it went the Physical Soccer way. A set of owner rulings came first, then a master plan, then a Playtest 1 plan cut down to one car and the new stack, and only then beads: every bead carries its plan task ID, its acceptance checks and the evidence it owes, and a bead map ties every plan requirement to a bead. The repo even states the order of authority: **owner ruling, then master plan, then Playtest 1 plan, then beads, then code**. A bead cannot overrule the plan; if it disagrees, the plan gets fixed first.
+
+<Chart type="line" title="Joystick Jammers 0.2: beads created vs closed, hour by hour" series={jj2Flow} xLabel="hours since the first bead" yLabel="beads" caption={`A hundred beads in the first six hours, straight from the plan, and closing under way by hour twelve. After that, closes arrive in steps rather than a stream. The step near hour 76 is my own design reviews (rounds 4 and 5): owner reviews are beads too, and a dozen interface beads closed with them. The big jump near hour 115 is the verifier: finished beads queue for it, and one pass closed about forty at once. ${jj2.status.closed} of ${jj2.beads} closed in under six days, with ${jj2.status.batch_pending ?? 0} more done and waiting for the verifier.`} />
+
+<BeadsGraph data={jj2} height={400} title={`Joystick Jammers 0.2: ${jj2.beads} beads, ${jj2.blocks} blocking links, ${jj2.layers} layers deep`} caption={`Compare it with 0.1 above: ${jj2.layers} layers instead of ${jj.layers}, and ${linksPer(jj2)} blocking links per bead instead of ${linksPer(jj)}. A rebuild has a real critical path (the network stack before the controllers, the simulation before the damage, the car before the playtest), and the plan writes it down instead of discovering it. Pale yellow dots are beads an agent has finished and handed to a separate verifier: closing is a second agent's job now, so "done" is checked, not claimed. ${jj2.creators} authors created beads, most of them one planning agent working from the plan's task list.`} />
+
+Two things changed from 0.1, and both came from Physical Soccer:
+
+- **The plan is the source, not the backlog.** In 0.1 most beads came straight from playtests, so the backlog was the plan. In 0.2 beads are cut from the plan, so a bead that turns out wrong sends me back to the plan instead of spawning three more beads.
+- **Closing is verified by someone else.** An agent that finishes a bead hands it to a verifier, which checks the bead's evidence against a green CI run on a commit that contains the work. It costs a little latency and saves a lot of "it was done, honestly".
+
+## Where I am the bottleneck
+
+The layered drawings above answer "how deep is this". They hide a question I care about more: *how much of this is waiting on me?* In both projects some beads can only be closed by me: a design or taste review, a couch playtest with real people and real phones, a release call. Agents can prepare everything around them, but they cannot close them. So I drew the same graphs the way a beads viewer does, as a force-directed network where tightly linked work clumps together, and picked out my own gates.
+
+<BeadsForce data={jj2Force} title={`Joystick Jammers 0.2: my ${jj2Force.gates} gates and what waits behind them`} caption={`Every dot is a bead, pulled towards the beads it is linked to. Ringed dots are mine; their size is how much open work sits behind them. The design gate and its review rounds 4 and 5 each had over fifty beads downstream: more than a quarter of the whole plan could not finish until I had looked at the screens and said yes. That is the step near hour 76 in the chart above. Pick a gate to see exactly what it holds up.`} />
+
+That is the honest cost of taste. Design reviews are cheap for me to do and expensive to wait for, so in 0.2 they became small, frequent rounds with their own beads (round 3, 4, 5) instead of one big verdict at the end, and the agents work on everything that does not depend on the look while a round is open.
+
+<BeadsForce data={psForce} title={`Physical Soccer: my ${psForce.gates} gates and what waits behind them`} caption={`A different shape. Physical Soccer's gates sit at the far end of the plan: the style guide, the announcer voice, the couch playtest, the human playtests and the release calls. Each has about 33 beads behind it, mostly the same ones: the release candidate and everything that integrates into it. Only ${psForce.waiting_on_owner} open beads wait on a gate right now, but ${psForce.crit_owner} of the ${psForce.crit} links on the remaining critical path are me. No number of agents makes those shorter; a free Saturday with a couch full of people does.`} />
+
+Two habits came out of looking at this:
+
+- **Put the human gates in the graph, explicitly.** If a playtest is only in my head, agents will happily build past it and I find out late. As a bead, it blocks exactly what it should, and the graph shows me when I have become the critical path.
+- **Split big human gates into rounds.** One "approve the style" gate at the end blocks everything after it. Several small review rounds, each blocking only the screens it judges, keep the herd busy while I catch up.
+
 ## Deep vs wide
 
 | Project | Beads | Blocking links | Longest chain | Closed | Shape |
 |---|---|---|---|---|---|
 | Physical Soccer | {ps.beads} | {ps.blocks} | {ps.layers} | {ps.status.closed} | planned, deep |
-| Joystick Jammers | {jj.beads} | {jj.blocks} | {jj.layers} | {jj.status.closed} | polishing, wide |
+| Joystick Jammers 0.1 | {jj.beads} | {jj.blocks} | {jj.layers} | {jj.status.closed} | polishing, wide |
+| Joystick Jammers 0.2 | {jj2.beads} | {jj2.blocks} | {jj2.layers} | {jj2.status.closed} | planned rebuild, deep |
 | This site (previous version) | {site.beads} | {site.blocks} | {site.layers} | {site.status.closed} | small, quick |
 
-The longest chain is the number I watch now. A herd of agents makes a graph *wide* cheaply: more panes, more parallel beads. Only planning makes it *shallow*, by finding the dependencies early and cutting them where they are not real. Physical Soccer's 24-deep chain is the honest critical path of a networked physics game with a relay, two hosts and owner playtests in the loop; Jammers' 10 layers is what lets a five-pane swarm close two dozen beads a day.
+The longest chain is the number I watch now. A herd of agents makes a graph *wide* cheaply: more panes, more parallel beads. Only planning makes it *shallow*, by finding the dependencies early and cutting them where they are not real. Physical Soccer's 24-deep chain is the honest critical path of a networked physics game with a relay, two hosts and owner playtests in the loop; Jammers 0.1's 10 layers is what let a five-pane swarm close two dozen beads a day. Jammers 0.2 sits in between at 17: the same game, but a rebuild has to lay its foundations in order, and the plan made that order explicit before the first agent started.
 
 The part that surprised me is how much the graph helps *me*. When something goes wrong, the fix is usually a better bead (clearer acceptance checks, a missing dependency), not a better prompt. I wrote about that shift in [Your Prompts Do Not Matter (Anymore)](/blog/your-prompts-do-not-matter-anymore/).

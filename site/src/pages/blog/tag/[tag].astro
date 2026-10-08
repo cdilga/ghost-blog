@@ -1,5 +1,6 @@
 ---
 import Footer from '../../../components/Footer.astro';
+import PostCard from '../../../components/PostCard.astro';
 import Base from '../../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -18,13 +19,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     <p class="meta mono"><a href={`${base}/blog/`}>← All writing</a></p>
     <h1>#{name}</h1>
     <div class="cards" style="grid-template-columns:1fr">
-      {posts.map((p) => (
-        <a class="card" href={`${base}/blog/${p.id}/`}>
-          <small>{p.data.date.toISOString().slice(0, 10)}</small>
-          <h3>{p.data.title}</h3>
-          <p>{p.data.description}</p>
-        </a>
-      ))}
+      {posts.map((p) => <PostCard post={p} tags={false} />)}
     </div>
   </div>
   <Footer />
