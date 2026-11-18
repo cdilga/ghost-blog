@@ -26,16 +26,16 @@ const filter = process.argv[2] || '';
 const W = 1200, H = 630, MAX_BYTES = 180 * 1024;
 mkdirSync(out, { recursive: true });
 
-// cover crops to the card from the top; contain sits the whole image on a blurred, darkened copy of itself
-async function card(input, fit = 'cover', w = W, h = H) {
-  if (fit !== 'contain') return sharp(input).resize(w, h, { fit: 'cover', position: 'top' }).toBuffer();
+// cover crops to the card from the top (or from `position`); contain sits the whole image on a blurred, darkened copy of itself
+async function card(input, fit = 'cover', w = W, h = H, position = 'top') {
+  if (fit !== 'contain') return sharp(input).resize(w, h, { fit: 'cover', position }).toBuffer();
   const bg = await sharp(input).resize(w, h, { fit: 'cover' }).blur(28).modulate({ brightness: 0.45 }).toBuffer();
   const fg = await sharp(input).resize(w, h, { fit: 'inside' }).toBuffer();
   return sharp(bg).composite([{ input: fg, gravity: 'centre' }]).toBuffer();
 }
 
-async function saveCard(input, file, fit) {
-  const img = await card(input, fit);
+async function saveCard(input, file, fit, position) {
+  const img = await card(input, fit, W, H, position);
   let q = 82, buf;
   do { buf = await sharp(img).jpeg({ quality: q, mozjpeg: true }).toBuffer(); q -= 6; }
   while (buf.length > MAX_BYTES && q > 40);
@@ -95,7 +95,9 @@ async function video(src, slug) {
     encode(['-i', raw, '-t', '24', '-vf', 'scale=960:504:force_original_aspect_ratio=increase,crop=960:504,fps=30'], mp4);
     const frame = join(tmp, 'poster.png');
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '2', '-i', raw, '-frames:v', '1', frame]);
-    const kb = await saveCard(frame, join(out, `${slug}.jpg`));
+    // the poster is cropped about the centre, like the loop above, so a caption at the bottom of the frame is not
+    // cut in half and the picture does not jump when the loop starts
+    const kb = await saveCard(frame, join(out, `${slug}.jpg`), 'cover', 'centre');
     return `video ${Math.round(statSync(mp4).size / 1024)} KB, poster ${Math.round(kb / 1024)} KB`;
   } finally { rmSync(tmp, { recursive: true, force: true }); }
 }
