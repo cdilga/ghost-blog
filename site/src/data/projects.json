@@ -34,8 +34,8 @@
       "url": "https://fortdinkum.dilger.dev",
       "blurb": "Build a sandstone fort on a headland by day, then hold it against the wildlife by night. Drop bears are real here.",
       "builds": { "url": "https://fortdinkum-index.dilger.dev", "label": "Every build" },
-      "alt": "Fort Dinkum game menu over a top-down headland of bush and scrub",
-      "media": { "type": "shot" }
+      "alt": "Fort Dinkum footage: a walled fort in the bush at night, towers firing as the wildlife closes in",
+      "media": { "type": "og" }
     },
     {
       "slug": "scrap-paper",
