@@ -22,9 +22,9 @@ Each computer was set up running only the test, and it was repeated twice. The c
 
 **Cinebench Results**
 
-<figure class="ghost-figure"><img src="https://lh5.googleusercontent.com/mKuqnSXRBjVEeNCQner98WE3R6zf2-Sib9YUzITvbVNQTZXqUwBVM3ZcXbvAGp81u-Nw9bLheo5AWnJNRZfdlRfl8Gg1bpsFU0_qBn1Dsooedb6BHfGdboE17anB9BnVtvxKR3pl=s0" alt="" loading="lazy"><figcaption>Multithreaded Cinebench test result of 6718</figcaption></figure>
+<figure class="ghost-figure"><img src="/img/new-mac-m1-or-old-intel-i7-4790k-which-would-win/mKuqnSXRBjVEeNCQner98WE3R6zf2-Sib9YUzITv-f344edea.png" alt="" loading="lazy"><figcaption>Multithreaded Cinebench test result of 6718</figcaption></figure>
 
-<figure class="ghost-figure"><img src="https://lh4.googleusercontent.com/ECLvMDXQ7ZDoT1oEb8taIEcAtTSoX-ejVm46JN4g4In2XISNM_OoR6uDWNZVdNJ4KXmzSg5r0fZOy730-5mRq5t2ZoPbYYzISS0kYN5lsX7HPWH6MIgjIkbXNnF-U2xho2Z_FG70=s0" alt="" loading="lazy"><figcaption>Singlethreaded Cinebench test result of 4505</figcaption></figure>
+<figure class="ghost-figure"><img src="/img/new-mac-m1-or-old-intel-i7-4790k-which-would-win/ECLvMDXQ7ZDoT1oEb8taIEcAtTSoX-ejVm46JN4g-aec16566.png" alt="" loading="lazy"><figcaption>Singlethreaded Cinebench test result of 4505</figcaption></figure>
 
 It's amazing that the M1 performs at least 50% better in both tests! The architecture of the i7 means there are 4 cores each with 2 hyper threads, so it's not particularly surprising that the 8 core can beat the 4 core, 5 year old chip. But what is suprising, is that the 4 high performance cores in the M1 chip outperform the intel chip. This is really amazing, as even today the defining feature of intel CPU's has always been the best in class single threaded performance. Of course, it's not fair to compare such an old chip. But still.
 
@@ -36,7 +36,7 @@ Now, let's use something real world that we use every day. Browser bench is a te
 
 Each run has an automated set of user actions and page refreshes, simulating average modern web applications, which might include messaging apps, banking applications or trading platforms. For the benchmark, it uses React with an example todo list application for task management.
 
-<figure class="ghost-figure"><img src="https://lh4.googleusercontent.com/YxWnrhf62XU5BYtV-BXnAU_cqQbDRDxL6oOXYowZU18VYZ4hIBh5gY_fxLwcfxj0e6coake6qmumOX2aQ7q4aYzmkCQci2RD437Vbqab1Y5gNaBCnr4SiD88KM27Fp1O_icXYrDZ=s0" alt="" loading="lazy"><figcaption>Browserbench test result of 162 actions per minute</figcaption></figure>
+<figure class="ghost-figure"><img src="/img/new-mac-m1-or-old-intel-i7-4790k-which-would-win/YxWnrhf62XU5BYtV-BXnAU_cqQbDRDxL6oOXYowZ-15ca60b1.png" alt="" loading="lazy"><figcaption>Browserbench test result of 162 actions per minute</figcaption></figure>
 
 [Jinho Jeong](https://tech.ssut.me/apple-m1-chip-benchmarks-focused-on-the-real-world-programming/) 说苹果的晶片很适合当一台可以用很久、高性能、非常好携带、开发者笔电。现在苹果从其他公司学到了怎么做一台优秀的笔电。做得好🍎。
 

@@ -56,7 +56,7 @@ This physical world example is analogous to the music task in PT3.2, TextBasedMu
 
 Our music library has some associated data, whether it be the song name, vibrational encoding of the music itself or the genre of the music somehow it all must be stored. Computers use variables to store information, which can be visualised as a box. You can put a song name in a box, and get it out later to see what the song is called. Songs themselves can be put in boxes, so they can be accessed, which is a different data **type**. Examples of types in a traditional computing environment include **Integers** (numbers), **Strings** (text), and **Booleans** (true or false). Expanding on the concept of the variable is the concept of the Array, which can be through of as a collection of boxes in a line. Perhaps each record is put in it's own box, then each box is put inside of a larger box. This larger box we know as an album, as is shown in the below image
 
-![A collection of Records, analagous to the Record datatype in a computer](https://c1.staticflickr.com/3/2664/4207951387_aa71bde81c_b.jpg#small)
+![A collection of Records, analagous to the Record datatype in a computer](/img/structured-programming/4207951387_aa71bde81c_b-e211c47d.jpg#small)
 
 > A record data structure is like a physical LP record, there is some information about the Artist, Year and the Single itself, all contained in an array, or box with a number of smaller containers inside.
 
@@ -78,7 +78,7 @@ Instruction 2. is completed after 1. Now we have an understanding of the concept
 When we're organising all of our singles into a large music library, we might have to make some decisions. If the disc cannot be found, don't add an empty case to our album. The `if` statement is the simplest decision structure, which instructs the computer to only execute code if an expression is true. An expression is a calculated value , calculates a value of true or false for the if statement.
 
 There are cases where many if statements are required. Categorical information, such as the genre may be used to organise the albums, and in such a case would require multiple statements to check where to place the album. See in the filing cabinet below, we have a collection of albums represented by the drawers. When writing a recipe for someone to organise all of our music, in the case that genre is pop, put it in the following cabinet.  
-![Filing Cabinet](https://image.ibb.co/mFLai5/cabinet_41038_960_720.png)
+![Filing Cabinet](/img/structured-programming/cabinet_41038_960_720-52ec862d.png)
 
 Example pseudo-code syntax:
 
