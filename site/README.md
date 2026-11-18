@@ -34,5 +34,15 @@ The live airflow figures (`<HouseAirflow />`, `<HouseAirflow3D />`) fall back to
 
 Old Ghost posts were ported once (they carry `legacy: true`, images under `public/img/ghost/`; the porting script is in git history). Old URLs (`/<slug>/`, `/tag/<tag>/`, `/rss/`) redirect to the new ones.
 
+## Projects page
+`/projects/` lists every public, live project: the party games as large cards, smaller tools and toys below. Each
+card opens the project; a small link under it goes to the latest builds (the `-index` sites, or Jammers' previews).
+The list is `src/data/projects.json`. Card images and video loops live in `public/projects/` and are committed, so the
+page loads nothing from other hosts. To add a project or refresh its picture, edit the JSON and run
+`npm run projects -- <slug>` (no slug: all of them). It takes the site's `og:video`, else its `og:image`, else a
+1200x630 screenshot (`media.type` picks), and needs ffmpeg for videos. Behind a proxy, prefix it with
+`NODE_USE_ENV_PROXY=1`. Videos play only while on screen and never with reduced motion. Only list projects that are
+public: no sign-in, nothing private (the house twin stays off it).
+
 ## Notes
 - `books.dilger.au` is still "coming soon"; the story uses `test.books.dilger.au` shots. Re-run `npm run shots` after launch.

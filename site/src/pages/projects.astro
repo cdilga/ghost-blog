@@ -1,0 +1,148 @@
+---
+// Every public, live project in one place. The list is src/data/projects.json; the card images and video loops in
+// public/projects/ come from `npm run projects` (scripts/project-media.mjs), committed so the page needs no CDN.
+import { existsSync } from 'node:fs';
+import Footer from '../components/Footer.astro';
+import Base from '../layouts/Base.astro';
+import data from '../data/projects.json';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const host = (u: string) => new URL(u).host + new URL(u).pathname.replace(/\/$/, '');
+const media = (slug: string) => ({
+  img: `${base}/projects/${slug}.jpg`,
+  video: existsSync(new URL(`../../public/projects/${slug}.mp4`, import.meta.url)) ? `${base}/projects/${slug}.mp4` : null,
+});
+type P = (typeof data.games)[number] & { builds?: { url: string; label: string } };
+const games = data.games as P[];
+const more = data.more as P[];
+---
+<Base title="Projects | Chris Dilger" description="Every live project of Chris Dilger's that you can open right now: party games for one big screen and a room full of phones, plus smaller tools and toys.">
+  <div class="projects">
+    <header class="pj-head">
+      <h1>Projects</h1>
+      <p class="pj-lede">Everything of mine that is live and open to the public. The games all work the same way: put one on a TV or laptop, and everyone joins by scanning the code with their phone. No installs, no accounts.</p>
+    </header>
+
+    <section aria-labelledby="games-h">
+      <h2 id="games-h" class="pj-label">Party games</h2>
+      <div class="pj-grid">
+        {games.map((p, i) => {
+          const m = media(p.slug);
+          return (
+            <article class:list={['pj', { 'pj-lead': i === 0 }]}>
+              <div class="pj-media">
+                <img src={m.img} alt={p.alt} width="1200" height="630" loading={i < 3 ? 'eager' : 'lazy'} sizes={i === 0 ? '(max-width: 820px) 100vw, 680px' : '(max-width: 820px) 100vw, 560px'} />
+                {m.video && <video muted loop playsinline preload="none" poster={m.img} data-src={m.video} aria-hidden="true" tabindex="-1"></video>}
+              </div>
+              <div class="pj-body">
+                <h3><a class="pj-go" href={p.url}>{p.name}</a></h3>
+                <p class="pj-host mono">{host(p.url)}</p>
+                <p class="pj-blurb">{p.blurb}</p>
+                {p.builds && <a class="pj-builds mono" href={p.builds.url}>{p.builds.label}<span class="pj-builds-host"> · {host(p.builds.url)}</span> <span aria-hidden="true">↗</span></a>}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+
+    <section aria-labelledby="more-h">
+      <h2 id="more-h" class="pj-label">Tools and toys</h2>
+      <div class="pj-grid pj-small">
+        {more.map((p) => {
+          const m = media(p.slug);
+          return (
+            <article class="pj">
+              <div class="pj-media">
+                <img src={m.img} alt={p.alt} width="1200" height="630" loading="lazy" sizes="(max-width: 560px) 100vw, (max-width: 980px) 50vw, 360px" />
+                {m.video && <video muted loop playsinline preload="none" poster={m.img} data-src={m.video} aria-hidden="true" tabindex="-1"></video>}
+              </div>
+              <div class="pj-body">
+                <h3><a class="pj-go" href={p.url}>{p.name}</a></h3>
+                <p class="pj-blurb">{p.blurb}</p>
+                {p.builds && <a class="pj-builds mono" href={p.builds.url}>{p.builds.label}<span class="pj-builds-host"> · {host(p.builds.url)}</span> <span aria-hidden="true">↗</span></a>}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+
+    <p class="pj-note">Most of these were built with a fleet of AI agents; the <a href={`${base}/blog/`}>writing</a> has how.</p>
+  </div>
+  <Footer />
+</Base>
+
+<script>
+  // Video loops play only while their card is on screen, and never for people who prefer reduced motion.
+  const vids = [...document.querySelectorAll<HTMLVideoElement>('.pj-media video')];
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  if (vids.length && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        const v = e.target as HTMLVideoElement;
+        if (e.isIntersecting && !still.matches) {
+          if (!v.src) v.src = v.dataset.src!;
+          v.play().then(() => v.classList.add('on')).catch(() => {});
+        } else v.pause();
+      }
+    }, { threshold: 0.35 });
+    vids.forEach((v) => io.observe(v));
+  }
+</script>
+
+<style>
+  .projects { max-width: 1120px; margin: 0 auto; padding: 130px clamp(16px, 4vw, 40px) 70px; }
+  .pj-head { max-width: 720px; margin-bottom: 44px; }
+  .pj-head h1 { font-size: clamp(2.4rem, 7vw, 4.4rem); }
+  .pj-lede { color: var(--sand-dim); font-size: clamp(1rem, 1.6vw, 1.18rem); margin: 18px 0 0; max-width: 60ch; }
+  .pj-label { font-family: var(--mono); font-size: .8rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); margin: 0 0 16px; }
+  section + section { margin-top: 64px; }
+
+  .pj-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(16px, 2.4vw, 28px); }
+  .pj-small { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  .pj { position: relative; display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; background: var(--ink-2); box-shadow: 0 0 0 1px var(--line); transition: box-shadow .3s, transform .3s cubic-bezier(.2, .7, .2, 1); }
+  .pj:hover, .pj:focus-within { box-shadow: 0 0 0 1px rgba(255, 122, 26, .45), 0 28px 60px -28px rgba(0, 0, 0, .9); transform: translateY(-2px); }
+  .pj-media { position: relative; aspect-ratio: 40 / 21; overflow: hidden; background: #0c0907; }
+  .pj-media img, .pj-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .pj-media img { filter: saturate(.9) brightness(.95); transition: transform .7s cubic-bezier(.2, .7, .2, 1), filter .4s; }
+  .pj-media video { opacity: 0; transition: opacity .6s; }
+  .pj-media video.on { opacity: 1; }
+  .pj:hover .pj-media img { transform: scale(1.03); filter: none; }
+  .pj-media::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 -1px 0 var(--line); pointer-events: none; }
+
+  .pj-body { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px 20px; flex: 1; }
+  .pj h3 { font-size: 1.35rem; letter-spacing: -.02em; }
+  .pj-small h3 { font-size: 1.08rem; }
+  .pj-go { color: var(--sand); text-decoration: none; }
+  /* the whole card opens the project; the builds link sits above that */
+  .pj-go::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+  .pj-go:focus-visible { outline: none; } .pj-go:focus-visible::after { outline: 2px solid var(--orange); outline-offset: -2px; }
+  .pj-host { margin: 0; font-size: .78rem; color: var(--orange-hot); }
+  .pj-blurb { margin: 4px 0 0; color: var(--sand-dim); font-size: .95rem; line-height: 1.5; }
+  .pj-small .pj-blurb { font-size: .88rem; }
+  .pj-builds { position: relative; z-index: 2; align-self: flex-start; margin-top: auto; padding-top: 12px; font-size: .74rem; color: var(--sand-dim); text-decoration: none; }
+  .pj-builds:hover, .pj-builds:focus-visible { color: var(--orange-hot); text-decoration: underline; }
+
+  /* the lead game runs across the top: picture left, words right */
+  .pj-lead { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+  .pj-lead .pj-media { aspect-ratio: auto; min-height: 100%; }
+  .pj-lead .pj-media img, .pj-lead .pj-media video { position: absolute; }
+  .pj-lead .pj-body { justify-content: center; padding: clamp(20px, 3vw, 36px); }
+  .pj-lead h3 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
+  .pj-lead .pj-blurb { font-size: 1.02rem; }
+  .pj-lead .pj-builds { margin-top: 14px; }
+  .pj-lead .pj-media { aspect-ratio: 40 / 21; }
+
+  .pj-note { margin: 56px 0 0; color: var(--sand-dim); font-size: .9rem; text-align: center; }
+
+  @media (max-width: 980px) { .pj-small { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 820px) {
+    .pj-grid { grid-template-columns: minmax(0, 1fr); }
+    .pj-lead { grid-template-columns: minmax(0, 1fr); }
+    .pj-lead .pj-body { padding: 18px 20px 20px; }
+  }
+  @media (max-width: 560px) { .pj-small { grid-template-columns: minmax(0, 1fr); } .pj-builds-host { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .pj, .pj-media img { transition: none; } .pj:hover { transform: none; } .pj:hover .pj-media img { transform: none; } }
+</style>

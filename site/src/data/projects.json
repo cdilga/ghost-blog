@@ -1,0 +1,101 @@
+{
+  "_about": "The /projects page. Only public, live projects belong here. `media` says where the card image comes from; `npm run projects` (scripts/project-media.mjs) fetches it into public/projects/<slug>.jpg (+ .mp4 for a video). og: the site's og:video, else og:image. shot: a screenshot of `shot.url` (default `url`). file: an image already in public/.",
+  "games": [
+    {
+      "slug": "jammers",
+      "name": "Joystick Jammers",
+      "url": "https://jammers.dilger.dev",
+      "blurb": "A party racer and demolition derby. The TV renders an outback track in ink and halftone; everyone steers from their phone with twin sticks.",
+      "builds": { "url": "https://jammers-preview.dilger.dev", "label": "Every build" },
+      "alt": "Joystick Jammers wordmark beside a chunky blue rally car over red earth",
+      "media": { "type": "og" }
+    },
+    {
+      "slug": "physical-soccer",
+      "name": "Physical Soccer",
+      "url": "https://physicalsoccer.dilger.dev",
+      "blurb": "Floppy footy for the whole room. Every phone is a one-button controller, and each kickoff deals a new mix: Rocket Boots, hoops, the Moon, forklifts.",
+      "builds": { "url": "https://ps-r-index-e94fc8fe.dilger.dev", "label": "Snapshot index" },
+      "alt": "Physical Soccer match footage: blocky footballers tumbling after the ball",
+      "media": { "type": "og" }
+    },
+    {
+      "slug": "big-lap",
+      "name": "Big Lap",
+      "url": "https://biglap.dilger.dev",
+      "blurb": "A co-op platformer around Australia. The emus have nicked the Golden Tongs three sleeps before the Big Barbie, and it is up to you and your mates.",
+      "builds": { "url": "https://biglap-index.dilger.dev", "label": "Every build" },
+      "alt": "Big Lap title screen: pixel lettering over a beach level with the host and join panels",
+      "media": { "type": "shot" }
+    },
+    {
+      "slug": "fort-dinkum",
+      "name": "Fort Dinkum",
+      "url": "https://fortdinkum.dilger.dev",
+      "blurb": "Build a sandstone fort on a headland by day, then hold it against the wildlife by night. Drop bears are real here.",
+      "builds": { "url": "https://fortdinkum-index.dilger.dev", "label": "Every build" },
+      "alt": "Fort Dinkum game menu over a top-down headland of bush and scrub",
+      "media": { "type": "shot" }
+    },
+    {
+      "slug": "scrap-paper",
+      "name": "Scrap Paper",
+      "url": "https://scrappaper.dilger.dev",
+      "blurb": "A stick-figure platform fighter brawling across notebook pages, graph paper and the back of a napkin. Knock the others off the page.",
+      "builds": { "url": "https://scrappaper-index.dilger.dev", "label": "Every build" },
+      "alt": "Scrap Paper title in red marker on lined notebook paper, stick figures fighting at the edges",
+      "media": { "type": "shot" }
+    }
+  ],
+  "more": [
+    {
+      "slug": "facemorph",
+      "name": "facemorph.me",
+      "url": "https://facemorph.me",
+      "blurb": "Type any words and get a face that does not exist, then morph to the next. The new version runs entirely on your device.",
+      "builds": { "url": "https://next.facemorph.me", "label": "Preview" },
+      "alt": "One generated face morphing smoothly into the next",
+      "media": { "type": "file", "path": "img/ghost/checkface/disconcerting-faces-gif.webp", "fit": "contain" }
+    },
+    {
+      "slug": "exquisite-corpse",
+      "name": "Exquisite Corpse",
+      "url": "https://exquisite-corpse.dilger.dev",
+      "blurb": "A party writing game: each player adds a line seeing only the one before, then the whole twisted tale is read aloud.",
+      "alt": "Exquisite Corpse lobby: create a room or join with a code",
+      "media": { "type": "shot" }
+    },
+    {
+      "slug": "ladder-logic-editor",
+      "name": "Ladder Logic Editor",
+      "url": "https://lle.dilger.dev",
+      "blurb": "Write and simulate PLC programs in IEC 61131-3 Structured Text, in the browser.",
+      "alt": "Ladder Logic Editor with a ladder diagram, variables panel and Structured Text editor",
+      "media": { "type": "shot", "click": "[aria-label='Close'], button:has-text('Skip'), .modal button:has-text('×')", "press": "Escape" }
+    },
+    {
+      "slug": "kris-kringle",
+      "name": "Kris Kringle Coordinator",
+      "url": "https://kris-kryngle-coordinator.dilger.dev",
+      "blurb": "Draw names for a Secret Santa and hand out private links. Nothing leaves your browser.",
+      "alt": "Kris Kringle Coordinator: a group name and a list of participants",
+      "media": { "type": "shot" }
+    },
+    {
+      "slug": "yearly",
+      "name": "Yearly",
+      "url": "https://yearly.dilger.dev",
+      "blurb": "Your year as a grid of dots, one per day, filling in as it goes.",
+      "alt": "A grid of dots for the days of 2026",
+      "media": { "type": "shot" }
+    },
+    {
+      "slug": "dishmate",
+      "name": "Dishmate",
+      "url": "https://cdilga.github.io/dishmate/",
+      "blurb": "Dishwasher decision trees: a load advisor and a troubleshooter for cloudy glasses and hard water.",
+      "alt": "Dishmate load advisor",
+      "media": { "type": "file", "path": "shots/dishmate-d.jpg" }
+    }
+  ]
+}

@@ -7,7 +7,8 @@
     "build": "astro build",
     "preview": "astro preview --host --port 4321",
     "harness": "node harness/run.mjs",
-    "shots": "node harness/project-shots.mjs"
+    "shots": "node harness/project-shots.mjs",
+    "projects": "node scripts/project-media.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4",
