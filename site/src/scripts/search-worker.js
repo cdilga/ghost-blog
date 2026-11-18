@@ -7,8 +7,8 @@ import { pipeline, env } from '@huggingface/transformers';
 let embed = null, vecs = null, scales = null, dims = 384, n = 0;
 const QUERY_PREFIX = 'Represent this sentence for searching relevant passages: ';
 
-async function load(model, base, local) {
-  env.allowLocalModels = local; env.allowRemoteModels = !local;
+async function load(model, base) {
+  env.allowLocalModels = true; env.allowRemoteModels = false;
   env.localModelPath = `${base}/models/`;
   env.backends.onnx.wasm.wasmPaths = { mjs: `${base}/ort/ort-wasm-simd-threaded.mjs`, wasm: `${base}/ort/ort-wasm-simd-threaded.wasm` };
   env.backends.onnx.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
@@ -31,8 +31,8 @@ async function init({ vectors, model, dims: d, base = '' }) {
   n = vectors.byteLength / (dims + 4);
   vecs = new Int8Array(vectors, 0, n * dims);
   scales = new Float32Array(vectors.slice(n * dims));
-  // the site's own copy first; if a build could not ship it, fall back to the Hugging Face hub
-  try { embed = await load(model, base, true); } catch { embed = await load(model, base, false); }
+  // only ever the site's own copy: if a build could not ship it, search stays lexical rather than reaching a third party
+  embed = await load(model, base);
   await embed('warm up', { pooling: 'cls', normalize: true });
   postMessage({ type: 'ready' });
 }

@@ -1,0 +1,33 @@
+# Copies images that posts hotlink from other sites into the repo (site/public/img/<slug>/) and points the posts at
+# the copies, so the site serves every image itself. Runs when posts change on a branch, or by hand from the Actions
+# tab. Commits made here use the workflow token, so they don't set workflows off again. It never touches prod.
+name: Localise images
+on:
+  push:
+    branches-ignore: [prod]
+    paths: ['site/src/content/**', 'site/scripts/localise-images.mjs', '.github/workflows/localise-images.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: localise-images-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  localise:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: site } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Download hotlinked images
+        run: node scripts/localise-images.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Commit changes
+        run: |
+          git add public/img src/content
+          if git diff --cached --quiet; then echo "No changes."; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "Serve hotlinked post images from the site"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

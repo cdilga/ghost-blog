@@ -27,6 +27,9 @@ The build updates `site/search-cache.json` (passage embeddings) when text change
   (`CF_PAGES_BRANCH`); keep it that way if you touch routing or the search index.
 - Posts are written by Chris. Edit post text only when asked; code, components and data are fair game.
 - Australian spelling in copy and docs. No em dashes.
+- The site serves its own assets: no CDNs, Google Fonts or third-party scripts (fonts come from `@fontsource`).
+  `scripts/check-third-party.mjs` fails the build otherwise. Third-party iframes wait behind a click
+  (`scripts/embed-gate.mjs`); hotlinked images get copied in by the Localise images workflow.
 
 ## Issue tracking
 

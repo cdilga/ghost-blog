@@ -112,6 +112,12 @@ For a short silent loop that plays like a GIF use `autoplay muted loop playsinli
 **Anything else that gives you an iframe** (Google Docs, maps, CodePen): the same `<figure class="embed">`
 wrapper, 600 px tall unless the iframe sets `height`.
 
+Embeds from other sites don't load with the page: the build swaps each one for a small card naming the site, with
+**Load it here** and **Open on …** links, so nothing from YouTube or Google runs until a reader asks. Write the iframe as
+normal; the swap is automatic. Images, fonts and scripts are always served from this site: an image linked from
+another site gets copied in by the **Localise images** workflow when you push, and the build fails if a page would load a
+script, stylesheet or font from elsewhere.
+
 **X / Twitter** posts need the MDX component below (`<Tweet />`).
 
 ## Rich content: MDX
@@ -150,7 +156,7 @@ All charts render to plain SVG at build time: no JavaScript to load, and readabl
 | `ParetoChart` | Scatter with the best-trade-off frontier drawn and every point labelled. |
 | `CompareWipe` | Before/after slider over two images of the same view. |
 | `Term` | A highlighted definition for teaching posts. |
-| `Tweet` | An X post: a plain link that turns into the embed when scrolled near. |
+| `Tweet` | An X post: a plain link card, with a button that loads the full post from X. |
 
 ```mdx
 import Chart from '../../components/Chart.astro';

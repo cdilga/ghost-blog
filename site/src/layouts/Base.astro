@@ -1,4 +1,12 @@
 ---
+// fonts are bundled into the site (no Google Fonts): latin subsets load on demand via unicode-range
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+import '@fontsource/inter/900.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/500.css';
 import '../styles/global.css';
 const { intro = false, title = 'Chris Dilger', description = 'Chris Dilger builds software with a fleet of AI agents: games, tools and a digital twin of a house.', image = '/og-chris-dilger.jpg', imageAlt, type = 'website', published, noindex = false } = Astro.props;
 // the default card is a designed 1200x630; post images vary, so only the default declares its size
@@ -40,9 +48,6 @@ const ogImage = image && !/^https?:/.test(image) ? new URL(`${base}${image}`, sh
   <meta name="twitter:description" content={description} />
   {ogImage && <meta name="twitter:image" content={ogImage} />}
   <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href} />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
   <link rel="alternate" type="application/rss+xml" title="Chris Dilger" href={`${base}/rss.xml`} />
 </head>
@@ -61,6 +66,14 @@ const ogImage = image && !/^https?:/.test(image) ? new URL(`${base}${image}`, sh
   </header>
   <main id="main"><slot /></main>
   <script>import '../scripts/search.js';</script>
+  <script is:inline>
+    // third-party embeds stay as a card until clicked (scripts/embed-gate.mjs)
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('.embed-gate-load'); if (!b) return;
+      var g = b.closest('[data-embed-gate]'), t = g && g.querySelector('template'); if (!t) return;
+      g.replaceWith(t.content.cloneNode(true));
+    });
+  </script>
   <script is:inline>
     // Lift the black curtain. Text pages: once fonts are in (2.5 s cap). The home page lifts it itself when the
     // desert has loaded; this is only its safety net, so a script failure can never leave the page black.

@@ -8,10 +8,13 @@
     "preview": "astro preview --host --port 4321",
     "harness": "node harness/run.mjs",
     "shots": "node harness/project-shots.mjs",
-    "projects": "node scripts/project-media.mjs"
+    "projects": "node scripts/project-media.mjs",
+    "localise-images": "node scripts/localise-images.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "@huggingface/transformers": "^4.3.1",
     "astro": "^5"
   },

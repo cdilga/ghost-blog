@@ -5,6 +5,8 @@ import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { optimiseImages } from './scripts/optimise-images.mjs';
 import { buildSearch } from './scripts/search-index.mjs';
+import { rehypeEmbedGate } from './scripts/embed-gate.mjs';
+import { checkThirdParty } from './scripts/check-third-party.mjs';
 
 // Cloudflare Pages: turn every meta-refresh redirect page (old Ghost URLs, /rss/, author and tag pages) into
 // a real 301 in _redirects, and keep the shared preview site out of search engines via _headers.
@@ -17,6 +19,7 @@ function cloudflarePages() {
         const log = { info: (m) => logger.info(m), warn: (m) => logger.warn(m) };
         await optimiseImages(root, base.replace(/\/$/, ''), log);
         await buildSearch(root, log);
+        await checkThirdParty(root, log);
         // Vite copies onnxruntime's own WASM builds into _astro, but the search worker loads the smaller
         // self-hosted /ort copy, and the asyncify build is over Pages' 25 MiB file limit
         for (const f of await readdir(join(root, '_astro'))) if (/^ort-wasm.*\.wasm$/.test(f)) await rm(join(root, '_astro', f));
@@ -72,6 +75,6 @@ export default defineConfig({
   site: process.env.SITE || 'https://chris.dilger.me',
   base,
   integrations: [mdx(), cloudflarePages()],
-  markdown: { rehypePlugins: [rehypeBase] },
+  markdown: { rehypePlugins: [rehypeBase, rehypeEmbedGate] },
   build: { inlineStylesheets: 'auto' },
 });

@@ -1,7 +1,7 @@
 ---
 /**
- * X/Twitter post embed. Renders a plain link (works with no JS and for privacy-minded readers),
- * then loads X's widget script only when the embed scrolls near the viewport.
+ * X/Twitter post embed. Renders a plain link card; X's widget script loads only when the reader clicks
+ * "Load the post" (the site serves its own assets, so nothing from X runs just by reading).
  * <Tweet url="https://x.com/user/status/123" label="Dreo replying about Australian stock" />
  */
 const { url, label = 'View the post on X' } = Astro.props;
@@ -9,16 +9,17 @@ const href = url.replace('://x.com/', '://twitter.com/').replace(/\?.*$/, '');
 ---
 <div class="tweet-embed">
   <blockquote class="twitter-tweet" data-dnt="true" data-theme="dark"><a href={href}>{label}</a></blockquote>
+  <button type="button" class="tweet-load">Load the post from X</button>
 </div>
 <style>
-  .tweet-embed { margin: 1.6em 0; display: flex; justify-content: center; }
+  .tweet-embed { margin: 1.6em 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .tweet-load { font: 500 .8rem var(--mono); padding: 5px 12px; border-radius: 99px; border: 1px solid var(--line); background: none; color: var(--sand-dim); cursor: pointer; }
+  .tweet-load:hover { color: var(--orange-hot); border-color: var(--orange-hot); }
   .tweet-embed blockquote { margin: 0; padding: 14px 18px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.02); }
 </style>
 <script>
-  const el = document.querySelector('.tweet-embed');
-  if (el) new IntersectionObserver((entries, io) => {
-    if (!entries[0].isIntersecting) return;
-    io.disconnect();
+  for (const b of document.querySelectorAll<HTMLButtonElement>('.tweet-load')) b.addEventListener('click', () => {
+    document.querySelectorAll('.tweet-load').forEach((x) => x.remove());
     const s = document.createElement('script'); s.src = 'https://platform.twitter.com/widgets.js'; s.async = true; document.body.append(s);
-  }, { rootMargin: '400px' }).observe(el);
+  });
 </script>
