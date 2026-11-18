@@ -1,9 +1,10 @@
 # Checks the live site from outside: key pages answer, the projects page lists its games, and nothing loads from
-# Google Fonts. Runs after a push to main (waiting for Cloudflare's preview build), after a promote, or by hand.
+# Google Fonts. Runs after a push to main (checks the preview) or prod (checks production), waiting for Cloudflare's
+# build; also after the Promote workflow, or by hand.
 name: Live smoke check
 on:
   push:
-    branches: [main]
+    branches: [main, prod]
     paths: ['site/**', '.github/workflows/smoke.yml']
   workflow_run:
     workflows: ['Promote to production']
@@ -22,7 +23,7 @@ jobs:
     steps:
       - name: Check pages
         env:
-          SITE: ${{ inputs.site || (github.event_name == 'workflow_run' && 'https://chris.dilger.me') || 'https://chris-preview.dilger.me' }}
+          SITE: ${{ inputs.site || ((github.event_name == 'workflow_run' || github.ref_name == 'prod') && 'https://chris.dilger.me') || 'https://chris-preview.dilger.me' }}
           WAIT: ${{ github.event_name == 'workflow_dispatch' && '0' || '480' }}
         run: |
           set -u
