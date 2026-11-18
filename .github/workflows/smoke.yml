@@ -1,0 +1,51 @@
+# Checks the live site from outside: key pages answer, the projects page lists its games, and nothing loads from
+# Google Fonts. Runs after a push to main (waiting for Cloudflare's preview build), after a promote, or by hand.
+name: Live smoke check
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', '.github/workflows/smoke.yml']
+  workflow_run:
+    workflows: ['Promote to production']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      site:
+        description: 'Site to check'
+        required: false
+        default: 'https://chris-preview.dilger.me'
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check pages
+        env:
+          SITE: ${{ inputs.site || (github.event_name == 'workflow_run' && 'https://chris.dilger.me') || 'https://chris-preview.dilger.me' }}
+          WAIT: ${{ github.event_name == 'workflow_dispatch' && '0' || '480' }}
+        run: |
+          set -u
+          echo "### Smoke check: $SITE" >> "$GITHUB_STEP_SUMMARY"
+          # Cloudflare builds in about two minutes; keep trying the newest page until it shows up
+          deadline=$(( $(date +%s) + WAIT ))
+          until curl -fsS "$SITE/projects/" | grep -q 'Party games'; do
+            if [ "$(date +%s)" -ge "$deadline" ]; then echo "::error::$SITE/projects/ never showed the projects page"; exit 1; fi
+            sleep 20
+          done
+          fail=0
+          check() { # path, text that must appear
+            body=$(curl -fsS "$SITE$1") || { echo "- $1: request failed" >> "$GITHUB_STEP_SUMMARY"; fail=1; return; }
+            if printf '%s' "$body" | grep -q "$2"; then echo "- $1: ok" >> "$GITHUB_STEP_SUMMARY"
+            else echo "- $1: missing \"$2\"" >> "$GITHUB_STEP_SUMMARY"; fail=1; fi
+            if printf '%s' "$body" | grep -q 'fonts.googleapis.com'; then echo "- $1: still loads Google Fonts" >> "$GITHUB_STEP_SUMMARY"; fail=1; fi
+          }
+          check / 'href="/projects/"'
+          check /projects/ 'Joystick Jammers'
+          check /projects/ 'biglap-index.dilger.dev'
+          check /projects/ 'jammers-preview.dilger.dev'
+          check /blog/ 'Writing'
+          for f in projects/jammers.jpg projects/physical-soccer.mp4; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/$f"); echo "- /$f: $code" >> "$GITHUB_STEP_SUMMARY"; [ "$code" = 200 ] || fail=1
+          done
+          exit $fail

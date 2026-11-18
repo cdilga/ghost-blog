@@ -53,6 +53,8 @@ your commit ──push──▶ main ──Cloudflare Pages──▶ chris-previ
   and otherwise pushes `prod` itself with the same check.
 - [Site build check](.github/workflows/site-check.yml) builds every push and pull request so a broken build
   shows red on GitHub before it reaches Cloudflare.
+- [Live smoke check](.github/workflows/smoke.yml) loads the preview after each push to `main` (and production after a
+  promote) and checks the key pages, the projects page and that nothing comes from Google Fonts.
 - To undo a release: Cloudflare dashboard > Workers & Pages > chris-dilger-me > Deployments > **Rollback** on the
   previous production deployment.
 
