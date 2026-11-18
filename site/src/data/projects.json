@@ -25,8 +25,8 @@
       "url": "https://biglap.dilger.dev",
       "blurb": "A co-op platformer around Australia. The emus have nicked the Golden Tongs three sleeps before the Big Barbie, and it is up to you and your mates.",
       "builds": { "url": "https://biglap-index.dilger.dev", "label": "Every build" },
-      "alt": "Big Lap title screen: pixel lettering over a beach level with the host and join panels",
-      "media": { "type": "shot" }
+      "alt": "Big Lap footage: emus legging it across the outback with the Golden Tongs, a ute full of animals in pursuit",
+      "media": { "type": "og" }
     },
     {
       "slug": "fort-dinkum",
@@ -43,8 +43,8 @@
       "url": "https://scrappaper.dilger.dev",
       "blurb": "A stick-figure platform fighter brawling across notebook pages, graph paper and the back of a napkin. Knock the others off the page.",
       "builds": { "url": "https://scrappaper-index.dilger.dev", "label": "Every build" },
-      "alt": "Scrap Paper title in red marker on lined notebook paper, stick figures fighting at the edges",
-      "media": { "type": "shot" }
+      "alt": "Scrap Paper footage: stick figures brawling across a pinboard of sticky notes, one knocked clean off the page",
+      "media": { "type": "og" }
     }
   ],
   "more": [
