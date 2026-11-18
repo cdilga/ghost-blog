@@ -41,7 +41,8 @@ The list is `src/data/projects.json`. Card images and video loops live in `publi
 page loads nothing from other hosts. To add a project or refresh its picture, edit the JSON and run
 `npm run projects -- <slug>` (no slug: all of them). It takes the site's `og:video`, else its `og:image`, else a
 1200x630 screenshot (`media.type` picks), and needs ffmpeg for videos. Behind a proxy, prefix it with
-`NODE_USE_ENV_PROXY=1`. Videos play only while on screen and never with reduced motion. Only list projects that are
+`NODE_USE_ENV_PROXY=1`. Or skip running it yourself: the **Refresh project media** workflow does the same on GitHub
+whenever `projects.json` changes, monthly on `main`, or from the Actions tab, and commits the result. Videos play only while on screen and never with reduced motion. Only list projects that are
 public: no sign-in, nothing private (the house twin stays off it).
 
 ## Notes

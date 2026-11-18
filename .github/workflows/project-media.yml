@@ -1,0 +1,47 @@
+# Refreshes the /projects page's card images and video loops (site/public/projects/) and commits them back.
+# It runs on GitHub's machines, so it can reach every project site without any local network setup.
+#   - automatically when site/src/data/projects.json changes on a branch (add a project, push, wait ~3 minutes)
+#   - on the 1st of each month on main, so the screenshots keep up with the games
+#   - by hand: Actions > Refresh project media > Run workflow (optionally one slug)
+# Commits made here use the workflow token, so they don't set this workflow off again. It never touches prod.
+name: Refresh project media
+on:
+  push:
+    branches-ignore: [prod]
+    paths: ['site/src/data/projects.json', 'site/scripts/project-media.mjs', '.github/workflows/project-media.yml']
+  schedule:
+    - cron: '17 3 1 * *'
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Only projects whose slug contains this (blank: all)'
+        required: false
+        default: ''
+permissions:
+  contents: write
+concurrency:
+  group: project-media-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: site } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: site/package-lock.json }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y ffmpeg fonts-noto-color-emoji
+      - name: Capture
+        run: npm run projects -- "${{ inputs.slug }}"
+      - name: Commit changes
+        run: |
+          git add public/projects
+          if git diff --cached --quiet; then echo "No changes."; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "Refresh project media"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git show --stat --format='### Refreshed project media (%h)' HEAD >> "$GITHUB_STEP_SUMMARY"
