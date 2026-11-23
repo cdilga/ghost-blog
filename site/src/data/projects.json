@@ -20,6 +20,15 @@
       "media": { "type": "og" }
     },
     {
+      "slug": "little-army",
+      "name": "Little Army",
+      "url": "https://littlearmy.dilger.dev",
+      "blurb": "A side-on scrap between two patrols of little Aussie diggers, across an outback you can dig through and blow up. Every phone is its own screen with two thumbsticks; the TV shows the lot. Bushmasters, Hueys, Boomerangs, and the Emu War.",
+      "builds": { "url": "https://littlearmy-index.dilger.dev", "label": "Every build" },
+      "alt": "Little Army footage: toy Australian diggers fighting across red-dirt mesas, action cameras above the whole arena, and a phone's own view with two thumbsticks",
+      "media": { "type": "og" }
+    },
+    {
       "slug": "big-lap",
       "name": "Big Lap",
       "url": "https://biglap.dilger.dev",
